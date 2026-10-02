@@ -1,0 +1,29 @@
+---
+description: MusicPlayer 项目构建、结构、约定（跨平台 C++17 桌面音乐播放器）
+globs: "**"
+alwaysApply: true
+---
+
+# MusicPlayer 项目规则
+
+自用跨平台桌面音乐播放器（macOS 主，Windows/Linux 兼容）。C++17 + CMake，皮肤用 TinyJS + Agg，浏览器管理后台用 LocalServer（HTTP+WebSocket）。
+
+## 目录速查
+- `MPlayerUI/` — 应用入口与 UI/shell（`MPlayerApp.cpp` 入口）
+- `Skin/` — 自绘皮肤引擎（TinyJS + Agg），`JsXXX` 对象暴露给 JS
+- `MediaTags/` — 标签与歌词解析（ID3/LRC/flac/ogg/m4a）
+- `LyricsLib/`、`LyricServer/`、`MLProtocol/` — 歌词显示与云端
+- `MPlayer/` — 媒体/播放列表/媒体库扫描
+- `MPlayerEngine/`、`Window/` — 播放内核与平台窗口封装（各 `mac|win32|linux` 子目录）
+- `LocalServer/` — 浏览器管理后台 HTTP+WebSocket
+- `third-parties/` — 第三方库
+
+## 构建
+- `./build.sh [Release|Debug] [-g][-b][-p]`（生成 Xcode 工程 → 编译 → 打 dmg）
+- 单元测试：CMake `-DUT=ON`，应用启动时 `runAllUnittest()` 跑 gtest `TEST(...)` + `ASSERT_*`（例：`MediaTags/LrcParser.cpp` 底部）
+- 快速语法检查：`clang++ -std=c++17 -fsyntax-only -D_MAC_OS -I. -I./TinyJS MediaTags/<file>.cpp`
+
+## 关键约束（务必遵守）
+2. **Release 必须定义 `NDEBUG`**：由 `CMakeLists.txt` 的 `COMPILE_DEFINITIONS_RELEASE "NDEBUG"` 保证，不要删。
+3. 跨平台改法：给 `mac` 加实现放 `MPlayerEngine/mac`、`Window/mac`，别动平台无关层。
+4. 代码注释主要为中文；保持三平台 API 一致。

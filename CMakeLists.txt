@@ -206,6 +206,10 @@ else(LINUX)
     set_property(TARGET ${PROJECT_NAME} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:${CMAKE_BUILD_TYPE}>:${CMAKE_BUILD_TYPE}>")
 endif(LINUX)
 
+# 发布版禁用 assert（NDEBUG），避免代码中的数据校验断言在用户机器上直接 Abort 闪退。
+# 使用 per-config 的 COMPILE_DEFINITIONS_RELEASE，对单配置和 Xcode 多配置都生效。
+set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS_RELEASE "NDEBUG")
+
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/TinyJS

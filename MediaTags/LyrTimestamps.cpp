@@ -42,10 +42,15 @@ void encodeTimeStamps(int duration, string &timeStamps) {
     }
 }
 
+// 解码一个时间戳字符。若遇到不在 base64 字符集内的字节（例如字符串被截断读到 '\0'、
+// 或混入多字节字符），返回 nullptr 表示失败，由调用方放弃解析，而不是断言崩溃。
 cstr_t decodeTimeStamps(cstr_t timestamps, int &duration) {
-    assert(*timestamps != CHAR_NO_TIME_STAMP);
-
     duration = 0;
+
+    if (*timestamps == CHAR_NO_TIME_STAMP) {
+        // '_' 是“本行无时间戳”的标记，不应出现在这里，视为非法输入。
+        return nullptr;
+    }
 
     bool isNegative = (*timestamps == CHAR_NEGATIVE_TIME_VALUE);
     if (isNegative) {
@@ -65,7 +70,10 @@ cstr_t decodeTimeStamps(cstr_t timestamps, int &duration) {
             break;
         }
     }
-    assert(i < MAX_DURATION);
+    if (i >= MAX_DURATION) {
+        // 无效字节（不在 base64 字符集内）。
+        return nullptr;
+    }
 
     duration *= TIME_STAMP_UNIT;
 
@@ -86,12 +94,18 @@ bool parse(cstr_t timestamps, RawLyrics &rawLyrics) {
     // offset time
     int timeOffset = 0;
     timestamps = decodeTimeStamps(timestamps, timeOffset);
+    if (timestamps == nullptr) {
+        return false;
+    }
 
     // Time of every line
     int timeAboveLine = 0;
     for (auto &line : rawLyrics) {
+        // 数据不满足“歌词行且仅一个未定时的 Piece”时，视为非法数据，放弃解析而非断言。
+        if (!line.isLyricsLine || line.pieces.empty() || line.pieces[0].beginTime != -1) {
+            return false;
+        }
         auto &piece = line.pieces[0];
-        assert(line.isLyricsLine && piece.beginTime == -1);
 
         if (*timestamps == CHAR_NO_TIME_STAMP) {
             timestamps++;
@@ -102,6 +116,9 @@ bool parse(cstr_t timestamps, RawLyrics &rawLyrics) {
         } else {
             int duration = 0;
             timestamps = decodeTimeStamps(timestamps, duration);
+            if (timestamps == nullptr) {
+                return false;
+            }
             timeAboveLine = piece.beginTime = line.beginTime = timeAboveLine + duration;
         }
     }

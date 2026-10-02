@@ -449,7 +449,9 @@ public:
             parse(lyrics, true);
             _rawLyrics.properties().lyrContentType = LCT_TXT;
 
-            LyrTimestamps::parse(_rawLyrics.properties().getOffsetTimeStr().c_str(), _rawLyrics);
+            if (LyrTimestamps::isTimeStamps(_rawLyrics.properties().getOffsetTimeStr().c_str())) {
+                LyrTimestamps::parse(_rawLyrics.properties().getOffsetTimeStr().c_str(), _rawLyrics);
+            }
         }
 
         return ERR_OK;
