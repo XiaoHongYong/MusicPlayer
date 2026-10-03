@@ -9,6 +9,7 @@
 
 
 #define MEM_CLEAN_DURATION      (1000 * 60 * 2)
+#define MAX_GLYPH_CAP           512
 
 CRawGlyphSetMgr::CRawGlyphSetMgr() {
 }
@@ -69,6 +70,7 @@ CRawGlyphSet::CRawGlyphSet() {
     OBJ_REFERENCE_INIT
 
     m_timeLastClean = getTickCount();
+    m_mapGlyph.reserve(MAX_GLYPH_CAP);
 }
 
 CRawGlyphSet::~CRawGlyphSet() {
@@ -93,34 +95,9 @@ Glyph *CRawGlyphSet::getGlyph(string &ch) {
     Glyph *glyph = nullptr;
     auto now = getTickCount();
 
-    if (m_mapGlyph.size() > 256 && now - m_timeLastClean >= MEM_CLEAN_DURATION) {
-        // Clean unused glyph
-        m_timeLastClean = now;
-        for (auto it = m_mapGlyph.begin(); it != m_mapGlyph.end(); ++it) {
-            auto glyph = (*it).second;
-            if (now - glyph->nLastUsedTime >= MEM_CLEAN_DURATION) {
-                if (glyph->bitmap) {
-                    delete[] glyph->bitmap;
-                    glyph->bitmap = nullptr;
-                    glyph->freed = true;
-                    if (glyph->bitmapOutlined) {
-                        delete[] glyph->bitmapOutlined;
-                        glyph->bitmapOutlined = nullptr;
-                    }
-                }
-            }
-        }
-    }
-
+    // 热路径：缓存命中只做一次哈希查找，不做任何清理扫描。
     auto it = m_mapGlyph.find(ch);
-    if (it == m_mapGlyph.end()) {
-        glyph = m_rawGlyphBuilder.buildGlyph(ch);
-        assert(glyph);
-        if (!glyph) {
-            return nullptr;
-        }
-        m_mapGlyph[ch] = glyph;
-    } else {
+    if (it != m_mapGlyph.end()) {
         glyph = (*it).second;
         if (glyph->freed && glyph->bitmap == nullptr) {
             // It must has been freed, renew one.
@@ -134,7 +111,37 @@ Glyph *CRawGlyphSet::getGlyph(string &ch) {
             temp->bitmap = nullptr;
             delete temp;
         }
+
+        glyph->nLastUsedTime = now;
+        return glyph;
     }
+
+    // 只在分配新字形（较少发生）时才考虑清理，避免每次访问都扫全表。
+    if (m_mapGlyph.size() > MAX_GLYPH_CAP && now - m_timeLastClean >= MEM_CLEAN_DURATION) {
+        // Clean unused glyph
+        m_timeLastClean = now;
+        for (auto itClean = m_mapGlyph.begin(); itClean != m_mapGlyph.end(); ++itClean) {
+            auto glyphClean = (*itClean).second;
+            if (now - glyphClean->nLastUsedTime >= MEM_CLEAN_DURATION) {
+                if (glyphClean->bitmap) {
+                    delete[] glyphClean->bitmap;
+                    glyphClean->bitmap = nullptr;
+                    glyphClean->freed = true;
+                    if (glyphClean->bitmapOutlined) {
+                        delete[] glyphClean->bitmapOutlined;
+                        glyphClean->bitmapOutlined = nullptr;
+                    }
+                }
+            }
+        }
+    }
+
+    glyph = m_rawGlyphBuilder.buildGlyph(ch);
+    assert(glyph);
+    if (!glyph) {
+        return nullptr;
+    }
+    m_mapGlyph[ch] = glyph;
 
     glyph->nLastUsedTime = now;
 

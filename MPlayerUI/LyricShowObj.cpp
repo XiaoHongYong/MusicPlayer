@@ -477,6 +477,10 @@ CLyricShowObj::CLyricShowObj() {
 
     m_bCanWrapLines = true;
 
+    m_pBgCache = nullptr;
+    m_nBgCacheW = m_nBgCacheH = 0;
+    m_bBgCacheDirty = true;
+
     m_bEnableAutoResize = true;
 
     m_bUseSkinStyle = false;
@@ -539,6 +543,11 @@ CLyricShowObj::CLyricShowObj() {
 CLyricShowObj::~CLyricShowObj() {
     g_profile.writeInt("NextPicInFolder", m_nextPicInFolder);
     m_pSkin->unregisterTimerObject(this);
+
+    delete m_pBgCache;
+    m_pBgCache = nullptr;
+
+    invalidateRowCache();
 }
 
 void CLyricShowObj::onCreate() {
@@ -839,6 +848,41 @@ bool CLyricShowObj::drawRow(CRawGraph *canvas, LyricsLine &lyricRow, int x, int 
         x = getLyricRowAlignPos(canvas, lyricRow);
     }
 
+    // 歌词按行缓存：仅对「单一定色」且非描边、非逐帧 setOpacity 的行（LCT_LOW / LCT_HIGH），
+    // 把字形栅格化一次进离屏图，每帧只做一次 blt 上屏，避免每帧每字形重跑 drawGlyphRGBA32。
+    // 交叉淡出（LCT_HIGH_TO_LOW 等）被排除：两张变体两次 BPM_BLEND 覆盖叠加对不透明字形复算术
+    // 不成立（会变「后画覆盖先画」而非混色），必须回退动态路径做单次混色。LCT_BG_* 依赖下层背景也不缓存。
+    if (!bSetOpacityPainting && !isOutlineLyrics()) {
+        if (lct == LCT_HIGH || lct == LCT_LOW) {
+            bool bHilight = (lct == LCT_HIGH);
+            int nW = getLyricRowTextWidth(canvas, lyricRow);
+            int nH = getFontHeight();
+            if (nW > 0 && nH > 0) {
+                CLyricRowCell *cell = getRowCacheCell(lyricRow);
+                if (cell->nW != nW || cell->nH != nH) {
+                    // 行了宽/高变了（换行/字号），重建两张变体
+                    delete cell->pImgLow;  cell->pImgLow = nullptr;
+                    delete cell->pImgHili; cell->pImgHili = nullptr;
+                    cell->nW = nW; cell->nH = nH;
+                }
+
+                CRawGraph *&rpImg = bHilight ? cell->pImgHili : cell->pImgLow;
+                if (!rpImg) {
+                    rpImg = renderRowVariant(lyricRow, bHilight, nW, nH, canvas);
+                }
+
+                if (rpImg) {
+                    // 单一定色：作透明度 255 的一次混合，与动态 textOut 像素一致。
+                    RawImageData *s = rpImg->getRawBuff();
+                    canvas->bltImage(canvas->mapAndScaleX(x), canvas->mapAndScaleY(y),
+                        s->width, s->height, s, 0, 0, BPM_BLEND);
+                    return true;
+                }
+                // 构建失败：回退下方动态路径
+            }
+        }
+    }
+
     // 画出此行歌词
     nSize = (int)lyricRow.pieces.size();
     for (LyricsPiece &piece : lyricRow.pieces) {
@@ -1101,17 +1145,154 @@ int CLyricShowObj::getLyricRowTextWidth(CRawGraph *canvas, LyricsLine &lyricRow)
 
 void CLyricShowObj::updateLyricDrawBufferBackground(CRawGraph *canvas, CRect &rc) {
     if (m_img.isValid()) {
-        m_img.tileBltEx(canvas, m_rcObj.left, m_rcObj.top, rc.left, rc.top, rc.width(), rc.height());
-        // m_img.blt(canvas, m_rcObj.left, m_rcObj.top);
+        if (m_bBgCacheDirty) {
+            // 背景失效（换图/改尺寸等）时重建离屏缓存；失败则走原动态路径兜底。
+            if (!rebuildBgCache(canvas)) {
+                m_bBgCacheDirty = false;
+            }
+        }
+
+        if (m_pBgCache) {
+            drawBgCache(canvas);
+        } else {
+            m_img.tileBltEx(canvas, m_rcObj.left, m_rcObj.top, rc.left, rc.top, rc.width(), rc.height());
+            // m_img.blt(canvas, m_rcObj.left, m_rcObj.top);
+        }
 
         if (m_bDarkenLyrBgOnImg) {
             darkenLyricsBg(canvas, rc);
         }
     } else if (m_bSetSkinBg) {
-        // The background has been drawed by parent skin container 
+        // The background has been drawed by parent skin container
     } else {
         canvas->fillRect(rc, m_clrBg);
     }
+}
+
+// 将 m_img 平铺进一个透明离屏缓冲，平铺相位与窗口坐标对齐，避免滚动时每帧重算 tile。
+// 透明缓冲 + 混合上屏：因为 premultiplied alpha 混合可结合，结果与动态路径像素一致。
+bool CLyricShowObj::rebuildBgCache(CRawGraph *canvas) {
+    int w = m_rcObj.width(), h = m_rcObj.height();
+    if (w <= 0 || h <= 0 || !m_img.isValid()) {
+        m_bBgCacheDirty = false;
+        return false;
+    }
+
+    // create() 接收逻辑尺寸并内部按 scale 放大；getRawBuff() 返回物理尺寸。
+    if (!m_pBgCache || m_nBgCacheW != int(w * canvas->getScaleFactor())
+        || m_nBgCacheH != int(h * canvas->getScaleFactor())) {
+        delete m_pBgCache;
+
+        CRawGraph *pCache = new CRawGraph(canvas->getScaleFactor());
+        // 离屏缓存不绘制到窗口，windowHandle 传 0 即可（内存缓冲不依赖窗口句柄）。
+        if (!pCache->create(w, h, (WindowHandle)0, 32)) {
+            delete pCache;
+            m_pBgCache = nullptr;
+            m_bBgCacheDirty = false;
+            return false;
+        }
+
+        RawImageData *rd = pCache->getRawBuff();
+        m_nBgCacheW = rd->width;
+        m_nBgCacheH = rd->height;
+        m_pBgCache = pCache;
+    }
+
+    // 清为透明
+    m_pBgCache->fillRect(CRect(0, 0, w, h), CColor(0, 0), BPM_COPY);
+
+    // 用与动态路径相同的相位（xOrg/yOrg = m_rcObj 左上角）把图贴进缓存。
+    m_img.tileBltEx(m_pBgCache, m_rcObj.left, m_rcObj.top, 0, 0, w, h);
+
+    m_bBgCacheDirty = false;
+
+    return true;
+}
+
+void CLyricShowObj::drawBgCache(CRawGraph *canvas) {
+    if (!m_pBgCache) {
+        return;
+    }
+
+    RawImageData *src = m_pBgCache->getRawBuff();
+
+    // bltImage 的坐标是 scale 后（物理）坐标；cache 与 canvas 同 scale，像素 1:1。
+    canvas->bltImage(canvas->mapAndScaleX(m_rcObj.left), canvas->mapAndScaleY(m_rcObj.top),
+        src->width, src->height, src, 0, 0, BPM_BLEND);
+}
+
+#define LYRIC_ROW_CACHE_CAP        24          // 可见行缓存上限（LRU 淘汰）
+
+// 由歌词行取（或新建）行缓存条目。按 LyricsLine* 索引；播放中 m_lyrLines 不增删，指针稳定。
+CLyricShowObj::CLyricRowCell *CLyricShowObj::getRowCacheCell(LyricsLine &lyricRow) {
+    for (auto &cell : m_vRowCache) {
+        if (cell.pLine == &lyricRow) {
+            cell.nLastUse = ++m_nRowCacheUseTick;
+            return &cell;
+        }
+    }
+
+    if ((int)m_vRowCache.size() >= LYRIC_ROW_CACHE_CAP) {
+        // LRU 淘汰最久未用的一行
+        auto itMin = m_vRowCache.begin();
+        for (auto it = m_vRowCache.begin(); it != m_vRowCache.end(); ++it) {
+            if (it->nLastUse < itMin->nLastUse) {
+                itMin = it;
+            }
+        }
+        delete itMin->pImgLow;
+        delete itMin->pImgHili;
+        m_vRowCache.erase(itMin);
+    }
+
+    CLyricRowCell cell;
+    cell.pLine = &lyricRow;
+    cell.nStamp = m_nRowCacheStamp;
+    cell.nLastUse = ++m_nRowCacheUseTick;
+    m_vRowCache.push_back(cell);
+    return &m_vRowCache.back();
+}
+
+// 把一行的字形栅格化一次进离屏图（透明底）。同一行的 high/low 变体复用本函数、仅换颜色/图案，
+// 保证两张图覆盖形状逐像素一致，交叉叠加才不重影。仅用于非描边文本。
+CRawGraph *CLyricShowObj::renderRowVariant(LyricsLine &lyricRow, bool bHilight, int nW, int nH, CRawGraph *canvas) {
+    CRawGraph *pImg = new CRawGraph(canvas->getScaleFactor());
+    if (!pImg->create(nW, nH, (WindowHandle)0, 32)) {
+        delete pImg;
+        return nullptr;
+    }
+
+    pImg->fillRect(CRect(0, 0, nW, nH), CColor(0, 0), BPM_COPY);
+    pImg->setFont(&m_font);
+
+    const TextOverlayBlending &tob = bHilight ? m_tobHilight : m_tobLowlight;
+    CColor clrFill = bHilight ? getHighlightColor() : getLowlightColor();
+
+    if (tob.obm == OBM_COLOR) {
+        m_font.useColorOverlay();
+    } else {
+        m_font.setOverlayPattern(tob.imgPattern);
+        clrFill = tob.clr[TCI_FILL];
+    }
+
+    // textOut 的 y 是行顶（字形向下占 getFontHeight），baseline=0 渲染并与 blit 位置一致。
+    int x = 0;
+    for (auto &piece : lyricRow.pieces) {
+        pImg->setTextColor(clrFill);
+        pImg->textOut((float)x, 0, piece.text);
+        x += getLyricFragDrawWidth(piece, pImg);
+    }
+
+    return pImg;
+}
+
+void CLyricShowObj::invalidateRowCache() {
+    for (auto &cell : m_vRowCache) {
+        delete cell.pImgLow;
+        delete cell.pImgHili;
+    }
+    m_vRowCache.clear();
+    m_nRowCacheStamp++;
 }
 
 void CLyricShowObj::darkenLyricsBg(CRawGraph *canvas, CRect &rc) {
@@ -1335,6 +1516,9 @@ void CLyricShowObj::onLyricsChanged() {
 }
 
 void CLyricShowObj::onLyrDrawContextChanged() {
+    m_bBgCacheDirty = true;
+    invalidateRowCache();       // 歌词/字体/颜色等变化：行缓存全部失效
+
     m_lyrLines.clearDrawContextWidth();
 
     if (m_bCanWrapLines) {
@@ -1648,6 +1832,9 @@ void CLyricShowObj::onTimer(int nId) {
 void CLyricShowObj::onSize() {
     CUIObject::onSize();
 
+    m_bBgCacheDirty = true;
+    invalidateRowCache();       // 尺寸/scale 变化：字形尺寸可能变，行缓存全部失效
+
     if (m_bUseBgImg || m_bUseAlbumArtAsBg) {
         loadNextBgImage();
     }
@@ -1855,6 +2042,8 @@ bool CLyricShowObj::onLyrDisplaySettings(cstr_t szProperty, cstr_t szValue) {
 }
 
 void CLyricShowObj::updateBgImage() {
+    m_bBgCacheDirty = true;
+
     if (m_img.isValid()) {
         m_img.detach();
     }

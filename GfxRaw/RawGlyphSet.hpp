@@ -10,6 +10,8 @@
 
 #include "RawGraph.h"
 
+#include <unordered_map>
+
 
 #define _CLEAR_TYPE
 
@@ -107,7 +109,7 @@ public:
 
 protected:
     friend class CRawGlyphSetMgr;
-    typedef map<string, Glyph*>        MAP_GLYPH;
+    typedef unordered_map<string, Glyph*>        MAP_GLYPH;
 
     FontInfoEx                  m_font;
 

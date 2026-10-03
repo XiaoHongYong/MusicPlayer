@@ -398,6 +398,11 @@ CRawGraph *CSkinContainer::getMemGraph() {
 void CSkinContainer::draw(CRawGraph *canvas) {
     CRect rc;
 
+    // 记录本帧需要重绘的区域（绘制前当前 clip 即 CSkinWnd::onPaint 设置的脏区）。
+    // 供子对象做脏区判定，跳过完全位于区域之外的对象，避免整帧全树重绘。
+    CRect rcDirtyArea;
+    canvas->getClipBoundBox(rcDirtyArea);
+
     if (m_bClipChildren) {
         canvas->getClipBoundBox(rc);
         canvas->setClipBoundBox(m_rcObj);
@@ -406,7 +411,8 @@ void CSkinContainer::draw(CRawGraph *canvas) {
     CUIObject::draw(canvas);
 
     for (CUIObject *pObj : m_vUIObjs) {
-        if (pObj->isVisible()) {
+        CRect rcObj;
+        if (pObj->isVisible() && rcObj.intersect(pObj->m_rcObj, rcDirtyArea)) {
             CRawGraph::COpacityBlendAutoRecovery opacityAR(canvas, pObj->getOpacity());
 
             pObj->tryToCallInitialUpdate();

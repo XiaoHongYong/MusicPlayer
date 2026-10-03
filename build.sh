@@ -45,6 +45,7 @@ function print_help() {
     echo "    -g|--generate             生成项目工程文件"
     echo "    -b|--build                执行编译"
     echo "    -p|--pack                 进行打包"
+    echo "    -s|--symbols              构建带符号的 Release（不 strip，并生成 dSYM），用于性能分析"
     exit
 }
 
@@ -52,6 +53,7 @@ BUILD_TYPE=Release
 ACTION_BUILD=
 ACTION_PACK=
 ACTION_GENERATE=
+ACTION_SYMBOLS=
 
 while (($# > 0)); do
     case "$1" in
@@ -80,6 +82,10 @@ while (($# > 0)); do
             ACTION_PACK=1
         ;;
 
+        "-s"|"--symbols")
+            ACTION_SYMBOLS=1
+        ;;
+
         *)
             echo "Invalid parameters: ($1)"
             exit 1
@@ -104,8 +110,14 @@ if [ $ACTION_GENERATE ] ; then
     mkdir -p build
     cd build
 
-    # cmake -D CMAKE_C_COMPILER="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc"  -D CMAKE_CXX_COMPILER="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++" -G Xcode ..
-    cmake -G Xcode -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
+    # 显式指定 Xcode 工具链编译器，避免 CMake 在全新 configure 时找不到编译器。
+    # CODE_SIGNING_ALLOWED=NO：新版本 Xcode/cmake 的编译器识别测试会因空签名身份失败，
+    # 需禁用签名才能通过（打包时发布自带签名）。
+    cmake -D CMAKE_C_COMPILER="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc" \
+          -D CMAKE_CXX_COMPILER="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++" \
+          -D CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
+          -D CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY="-" \
+          -G Xcode -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
     exit_if_err
     cd ..
 
@@ -115,8 +127,22 @@ fi
 if [ $ACTION_BUILD ] ; then
     echo "Build project MusicPlayer..."
 
-    xcodebuild -project build/MusicPlayer.xcodeproj -scheme MusicPlayer -configuration $BUILD_TYPE
+    # -s/--symbols：构建带符号的 Release（保留符号并生成 dSYM），供性能分析。
+    # 常规 Release 会因 DEPLOYMENT_POSTPROCESSING=YES 被 strip（CMakeLists.txt）。
+    XCODE_ATTRS=""
+    if [ $ACTION_SYMBOLS ] ; then
+        XCODE_ATTRS="DEPLOYMENT_POSTPROCESSING=NO DEBUG_INFORMATION_FORMAT=dwarf-with-dsym"
+    fi
+
+    xcodebuild -project build/MusicPlayer.xcodeproj -scheme MusicPlayer -configuration $BUILD_TYPE $XCODE_ATTRS
     exit_if_err
+
+    # 带符号构建：显式生成 dSYM，便于 atos/Instruments 做行级符号化。
+    APP_BIN="build/${BUILD_TYPE}/MusicPlayer.app/Contents/MacOS/MusicPlayer"
+    if [ $ACTION_SYMBOLS ] && [ -f "${APP_BIN}" ] ; then
+        dsymutil "${APP_BIN}" -o "build/${BUILD_TYPE}/MusicPlayer.app.dSYM" >/dev/null 2>&1 \
+            && echo "dSYM written to build/${BUILD_TYPE}/MusicPlayer.app.dSYM"
+    fi
 fi
 
 if [ $ACTION_PACK ] ; then

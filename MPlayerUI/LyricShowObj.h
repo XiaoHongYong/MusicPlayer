@@ -160,6 +160,25 @@ protected:
     bool autoWidthSkinAccordLyrics();
     void updateLyricDrawBufferBackground(CRawGraph *canvas, CRect &rc);
 
+    // 背景离屏缓存：rebuild 将 m_img 贴进透明离屏缓冲（相位对齐窗口），draw 每帧仅做一次混合上屏。
+    bool rebuildBgCache(CRawGraph *canvas);
+    void drawBgCache(CRawGraph *canvas);
+
+    // 歌词「按行缓存」：把一行的字形/图案/描边栅格化一次进离屏图，每帧只按 LCT + 行 alpha 上屏。
+    // 高/低两个变体覆盖形状完全一致（同一渲染函数、仅换颜色/图案），保证交叉叠加不重影。
+    struct CLyricRowCell {
+        LyricsLine  *pLine = nullptr;
+        CRawGraph   *pImgLow = nullptr;
+        CRawGraph   *pImgHili = nullptr;
+        int         nW = 0, nH = 0;          // 逻辑尺寸
+        uint32_t    nStamp = 0;              // 命中需要 == m_nRowCacheStamp
+        uint32_t    nLastUse = 0;
+    };
+
+    CLyricRowCell *getRowCacheCell(LyricsLine &lyricRow);
+    CRawGraph *renderRowVariant(LyricsLine &lyricRow, bool bHilight, int nW, int nH, CRawGraph *canvas);
+    void invalidateRowCache();
+
     void darkenLyricsBg(CRawGraph *canvas, CRect &rc);
 
     int getLyricRowAlignPos(CRawGraph *canvas, LyricsLine &lyricRow);
@@ -263,6 +282,16 @@ protected:
     bool                        m_bDarkenLyrBgOnImg;
     float                       m_nDarkenTopArea, m_nDarkenBottomArea;
     CColor                      m_clrDarken;
+
+    // 背景/封面离屏缓存，避免歌词滚动时每帧重贴 m_img。仅用于 m_img.isValid() 情形。
+    CRawGraph                   *m_pBgCache;
+    int                         m_nBgCacheW, m_nBgCacheH;     // cache（物理像素）尺寸
+    bool                        m_bBgCacheDirty;
+
+    // 歌词按行缓存：KeysBy LyricsLine*，失效用版本号，容量上限按 LRU 淘汰。
+    std::vector<CLyricRowCell>  m_vRowCache;
+    uint32_t                    m_nRowCacheStamp = 0;
+    uint32_t                    m_nRowCacheUseTick = 0;
 
     // Horizontal lyrics alignment
     LyrAlignment                m_nAlignment;
