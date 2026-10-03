@@ -88,10 +88,9 @@ void CMediaAlbumArtCtrl::onTimer(int nId) {
     if (image) {
         createAlbumArtImage(image);
         invalidate();
-        return;
-    } else {
-        m_mediaAlbumArt.restartLoop();
     }
+    // 没有新图片时不回卷重解：避免暂停/静止时每 20s 无谓地重解同一张封面（JPEG 解码）。
+    // 换歌已由 onEvent -> updateAlbumArt() 负责 reset() 并重新加载，无需在此重复回卷。
 }
 
 void CMediaAlbumArtCtrl::onSize() {

@@ -1598,7 +1598,10 @@ void CSkinWnd::onSkinLoaded() {
             }
 
             // 需要周期性的执行 TinyJs VM 的任务.
-            setTimer(TIMER_ID_TINY_JS_VM, 1);
+            // 用 4ms(250Hz) 替代原来的 1ms：皮肤 JS 里最小 setTimeout/setInterval 就是 4/5ms，
+            // 1ms 的泵粒度属于严重过采样，会以 ~1000 次/秒把 runloop 的 timer 机制保持烫，
+            // 白白吃掉主线程几个点。4ms 仍远超显示刷新率，保留全部真实时序，唤醒量降到 1/4。
+            setTimer(TIMER_ID_TINY_JS_VM, 4);
 
             // 初始化调用一些 JS 事件
             if (m_onSizeListener.isFunction()) {

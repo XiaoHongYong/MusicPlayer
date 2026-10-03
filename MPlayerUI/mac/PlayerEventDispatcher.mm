@@ -28,6 +28,10 @@
         // 用 CADisplayLink 替代 NSTimer：回调与 vsync 对齐，削减与显示刷新不同步造成的
         // 参差 CA::commit。节流闸在 onDisplayLink 内保持平均 ~40ms（原有 25fps 观感）。
         displayLink = [NSScreen.mainScreen displayLinkWithTarget:self selector:@selector(onDisplayLink:)];
+        // 歌词只按 ~25fps 动画，无需让 CADisplayLink 以显示刷新的满速(如 120Hz)唤醒。
+        // 限制递帧率为 30fps(60/120 的整数约数)，唤醒量降到满速的 1/4。
+        const CAFrameRateRange range = { 25, 30, 30 };  // minimum / maximum / preferred
+        displayLink.preferredFrameRateRange = range;
         [displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
         [displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSEventTrackingRunLoopMode];
         lastTick = 0;

@@ -3,7 +3,7 @@
     FileName :    LyricShowObj.cpp
     Author   :    xhy
 
-    Purpose  :    
+    Purpose  :
 *********************************************************************/
 
 #include "MPlayerApp.h"
