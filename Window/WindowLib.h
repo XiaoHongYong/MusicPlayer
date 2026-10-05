@@ -29,6 +29,7 @@
 #include "WndResizer.h"
 #include "WndDrag.h"
 #include "Desktop.h"
+#include "SkinOs.h"
 
 
 #endif // _HEADER_WIDGET_H_

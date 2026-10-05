@@ -47,7 +47,7 @@ Window::~Window() {
 }
 
 bool Window::createForSkin(cstr_t szClassName, cstr_t szCaption, int x, int y, int nWidth, int nHeight, Window *pWndParent, bool bToolWindow, bool bTopmost, bool bVisible) {
-    // 不使用系统原生标题栏：chrome 由皮肤 <Caption os="..."> 绘制。
+    // 不使用系统原生标题栏：chrome 由皮肤样式（Caption / Caption.mac 等）自绘。
     NSRect frame = NSMakeRect(x, y, nWidth, nHeight);
     WindowMacImp* w = [[WindowMacImp alloc] initWithContentRect:frame
         styleMask: NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable

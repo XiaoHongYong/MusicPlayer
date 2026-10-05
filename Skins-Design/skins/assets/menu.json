@@ -791,6 +791,10 @@
     [
       "Browse Album Art...",
       "ID_BR_ALBUM_ART"
+    ],
+    [
+      "Download Album Art...",
+      "ID_DL_ALBUM_ART"
     ]
   ],
   "TrayIconMenu": [

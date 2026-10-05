@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PreferPage.AlbumArtRoot ID="CID_C_AA_ROOT" Name="Album Art" Rect="0,65,w,h-65" Visible="false">
+  <NormalFrame Rect="10,10,w-20,h-20"/>
+  <NormalTabButton ID="CID_TOOLBAR_ALBUM_ART"  Rect="30,8,w-30,">
+    <button ID="ID_ALBUM_ART_DOWNLOAD" Text="Album Art Download"/>
+  </NormalTabButton>
+  <Container Name="Content" Rect="10,0,w-20,h" ClipChildren="true">
+    <PreferPage.AlbumArt ID="CID_C_AA_DOWNLOAD" Visible="false" Name="Album Art Download" Rect="0,30,w,h-30-10">
+      <NormalCheckBox ID="CID_C_ENABLE_ALBUM_ART_DL" Text="Automatically download album art if missing" Rect="25,15,w-50,"/>
+
+      <NormalFrame Rect="10,50,w-20,130" Text="Download source"/>
+      <NormalRadioBt ID="CID_C_AA_SRC_AUTO" Text="Auto (MusicBrainz, then China sources)" Rect="25,80,w-50,"/>
+      <NormalRadioBt ID="CID_C_AA_SRC_MB" Text="MusicBrainz + Cover Art Archive" Rect="25,110,w-50,"/>
+      <NormalRadioBt ID="CID_C_AA_SRC_CHINA" Text="China (NetEase / iTunes CN)" Rect="25,140,w-50,"/>
+
+      <NormalFrame Rect="10,195,w-20,110" Text="Save downloaded album art"/>
+      <NormalRadioBt ID="CID_C_AA_SAVE_SONG_DIR" Text="Song's directory, same file name as the song" Rect="25,225,w-50,"/>
+      <NormalRadioBt ID="CID_C_AA_SAVE_CUSTOM" Text="Album art download folder" Rect="25,255,220,"/>
+      <NormalTextBt ID="CID_AA_DOWN_DIR" Text="Choose the directory" Rect="250,255,w-250-25,"/>
+    </PreferPage.AlbumArt>
+  </Container>
+</PreferPage.AlbumArtRoot>

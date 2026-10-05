@@ -395,30 +395,51 @@ SXNode *CSkinStyles::getClassNode(cstr_t className) const {
 
 void CSkinStyles::addStyle(SXNode *nodeStyle) {
     for (auto node : nodeStyle->listChildren) {
-        auto it = m_mapStyles.find(node->name);
-        if (it != m_mapStyles.end()) {
-            DBG_LOG1("Overwrite style name: %s", node->name.c_str());
+        string styleName;
+        SkinStyleOsKind osKind = parseSkinStyleName(node->name.c_str(), styleName);
+        if (osKind == SkinStyleOsKind::Other) {
+            continue;
+        }
+        if (styleName.empty()) {
+            continue;
         }
 
-        m_mapStyles[node->name] = node;
+        auto it = m_mapStyles.find(styleName);
+        if (it != m_mapStyles.end()) {
+            // 已有平台专用样式时，不能再用无后缀的通用样式盖掉。
+            // 依赖节点保留原名（如 Caption.mac），不要改写成基名。
+            string existingBase;
+            if (parseSkinStyleName(it->second->name.c_str(), existingBase) == SkinStyleOsKind::Current
+                && osKind != SkinStyleOsKind::Current) {
+                DBG_LOG1("Skip generic style, keep OS style: %s", styleName.c_str());
+                continue;
+            }
+            DBG_LOG1("Overwrite style name: %s", styleName.c_str());
+        }
 
+        // 先按旧表解析 Extends，避免 Caption.mac 覆盖 Caption 后变成自己继承自己。
         auto extends = node->getProperty(SZ_PN_EXTENDS);
+        SXNode *nodeFrom = nullptr;
         if (extends) {
-            auto it = m_mapStyles.find(extends);
-            if (it != m_mapStyles.end()) {
-                // extends from another style, must copy all its properties.
-                auto nodeFrom = (*it).second;
-                for (auto &prop : nodeFrom->listProperties) {
-                    if (node->getProperty(prop.name.c_str()) == nullptr) {
-                        // Add not existed property.
-                        node->listProperties.push_back(prop);
-                    }
-                }
+            auto itExt = m_mapStyles.find(extends);
+            if (itExt != m_mapStyles.end()) {
+                nodeFrom = itExt->second;
+            }
+        }
 
-                auto orgExtends = nodeFrom->getProperty(SZ_PN_EXTENDS);
-                if (orgExtends != nullptr) {
-                    node->setProperty(SZ_PN_EXTENDS, orgExtends);
+        // map key 用基名；node->name 保留带后缀的原名，供覆盖判断。
+        m_mapStyles[styleName] = node;
+
+        if (nodeFrom) {
+            for (auto &prop : nodeFrom->listProperties) {
+                if (node->getProperty(prop.name.c_str()) == nullptr) {
+                    node->listProperties.push_back(prop);
                 }
+            }
+
+            auto orgExtends = nodeFrom->getProperty(SZ_PN_EXTENDS);
+            if (orgExtends != nullptr) {
+                node->setProperty(SZ_PN_EXTENDS, orgExtends);
             }
         }
     }

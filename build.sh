@@ -39,13 +39,13 @@ function create_music_player_update_json() {
 }
 
 function print_help() {
-    echo "build.sh [Release|Debug] [-g|--generate] [-b|-build] [-p|--pack] [-h|--help]"
+    echo "build.sh [Release|Debug] [-g|--generate] [-b|--build] [-p|--pack] [-s|--symbols] [-h|--help]"
     echo "    -h|--help                 显示帮助消息"
     echo "    Release|Debug             使用 Release 或者 Debug 配置，缺省为 Release"
     echo "    -g|--generate             生成项目工程文件"
     echo "    -b|--build                执行编译"
-    echo "    -p|--pack                 进行打包"
-    echo "    -s|--symbols              构建带符号的 Release（不 strip，并生成 dSYM），用于性能分析"
+    echo "    -p|--pack                 进行打包（仅支持 Release）"
+    echo "    -s|--symbols              构建时保留符号并生成 dSYM（主要用于 Release 性能分析）"
     exit
 }
 
@@ -78,7 +78,6 @@ while (($# > 0)); do
         ;;
 
         "-p"|"--pack")
-            echo "-p"
             ACTION_PACK=1
         ;;
 
@@ -146,19 +145,24 @@ if [ $ACTION_BUILD ] ; then
 fi
 
 if [ $ACTION_PACK ] ; then
-    echo "Make package: MusicPlayer.dmg ..."
+    if [ "$BUILD_TYPE" != "Release" ] ; then
+        echo "Skip packaging: only supported for Release (got $BUILD_TYPE)."
+    else
+        echo "Make package: MusicPlayer.dmg ..."
 
-    rm build/MusicPlayer.dmg
-    rm build/Release/Applications
-    ln -s /Applications build/Release/Applications
-    hdiutil create -volname MusicPlayer -srcfolder build/Release -format UDZO build/MusicPlayer.dmg
-    exit_if_err
+        rm -f build/MusicPlayer.dmg
+        rm -f build/Release/Applications
+        ln -s /Applications build/Release/Applications
+        hdiutil create -volname MusicPlayer -srcfolder build/Release -format UDZO build/MusicPlayer.dmg
+        exit_if_err "Failed to create MusicPlayer.dmg."
 
-    mkdir -p $RELEASE_DIR
-    rm -f $RELEASE_DIR/*.dmg
-    cp build/MusicPlayer.dmg $RELEASE_DIR
+        mkdir -p $RELEASE_DIR
+        rm -f $RELEASE_DIR/*.dmg
+        cp build/MusicPlayer.dmg $RELEASE_DIR
+        exit_if_err "Failed to copy dmg to ${RELEASE_DIR}."
 
-    create_music_player_update_json
+        create_music_player_update_json
+    fi
 fi
 
 echo "== build successfully =="

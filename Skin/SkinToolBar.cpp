@@ -24,7 +24,9 @@
 UIOBJECT_CLASS_NAME_IMP(CSkinToolbar, "Toolbar")
 
 CSkinToolbar::CSkinToolbar() {
-    m_msgNeed = UO_MSG_WANT_MOUSEMOVE | UO_MSG_WANT_LBUTTON;
+    // UO_MSG_WANT_COMMAND: 容器派发命令时也会送到本控件(onCommand 里同步
+    // 自定义按钮的选中态, 供脚本 document.postCommand 恢复状态用)
+    m_msgNeed = UO_MSG_WANT_MOUSEMOVE | UO_MSG_WANT_LBUTTON | UO_MSG_WANT_COMMAND;
 
     m_nUnitsOfX = 1;
 
@@ -579,6 +581,9 @@ int CSkinToolbar::fromXML(SXNode *pXmlNode) {
     it != pXmlNode->listChildren.end(); ++it)
         {
         SXNode *pChild = *it;
+        if (!isSkinXmlNodeForCurrentOs(pChild)) {
+            continue;
+        }
 
         if (strcasecmp(pChild->name.c_str(), "button") == 0) {
             Button bt;
@@ -650,6 +655,17 @@ void CSkinToolbar::groupButtonUncheckOld(int nGroup, int nCurButton) {
             bt.nCurStatus = 0;
         }
     }
+}
+
+bool CSkinToolbar::onCommand(uint32_t nId) {
+    // 皮肤脚本可用 document.postCommand(CID_XXX) 同步自定义按钮的选中态
+    // (如启动时恢复上次选中的 tab)。仅限脚本自定义 ID(ID_ID_USER_BASE 起),
+    // 内置命令按钮(如 ID_MAXIMIZE)的 check/uncheck 由点击流程自己管理, 不参与。
+    // 返回 false: 不吞掉命令, 让其继续派发给 JS oncommand 等其它处理者。
+    if (nId >= ID_ID_USER_BASE) {
+        setCheck(nId, true);
+    }
+    return false;
 }
 
 bool CSkinToolbar::isCheck(int nCmdID) {

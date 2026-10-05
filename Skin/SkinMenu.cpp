@@ -55,8 +55,6 @@ CSkinMenu::~CSkinMenu() {
 int CSkinMenu::loadMenu(const rapidjson::Value &items) {
     createPopupMenu();
 
-    assert(items.IsArray());
-
     loadMenu(items, *this);
 
     onLoadMenu();
@@ -65,29 +63,39 @@ int CSkinMenu::loadMenu(const rapidjson::Value &items) {
 }
 
 void CSkinMenu::loadMenu(const rapidjson::Value &items, CMenu &menu) {
-    assert(items.IsArray());
+    if (!items.IsArray()) {
+        return;
+    }
 
     for (int i = 0; i < items.Size(); i++) {
         auto &item = items[i];
-        assert(item.IsArray());
+        if (!item.IsArray() || item.Empty() || !item[0].IsString()) {
+            continue;
+        }
 
         if (item.Size() == 1) {
-            // Separator
             menu.appendSeperator();
-        } else {
-            // Menu item
-            assert(item.Size() == 2);
-            if (item[1].IsArray()) {
-                // Popup
-                CMenu subMenu = menu.appendSubmenu(_TL(item[0].GetString()));
-                loadMenu(item[1], subMenu);
-            } else {
-                string name = item[0].GetString(), shortcut;
-                auto id = CSkinApp::getInstance()->getSkinFactory()->getIDByName(item[1].GetString());
-                getShortcutKey(id, shortcut);
-                menu.appendItem(id, _TL(name.c_str()), shortcut.c_str());
-            }
+            continue;
         }
+
+        if (item[1].IsArray()) {
+            CMenu subMenu = menu.appendSubmenu(_TL(item[0].GetString()));
+            loadMenu(item[1], subMenu);
+            continue;
+        }
+
+        string name = item[0].GetString(), shortcut;
+        int id = ID_INVALID;
+        if (item[1].IsString()) {
+            id = CSkinApp::getInstance()->getSkinFactory()->getIDByName(item[1].GetString());
+        } else if (item[1].IsInt()) {
+            id = item[1].GetInt();
+        }
+        if (id == ID_INVALID) {
+            continue;
+        }
+        getShortcutKey(id, shortcut);
+        menu.appendItem(id, _TL(name.c_str()), shortcut.c_str());
     }
 }
 

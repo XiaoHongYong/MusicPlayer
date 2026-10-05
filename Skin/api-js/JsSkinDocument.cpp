@@ -190,6 +190,20 @@ void document_moveWindow(VMContext *ctx, const JsValue &thiz, const Arguments &a
     ctx->throwException(JE_RANGE_ERROR, "Invalid window size/position.");
 }
 
+void document_postCommand(VMContext *ctx, const JsValue &thiz, const Arguments &args) {
+    auto skinWnd = documentGetSkinWnd(ctx, thiz);
+    if (skinWnd == nullptr) {
+        return;
+    }
+
+    ctx->retValue = jsValueUndefined;
+
+    int id = getIdFromArg0(skinWnd, ctx, args);
+    if (id != ID_INVALID) {
+        skinWnd->postCustomCommandMsg(id);
+    }
+}
+
 void document_startAnimation(VMContext *ctx, const JsValue &thiz, const Arguments &args) {
     auto skinWnd = documentGetSkinWnd(ctx, thiz);
     if (skinWnd == nullptr) {
@@ -224,6 +238,7 @@ static JsLibProperty documentPrototypeFunctions[] = {
     { "getElementById", document_getElementById },
     { "getCommandID", document_getCommandID },
     { "moveWindow", document_moveWindow },
+    { "postCommand", document_postCommand },
     { "startAnimation", document_startAnimation },
     { "stopAnimation", document_stopAnimation },
 };

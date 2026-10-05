@@ -22,6 +22,15 @@ void CSFImage::attach(const RawImageDataPtr &image) {
     m_scaleFactor = 1.0;
 }
 
+void CSFImage::attach(const RawImageDataPtr &image, float scaleFactor) {
+    assert(scaleFactor > 0);
+
+    CRawImage::attach(image);
+    m_scaleFactor = scaleFactor;
+    m_cx = (int)(m_cx / scaleFactor);
+    m_cy = (int)(m_cy / scaleFactor);
+}
+
 void CSFImage::detach() {
     if (m_skinResMgr) {
         m_skinResMgr = nullptr;

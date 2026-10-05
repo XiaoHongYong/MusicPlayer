@@ -440,6 +440,9 @@ int CSkinContainer::fromXML(SXNode *pXmlNode) {
 void CSkinContainer::createChild(SXNode *pXmlNode) {
     // create child CUIObject
     for (SXNode *pNode : pXmlNode->listChildren) {
+        if (!isSkinXmlNodeForCurrentOs(pNode)) {
+            continue;
+        }
         if (isPropertyName(pNode->name.c_str(), SZ_PN_PROPERTY)) {
             // CUIObject has handled it.
             continue;

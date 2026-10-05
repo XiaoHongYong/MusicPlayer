@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<skinwnd Extends="WindowFrame" Name="DlgAlbumArtDownload.xml" Caption="Download Album Art"
+         MinWidth="520" MinHeight="360" Width="560" Height="420" RememberSizePos="true"
+         DefaultPage="Container.AlbumArtDownload">
+  <Container.AlbumArtDownload Visible="false" Name="Download Album Art" Rect="0,0,w,h">
+    <NormalEdit ID="CID_E_LOG" Text="" Rect="15,15,w-30,h-60" Style="MULTILINE | READ_ONLY"/>
+    <NormalTextBt ID="ID_CANCEL" Text="Cancel" Rect="w-100,h-35,80,"/>
+  </Container.AlbumArtDownload>
+</skinwnd>

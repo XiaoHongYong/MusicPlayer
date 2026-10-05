@@ -154,6 +154,7 @@ bool isTRUE(cstr_t szValue);
 #define SZ_PN_HEIGHT        "height"
 #define SZ_PN_TOOLTIP       "ToolTip"
 #define SZ_PN_EXTENDS       "Extends"
+#define SZ_PN_OS            "os"
 
 #define SZ_PN_PROPERTY      "Property"
 
@@ -212,6 +213,13 @@ protected:
     SXNode                      *m_pNode1, *m_pNode2;
 
 };
+
+// 从 <Property Name="BgImage|WindowImage" Image=... HorzExtendPos=... VertExtendPos=... /> 加载 9-slice 图。
+// pBpm 非空时解析 BlendPixMode；为空则保持调用方已设定的混合模式。
+// 窗口级请用 WindowImage（CSkinWnd 固定 copy）；控件级仍用 BgImage。
+bool loadBgImageProperty(CSkinWnd *pSkin, CSXNodeProperty *pProperties,
+    CSFImage &imageBg, CSFImage &imageBgMask, CScaleImagePainter &painter,
+    BlendPixMode *pBpm = nullptr);
 
 class CUIObject {
 public:

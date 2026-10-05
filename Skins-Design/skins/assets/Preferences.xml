@@ -12,12 +12,14 @@
       <button ID="ID_ROOT_THEME" Left="1" checked_left="1" Text="Themes" RadioGroup="1"/>
       <button ID="ID_ROOT_SYSTEM" Left="2" checked_left="2" Text="System" RadioGroup="1"/>
       <button ID="ID_ROOT_LYRICS" Left="3" checked_left="3" Text="Lyrics" RadioGroup="1"/>
-      <button ID="ID_ROOT_ADVANCED" Left="4" checked_left="4" Text="Advanced" RadioGroup="1"/>
+      <button ID="ID_ROOT_ALBUM_ART" Left="4" checked_left="4" Text="Album Art" RadioGroup="1"/>
+      <button ID="ID_ROOT_ADVANCED" Left="5" checked_left="5" Text="Advanced" RadioGroup="1"/>
     </Toolbar>
     <include Name="Pf_UserInterface.xml"/>
     <include Name="Pf_Themes.xml"/>
     <include Name="Pf_System.xml"/>
     <include Name="Pf_Lyrics.xml"/>
+    <include Name="Pf_AlbumArt.xml"/>
     <include Name="Pf_Advanced.xml"/>
   </PreferPage.Root>
 </skinwnd>

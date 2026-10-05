@@ -64,6 +64,8 @@ public:
     bool onLButtonUp(uint32_t nFlags, CPoint point) override;
     bool onLButtonDown(uint32_t nFlags, CPoint point) override;
 
+    bool onCommand(uint32_t nId) override;
+
     void onLanguageChanged() override;
 
     void draw(CRawGraph *canvas) override;

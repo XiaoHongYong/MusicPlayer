@@ -4,7 +4,7 @@
 
 	<skinwnd Extends="Window" Name="MainWnd"
 			MinWidth="640" MinHeight="120" Width="700" Height="400" Menu="MainWndMenu"
-			CmdHandler="ch_common,ch_playlist" Script="main.js" 
+			CmdHandler="ch_common,ch_playlist" Script="main.js"
 			ContextMenu="MainContextMenu">
 
 		<Frame Name="Frame" Rect="0,110,w,h-110" Image="frame.png" ImageRect="0,110,425,40"
@@ -13,20 +13,28 @@
 		<Container Name="Caption" Rect="0,0,w,110" TranslucencyWithSkin="FALSE">
 			<Property Name="BgImage" Image="frame.png" ImageRect="0,0,425,110" HorzExtendPos="7,418" BlendPixMode="copy"/>
 
-			<MenuBar Rect="124,8,w/2-25,20" Name="Menu"
+			<MenuBar os="win,linux" Rect="124,8,w/2-25,20" Name="Menu"
 					 FontName="Verdana"
 			   FontHeight="13" FontBold="false" TextColor="#000000" TextOutlinedColor="#FFFFFF"
 			   TextOutlined="TRUE" TextColorHover="#202020" TextOutlinedColorHover="#FFFFFF"
 			   TextColorPressed="#FFFFFF" TextOutlinedColorPressed="#000000"
 			   BgColorPressed="#D0D0D0" BgPressedAlpha="127"/>
 
-			<Toolbar ID="CID_TB_SYSBT" Rect="w-10-60,10,60,16" 
+			<Toolbar os="win,linux" ID="CID_TB_SYSBT" Rect="w-10-60,10,60,16"
 				 Image="caption_btn.png" enablehover="TRUE" units_x="16"
 				 blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
 				 MarginX="0" MarginY="0" ButtonSpacesCX="5" FullStatusImage="TRUE">
 				<button ID="ID_MINIMIZE" Left="1" />
 				<button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
 			  <button ID="ID_CLOSE" Left="4" />
+			</Toolbar>
+			<Toolbar os="mac" ID="CID_TB_SYSBT" Rect="124,8,64,16"
+				 Image="caption_btn_mac.png" enablehover="TRUE" units_x="16"
+				 blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
+				 MarginX="0" MarginY="0" ButtonSpacesCX="8" FullStatusImage="TRUE">
+				<button ID="ID_CLOSE" Left="4" />
+				<button ID="ID_MINIMIZE" Left="1" />
+				<button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
 			</Toolbar>
 
 			<AlbumArt Name="AlbumArt" Rect="6,6,108,108" ID="ID_ALBUMART" Image="albumart.png"
@@ -45,7 +53,7 @@
 				<Button Rect="125,10,40,40" ID="ID_NEXT" ImageMask="prev_next.png" ImageMaskRect="40,0,40,40"
 					Image="prev_next.png" ImageSize="40,40" ImagePos="40,0" ImageSelPos="40,80"
 					ImageFocusPos="40,40" />
-					
+
 				<Image Name="Volume" Rect="180,25,14,14" Image="volume.png" />
 				<Slider Name="Volume" ID="ID_VOLUME" Rect="200,25,100,"/>
 			</Container>
@@ -60,7 +68,7 @@
 					<RateButton id="ID_RATE" Rect="w-100-10,5,100,20" Image="rating.png" ImageRect="0,0,40,20" />
 					<MediaInfoText Name="Artist - Album" Rect="10,27,w-20,16" FontName="Tahoma" FontHeight="13" FontBold="false" TextOutlined="TRUE" TextOutlinedColor="#000000" TextColor="#FFFFFF" Text="" MediaInfoType="Artist|Album" CombineWith=" - "/>
 
-					<PlayingTime Rect="10,50,50,11" 
+					<PlayingTime Rect="10,50,50,11"
 						AlignText="AT_CENTER" CharWidth="8" TextImage="shade-numfont.png" ImageChars="0123456789 -:" />
 					<Slider Name="Seek" ID="ID_SEEK" Rect="65,48,w-65-10,"/>
 				</Container>
@@ -74,8 +82,8 @@
 		<Image ID="CID_BODY_BG" Visible="false" Name="BgImage" Image="frame.png" Rect="8,118,w-16,h-118-8" ImageRect="7,7,411,130" BltMode="tile" BlendPixMode="copy"/>
 
 		<Container ID="CID_BODY" Rect="8,118,w-16,h-118-8">
-		
-			<Frame Name="Body frame" Rect="0,0,w,h" Image="inner_frame.png" ImageRect="0,0,20,20" 
+
+			<Frame Name="Body frame" Rect="0,0,w,h" Image="inner_frame.png" ImageRect="0,0,20,20"
 				RoundWidthTop="1" RoundWidthBottom="1" ThickWidth="1" BlendPixMode="copy"/>
 
 			<ResizableLinearContainer ID="CID_PLAYLIST_LYRICS" Name="Body" Rect="1,1,w-2,h-2" BgColor="#7F7F7F" SeparatorThickness="4" Orientation="Horizontal">

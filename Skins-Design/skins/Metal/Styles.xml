@@ -7,25 +7,67 @@
 		FontName="Verdana" FontHeight="13" TextColor="#000000" BgColor="#EBEBEB"
 		EnableTranslucency="true" TranslucencyAlpha="255"
 	/>
+
+	<DialogCaption Extends="Container" Name="Caption bar" TranslucencyWithSkin="TRUE">
+		<Property Name="BgImage" Image="frame.png" ImageRect="0,0,425,31" HorzExtendPos="7,418" BlendPixMode="copy"/>
+		<Text ID="ID_CAPTION" Rect="24,8,w-80,20" CaptionText="true" FontName="Verdana" FontHeight="16" FontBold="false" TextColor="#FFFFFF" TextOutlinedColor="#000000" TextOutlined="true" LeftMargin="0" AlignText="AT_LEFT | AT_VCENTER"/>
+		<Toolbar ID="CID_TB_SYSBT" Rect="w-10-20,10,20,16" TranslucencyWithSkin="TRUE"
+			Image="caption_btn.png" enablehover="TRUE" units_x="16"
+			blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
+			MarginX="0" MarginY="0" ButtonSpacesCX="5" FullStatusImage="TRUE">
+		  <button ID="ID_CLOSE" Left="4" />
+		</Toolbar>
+	</DialogCaption>
+	<DialogCaption.mac Extends="Container" Name="Caption bar" TranslucencyWithSkin="TRUE">
+		<Property Name="BgImage" Image="frame.png" ImageRect="0,0,425,31" HorzExtendPos="7,418" BlendPixMode="copy"/>
+		<Toolbar ID="CID_TB_SYSBT" Rect="12,8,16,16" TranslucencyWithSkin="TRUE"
+			Image="caption_btn_mac.png" enablehover="TRUE" units_x="16"
+			blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
+			MarginX="0" MarginY="0" ButtonSpacesCX="8" FullStatusImage="TRUE">
+		  <button ID="ID_CLOSE" Left="4" />
+		</Toolbar>
+		<Text ID="ID_CAPTION" Rect="40,8,w-80,20" CaptionText="true" FontName="Verdana" FontHeight="16" FontBold="false" TextColor="#FFFFFF" TextOutlinedColor="#000000" TextOutlined="true" LeftMargin="0" AlignText="AT_CENTER | AT_VCENTER"/>
+	</DialogCaption.mac>
+
+	<MenuCaption Extends="Container" Name="Caption bar" TranslucencyWithSkin="TRUE">
+		<Property Name="BgImage" Image="frame.png" ImageRect="0,0,425,31" HorzExtendPos="7,418" BlendPixMode="copy"/>
+		<MenuBar Rect="13,8,w/2-20,20" Name="Menu"
+			TranslucencyWithSkin="TRUE" FontName="Verdana"
+			FontHeight="13" FontBold="false" TextColor="#000000" TextOutlinedColor="#FFFFFF"
+			TextOutlined="TRUE" TextColorHover="#202020" TextOutlinedColorHover="#FFFFFF"
+			TextColorPressed="#FFFFFF" TextOutlinedColorPressed="#000000"
+			BgColorPressed="#D0D0D0" BgPressedAlpha="127"/>
+		<Text ID="ID_CAPTION" Rect="w/2,8,w/2-10-60-10,20" CaptionText="true" FontName="Verdana" FontHeight="16" FontBold="false" TextColor="#FFFFFF" TextOutlinedColor="#000000" TextOutlined="true" LeftMargin="0" AlignText="AT_LEFT | AT_VCENTER"/>
+		<Toolbar ID="CID_TB_SYSBT" Rect="w-10-60,10,60,16" TranslucencyWithSkin="TRUE"
+			Image="caption_btn.png" enablehover="TRUE" units_x="16"
+			blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
+			MarginX="0" MarginY="0" ButtonSpacesCX="5" FullStatusImage="TRUE">
+			<button ID="ID_MINIMIZE" Left="1" />
+			<button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
+			<button ID="ID_CLOSE" Left="4" />
+		</Toolbar>
+	</MenuCaption>
+	<MenuCaption.mac Extends="Container" Name="Caption bar" TranslucencyWithSkin="TRUE">
+		<Property Name="BgImage" Image="frame.png" ImageRect="0,0,425,31" HorzExtendPos="7,418" BlendPixMode="copy"/>
+		<Toolbar ID="CID_TB_SYSBT" Rect="12,8,64,16" TranslucencyWithSkin="TRUE"
+			Image="caption_btn_mac.png" enablehover="TRUE" units_x="16"
+			blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
+			MarginX="0" MarginY="0" ButtonSpacesCX="8" FullStatusImage="TRUE">
+			<button ID="ID_CLOSE" Left="4" />
+			<button ID="ID_MINIMIZE" Left="1" />
+			<button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
+		</Toolbar>
+		<Text ID="ID_CAPTION" Rect="80,8,w-160,20" CaptionText="true" FontName="Verdana" FontHeight="16" FontBold="false" TextColor="#FFFFFF" TextOutlinedColor="#000000" TextOutlined="true" LeftMargin="0" AlignText="AT_CENTER | AT_VCENTER"/>
+	</MenuCaption.mac>
     <WindowFrame Extends="Window"
         MinWidth="100" MinHeight="100" Width="330" Height="400" IsDialog="true">
 
 		<Frame Name="Frame" Rect="0,27,w,h-27" Image="frame.png" ImageRect="0,27,425,123"
 			RoundWidthTop="4" RoundWidthBottom="4" ThickWidth="4" BlendPixMode="copy"/>
-		<Frame Name="Inner frame" Rect="4,31,w-8,h-31-4" Image="inner_frame.png" ImageRect="0,0,20,20" 
+		<Frame Name="Inner frame" Rect="4,31,w-8,h-31-4" Image="inner_frame.png" ImageRect="0,0,20,20"
 			RoundWidthTop="1" RoundWidthBottom="1" ThickWidth="1" BlendPixMode="copy"/>
 
-		<Container Name="Caption bar" Rect="0,0,w,31" TranslucencyWithSkin="TRUE">
-			<Property Name="BgImage" Image="frame.png" ImageRect="0,0,425,31" HorzExtendPos="7,418" BlendPixMode="copy"/>
-
-			<Text ID="ID_CAPTION" Rect="24,8,w-80,20" CaptionText="true" FontName="Verdana" FontHeight="16" FontBold="false" TextColor="#FFFFFF" TextOutlinedColor="#000000" TextOutlined="true" LeftMargin="0" AlignText="AT_LEFT | AT_VCENTER"/>
-			<Toolbar ID="CID_TB_SYSBT" Rect="w-10-20,10,20,16" TranslucencyWithSkin="TRUE"
-                Image="caption_btn.png" enablehover="TRUE" units_x="16"
-                blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
-                MarginX="0" MarginY="0" ButtonSpacesCX="5" FullStatusImage="TRUE">
-			  <button ID="ID_CLOSE" Left="4" />
-			</Toolbar>
-		</Container>
+		<DialogCaption Rect="0,0,w,31"/>
 
 		<ClientArea Rect="10,32,w-20,h-31-12" ClipChildren="true"/>
 	</WindowFrame>
@@ -35,29 +77,10 @@
 
 		<Frame Name="Frame" Rect="0,27,w,h-27" Image="frame.png" ImageRect="0,27,425,123"
 			RoundWidthTop="4" RoundWidthBottom="4" ThickWidth="4" BlendPixMode="copy"/>
-		<Frame Name="Inner frame" Rect="4,31,w-8,h-31-4" Image="inner_frame.png" ImageRect="0,0,20,20" 
+		<Frame Name="Inner frame" Rect="4,31,w-8,h-31-4" Image="inner_frame.png" ImageRect="0,0,20,20"
 			RoundWidthTop="1" RoundWidthBottom="1" ThickWidth="1" BlendPixMode="copy"/>
 
-		<Container Name="Caption bar" Rect="0,0,w,31" TranslucencyWithSkin="TRUE">
-			<Property Name="BgImage" Image="frame.png" ImageRect="0,0,425,31" HorzExtendPos="7,418" BlendPixMode="copy"/>
-
-			<MenuBar Rect="13,8,w/2-20,20" Name="Menu"
-				TranslucencyWithSkin="TRUE" FontName="Verdana"
-				FontHeight="13" FontBold="false" TextColor="#000000" TextOutlinedColor="#FFFFFF"
-				TextOutlined="TRUE" TextColorHover="#202020" TextOutlinedColorHover="#FFFFFF"
-				TextColorPressed="#FFFFFF" TextOutlinedColorPressed="#000000"
-				BgColorPressed="#D0D0D0" BgPressedAlpha="127"/>
-			
-			<Text ID="ID_CAPTION" Rect="w/2,8,w/2-10-60-10,20" CaptionText="true" FontName="Verdana" FontHeight="16" FontBold="false" TextColor="#FFFFFF" TextOutlinedColor="#000000" TextOutlined="true" LeftMargin="0" AlignText="AT_LEFT | AT_VCENTER"/>
-			<Toolbar ID="CID_TB_SYSBT" Rect="w-10-60,10,60,16" TranslucencyWithSkin="TRUE"
-                Image="caption_btn.png" enablehover="TRUE" units_x="16"
-                blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
-                MarginX="0" MarginY="0" ButtonSpacesCX="5" FullStatusImage="TRUE">
-				<button ID="ID_MINIMIZE" Left="1" />
-				<button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
-      			<button ID="ID_CLOSE" Left="4" />
-			</Toolbar>
-		</Container>
+		<MenuCaption Rect="0,0,w,31"/>
 
 		<ClientArea Rect="6,32,w-12,h-31-6" ClipChildren="true"/>
     </MenuWindowFrame>

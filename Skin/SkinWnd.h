@@ -304,6 +304,7 @@ public:
 
 public:
     void setProperies(SXNode::ListProperties &listProperties);
+    virtual bool setProperty(cstr_t szProperty, CSXNodeProperty *pProperties);
     virtual bool setProperty(cstr_t szProperty, cstr_t szValue);
 #ifdef _SKIN_EDITOR_
     virtual void enumProperties(CUIObjProperties &listProperties);
@@ -363,6 +364,7 @@ public:
 
 protected:
     virtual int fromXML(SXNode *pXmlNode);
+    void applyXmlPropertyNodes(SXNode *pXmlNode);
 
     void switchFocusUIObj(bool toPrev=false);
 
@@ -454,6 +456,10 @@ protected:
     CRect                       m_rcBoundBox;       // skin的矩形
 
     CSkinFontProperty           m_fontProperty;     // Default font property.
+
+    // WindowImage：copy 铺满整窗底座（圆角外透明一并写入，一般不必再叠 Frame）
+    CScaleImagePainter          m_bgImagePainter;
+    CSFImage                    m_imageBg, m_imageBgMask;
 
     // Unprocessed properties
     SXNode::ListProperties      m_listUnprocessedProperties;

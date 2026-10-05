@@ -47,3 +47,8 @@ client id 由 server 生成，client 保存并使用.
 
 data 的格式
 * 由 type 决定，加密的数据需要解密，否则为 utf-8 的 json 格式.
+
+## 相关文档
+
+* Web Console 完整设计（页面、API/事件契约、数据模型、前端）：见 [docs/web-console/README.md](docs/web-console/README.md)。
+* 在现有 C++ LocalServer 上落地 Web Console 的分阶段实施计划：见 [docs/web-console/plan.md](docs/web-console/plan.md)。

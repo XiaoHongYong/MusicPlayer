@@ -596,49 +596,54 @@ void CUIObject::setProperties(vector<string> &properties) {
     }
 }
 
-bool CUIObject::setProperty(cstr_t szProperty, CSXNodeProperty *pProperties) {
-    if (isPropertyName(szProperty, "BgImage")) {
-        // set background image
-        m_imageBg.loadFromSRM(m_pSkin, pProperties->getPropertySafe(SZ_PN_IMAGE));
-        cstr_t szValue = pProperties->getProperty("ImageMask");
-        if (szValue) {
-            m_imageBgMask.loadFromSRM(m_pSkin, szValue);
-        }
+bool loadBgImageProperty(CSkinWnd *pSkin, CSXNodeProperty *pProperties,
+        CSFImage &imageBg, CSFImage &imageBgMask, CScaleImagePainter &painter,
+        BlendPixMode *pBpm) {
+    imageBg.loadFromSRM(pSkin, pProperties->getPropertySafe(SZ_PN_IMAGE));
+    cstr_t szValue = pProperties->getProperty("ImageMask");
+    if (szValue) {
+        imageBgMask.loadFromSRM(pSkin, szValue);
+    }
 
-        // Image Rect
-        szValue = pProperties->getProperty(SZ_PN_IMAGERECT);
-        if (szValue) {
-            getRectValue(szValue, m_imageBg);
-            if (m_imageBgMask.isValid()) {
-                getRectValue(szValue, m_imageBgMask);
-            }
+    szValue = pProperties->getProperty(SZ_PN_IMAGERECT);
+    if (szValue) {
+        getRectValue(szValue, imageBg);
+        if (imageBgMask.isValid()) {
+            getRectValue(szValue, imageBgMask);
         }
+    }
 
-        szValue = pProperties->getPropertySafe("HorzExtendPos");
-        if (!scan2IntX(szValue, m_bgImagePainter.srcHorzExtendStart, m_bgImagePainter.srcHorzExtendEnd)) {
-            m_bgImagePainter.srcHorzExtendStart = m_bgImagePainter.srcHorzExtendEnd = m_imageBg.x() + m_imageBg.width();
-        }
+    szValue = pProperties->getPropertySafe("HorzExtendPos");
+    if (!scan2IntX(szValue, painter.srcHorzExtendStart, painter.srcHorzExtendEnd)) {
+        painter.srcHorzExtendStart = painter.srcHorzExtendEnd = imageBg.x() + imageBg.width();
+    }
 
-        szValue = pProperties->getPropertySafe("VertExtendPos");
-        if (!scan2IntX(szValue, m_bgImagePainter.srcVertExtendStart, m_bgImagePainter.srcVertExtendEnd)) {
-            m_bgImagePainter.srcVertExtendStart = m_bgImagePainter.srcVertExtendEnd = m_imageBg.y() + m_imageBg.height();
-        }
+    szValue = pProperties->getPropertySafe("VertExtendPos");
+    if (!scan2IntX(szValue, painter.srcVertExtendStart, painter.srcVertExtendEnd)) {
+        painter.srcVertExtendStart = painter.srcVertExtendEnd = imageBg.y() + imageBg.height();
+    }
 
+    if (pBpm) {
         szValue = pProperties->getProperty("BlendPixMode");
         if (szValue) {
-            m_bgBpm = blendPixModeFromStr(szValue);
+            *pBpm = blendPixModeFromStr(szValue);
         }
+    }
 
-        m_bgImagePainter.srcX = m_imageBg.x();
-        m_bgImagePainter.srcY = m_imageBg.y();
-        m_bgImagePainter.srcWidth = m_imageBg.width();
-        m_bgImagePainter.srcHeight = m_imageBg.height();
-        m_bgImagePainter.bDrawCenterArea = !m_imageBgMask.isValid();
+    painter.srcX = imageBg.x();
+    painter.srcY = imageBg.y();
+    painter.srcWidth = imageBg.width();
+    painter.srcHeight = imageBg.height();
+    painter.bDrawCenterArea = !imageBgMask.isValid();
 
-        if (m_imageBg.isValid()) {
+    return imageBg.isValid();
+}
+
+bool CUIObject::setProperty(cstr_t szProperty, CSXNodeProperty *pProperties) {
+    if (isPropertyName(szProperty, "BgImage")) {
+        if (loadBgImageProperty(m_pSkin, pProperties, m_imageBg, m_imageBgMask, m_bgImagePainter, &m_bgBpm)) {
             m_bgType = BG_IMAGE;
         }
-
         return true;
     }
 
@@ -739,6 +744,8 @@ bool CUIObject::setProperty(cstr_t szProperty, cstr_t szValue) {
         m_animateType = animateTypeFromString(szValue);
     } else if (isPropertyName(szProperty, "AnimateDuration")) {
         m_animateDuration = atoi(szValue);
+    } else if (isPropertyName(szProperty, SZ_PN_OS)) {
+        // 由 createChild 按当前 OS 过滤，控件自身忽略。
     } else {
         return false;
     }
@@ -907,7 +914,8 @@ int CUIObject::fromXML(SXNode *pXmlNode) {
     for (SXNode::Property &prop : pXmlNode->listProperties) {
         if (!setProperty(prop.name.c_str(), prop.strValue.c_str())) {
 #ifdef DEBUG
-            if (!isPropertyName(prop.name.c_str(), SZ_PN_EXTENDS)) {
+            if (!isPropertyName(prop.name.c_str(), SZ_PN_EXTENDS) &&
+                !isPropertyName(prop.name.c_str(), SZ_PN_OS)) {
                 DBG_LOG3("%s - Unknown property: %s=%s",
                     (string(getClassName()) + pXmlNode->getPropertySafe(SZ_PN_ID)).c_str(),
                     prop.name.c_str(), prop.strValue.c_str());
@@ -920,6 +928,9 @@ int CUIObject::fromXML(SXNode *pXmlNode) {
     for (SXNode *pNode: pXmlNode->listChildren) {
         // Is it a property node?
         if (isPropertyName(pNode->name.c_str(), SZ_PN_PROPERTY)) {
+            if (!isSkinXmlNodeForCurrentOs(pNode)) {
+                continue;
+            }
             cstr_t szPropName = pNode->getPropertySafe(SZ_PN_NAME);
             cstr_t szExtends = pNode->getProperty(SZ_PN_EXTENDS);
             SXNode *pExtends = nullptr;

@@ -334,7 +334,7 @@ bool Window::createEx(cstr_t szClassName, cstr_t szCaption, int x, int y, int nW
 }
 
 bool Window::createForSkin(cstr_t szClassName, cstr_t szCaption, int x, int y, int nWidth, int nHeight, Window *pWndParent, bool bToolWindow, bool bTopmost, bool bVisible) {
-    // 不使用系统原生标题栏：chrome 由皮肤 <Caption os="..."> 绘制。
+    // 不使用系统原生标题栏：chrome 由皮肤样式（Caption / Caption.mac 等）自绘。
     uint32_t dwStyle = DS_NOIDLEMSG | WS_SYSMENU | WS_MINIMIZEBOX | WS_CLIPCHILDREN | WS_MAXIMIZEBOX;
     uint32_t dwExStyle = 0;
     if (bTopmost) {

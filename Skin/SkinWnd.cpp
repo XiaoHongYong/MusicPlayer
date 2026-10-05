@@ -800,7 +800,8 @@ bool CSkinWnd::updateSkinProperty() {
     // init
     onSize(m_rcBoundBox.width(), m_rcBoundBox.height());
 
-    // setMinSize(m_wndResizer.getMinCx(), m_wndResizer.getMinCy());
+    // macOS 下需要把最小尺寸设置到 NSWindow 上，系统级的窗口缩放才会受 MinWidth/MinHeight 限制
+    setMinSize(m_wndResizer.getMinCx(), m_wndResizer.getMinCy());
 
     return true;
 }
@@ -822,6 +823,14 @@ void CSkinWnd::onPaint(CRawGraph *canvas, CRect *rcClip) {
 
     if (bRedraw) {
         canvas->resetClipBoundBox(*rcClip);
+
+        if (m_imageBg.isValid()) {
+            // WindowImage 固定 copy：不透明区域画底座，圆角外透明像素覆盖画布，
+            // 半透明窗口下角外即透出桌面，不必再叠 copy 模式的 Frame 打孔。
+            CDrawImageFunMask funcDraw(canvas, &m_imageBg,
+                m_imageBgMask.isValid() ? &m_imageBgMask : nullptr, BPM_COPY);
+            m_bgImagePainter.blt(0, 0, m_rcBoundBox.width(), m_rcBoundBox.height(), funcDraw);
+        }
 
         // draw every UI objects on back buffer one by one
         m_rootConainter.draw(canvas);
@@ -1183,12 +1192,45 @@ void CSkinWnd::setProperies(SXNode::ListProperties &listProperties) {
     for (it = listProperties.begin(); it != listProperties.end(); ++it) {
         SXNode::Property &prop = *it;
         if (!setProperty(prop.name.c_str(), prop.strValue.c_str())) {
-            if (!isPropertyName(prop.name.c_str(), SZ_PN_EXTENDS)) { // Do NOT log extends
+            if (!isPropertyName(prop.name.c_str(), SZ_PN_EXTENDS) &&
+                !isPropertyName(prop.name.c_str(), SZ_PN_OS)) { // Do NOT log extends/os
                 m_listUnprocessedProperties.push_back(prop);
                 DBG_LOG2("Unknow Property: %s, %s", prop.name.c_str(), prop.strValue.c_str());
             }
         }
     }
+}
+
+void CSkinWnd::applyXmlPropertyNodes(SXNode *pXmlNode) {
+    for (SXNode *pNode : pXmlNode->listChildren) {
+        if (!isPropertyName(pNode->name.c_str(), SZ_PN_PROPERTY)) {
+            continue;
+        }
+        if (!isSkinXmlNodeForCurrentOs(pNode)) {
+            continue;
+        }
+
+        cstr_t szPropName = pNode->getPropertySafe(SZ_PN_NAME);
+        cstr_t szExtends = pNode->getProperty(SZ_PN_EXTENDS);
+        SXNode *pExtends = nullptr;
+        if (szExtends != nullptr) {
+            pExtends = m_pSkinFactory->getExtendsStyle(szExtends);
+        }
+        CSXNodeProperty properties(pNode, pExtends);
+        if (!isEmptyString(szPropName) && !setProperty(szPropName, &properties)) {
+            DBG_LOG2("Unknow Property: %s, name: %s", pNode->name.c_str(), szPropName);
+        }
+    }
+}
+
+bool CSkinWnd::setProperty(cstr_t szProperty, CSXNodeProperty *pProperties) {
+    if (isPropertyName(szProperty, "WindowImage") || isPropertyName(szProperty, "BgImage")) {
+        // WindowImage 固定 copy，铺满整窗；旧名 BgImage 仍接受。
+        loadBgImageProperty(this, pProperties, m_imageBg, m_imageBgMask, m_bgImagePainter, nullptr);
+        return true;
+    }
+
+    return false;
 }
 
 bool CSkinWnd::setProperty(cstr_t szProperty, cstr_t szValue) {
@@ -1213,6 +1255,8 @@ bool CSkinWnd::setProperty(cstr_t szProperty, cstr_t szValue) {
     } else if (isPropertyName(szProperty, "Caption")) {
         m_strCaption = _TL(szValue);
         setTitle(m_strCaption.c_str());
+    } else if (isPropertyName(szProperty, SZ_PN_OS)) {
+        // 由皮肤加载按当前 OS 过滤子节点，窗口本身忽略。
     } else if (strcasecmp(szProperty, "ContextMenu") == 0) {
         m_rootConainter.setProperty(szProperty, szValue);
     } else if (strcasecmp(szProperty, "Menu") == 0) {
@@ -1868,6 +1912,11 @@ int CSkinWnd::fromXML(SXNode *pXmlNode) {
     }
 
     setProperies(pXmlNode->listProperties);
+
+    if (pNodeExtends) {
+        applyXmlPropertyNodes(pNodeExtends);
+    }
+    applyXmlPropertyNodes(pXmlNode);
 
     m_fontProperty.create();
 

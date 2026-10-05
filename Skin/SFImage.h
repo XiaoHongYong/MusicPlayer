@@ -22,6 +22,11 @@ public:
     bool loadFromSRM(CSkinResMgr *resMgr, cstr_t resName, int scaleFactor);
 
     virtual void attach(const RawImageDataPtr &image) override;
+
+    // 附加一张按 @scaleFactor 生成的图片（物理像素 = 逻辑尺寸 * scaleFactor），
+    // 逻辑尺寸 m_cx/m_cy 会相应除以 scaleFactor。
+    void attach(const RawImageDataPtr &image, float scaleFactor);
+
     virtual void detach() override;
 
     virtual const RawImageDataPtr &getRawImageData(float scaleFactor) override;

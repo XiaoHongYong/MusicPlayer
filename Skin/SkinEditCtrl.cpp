@@ -2555,15 +2555,14 @@ void CSkinEditCtrl::onChar(uint32_t nChar) {
     }
 }
 
-void addMenuItem(rapidjson::Document &doc, const char *name, int id) {
+void addMenuItem(rapidjson::Document &doc, const char *name, const char *idName) {
     rapidjson::Value item;
     item.SetArray();
     if (name == nullptr) {
         item.PushBack(rapidjson::Value("separator", doc.GetAllocator()), doc.GetAllocator());
     } else {
         item.PushBack(rapidjson::Value(name, doc.GetAllocator()), doc.GetAllocator());
-        item.PushBack(rapidjson::Value(""), doc.GetAllocator());
-        item.PushBack(rapidjson::Value(id), doc.GetAllocator());
+        item.PushBack(rapidjson::Value(idName, doc.GetAllocator()), doc.GetAllocator());
     }
     doc.PushBack(item, doc.GetAllocator());
 }
@@ -2574,13 +2573,13 @@ void CSkinEditCtrl::onContexMenu(int xPos, int yPos) {
     rapidjson::Document doc;
     doc.SetArray();
 
-    addMenuItem(doc, _TL("&Undo"), ID_EDIT_UNDO);
-    addMenuItem(doc, _TL("&Redo"), ID_EDIT_REDO);
-    addMenuItem(doc, nullptr, 0);
-    addMenuItem(doc, _TL("Cu&t"), ID_EDIT_CUT);
-    addMenuItem(doc, _TL("&Copy"), ID_EDIT_COPY);
-    addMenuItem(doc, _TL("&Paste"), ID_EDIT_PASTE);
-    addMenuItem(doc, _TL("&Delete"), ID_EDIT_DELETE);
+    addMenuItem(doc, _TL("&Undo"), "ID_EDIT_UNDO");
+    addMenuItem(doc, _TL("&Redo"), "ID_EDIT_REDO");
+    addMenuItem(doc, nullptr, nullptr);
+    addMenuItem(doc, _TL("Cu&t"), "ID_EDIT_CUT");
+    addMenuItem(doc, _TL("&Copy"), "ID_EDIT_COPY");
+    addMenuItem(doc, _TL("&Paste"), "ID_EDIT_PASTE");
+    addMenuItem(doc, _TL("&Delete"), "ID_EDIT_DELETE");
 
     menu.loadMenu(doc.GetArray());
 
