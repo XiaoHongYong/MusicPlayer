@@ -4,6 +4,7 @@
 #include "LyricShowAgentObj.h"
 #include "LyricShowTextEditObj.h"
 #include "DlgSearchLyrics.h"
+#include "DlgAlbumArtDownload.h"
 #include "DlgUpload.h"
 #include "AutoProcessEmbeddedLyrics.h"
 #include "DlgSaveEmbeddedLyrics.hpp"
@@ -229,6 +230,9 @@ bool CMPCommonCmdHandler::onCommand(uint32_t nID) {
 
             MPlayerApp::getEventsDispatcher()->dispatchSyncEvent(ET_PLAYER_CUR_MEDIA_INFO_CHANGED);
         }
+        break;
+    case ID_DL_ALBUM_ART:
+        showDownloadAlbumArtDialog(m_pSkinWnd);
         break;
     case ID_LYR_EDITOR:
         {

@@ -126,14 +126,19 @@ void WndResizer::onSizing(uint32_t fwKeys, CPoint &pt) {
 
     // 限制最小的高度
     if (m_ResizeDirection & RD_TOP) {
+#ifdef _WIN32
         if (m_rcResizing.bottom - (m_rcResizing.top + nOffy) <= m_nMincy) {
             nOffy = m_rcResizing.height() - m_nMincy;
         }
 
-#ifdef _WIN32
         m_rcResizing.top += nOffy;
 #else
-        // For mac, it's upside is reversed.
+        // macOS 的 y 轴向上，CRect.top 实际是窗口的下边缘(origin.y)，
+        // RD_TOP 拖动的是上边缘，对应 CRect.bottom。
+        if (m_rcResizing.height() + nOffy <= m_nMincy) {
+            nOffy = m_nMincy - m_rcResizing.height();
+        }
+
         m_rcResizing.bottom += nOffy;
 #endif
     }
@@ -149,14 +154,19 @@ void WndResizer::onSizing(uint32_t fwKeys, CPoint &pt) {
 
     // 限制最小的高度
     if (m_ResizeDirection & RD_BOTTOM) {
+#ifdef _WIN32
         if ((m_rcResizing.bottom + nOffy) - m_rcResizing.top <= m_nMincy) {
             nOffy = m_nMincy - m_rcResizing.height();
         }
 
-#ifdef _WIN32
         m_rcResizing.bottom += nOffy;
 #else
-        // For mac, it's upside is reversed.
+        // macOS: RD_BOTTOM 拖动的是下边缘，对应 CRect.top(origin.y)，
+        // 拖动后新高度为 height - nOffy。
+        if (m_rcResizing.height() - nOffy <= m_nMincy) {
+            nOffy = m_rcResizing.height() - m_nMincy;
+        }
+
         m_rcResizing.top += nOffy;
 #endif
     }
@@ -179,7 +189,13 @@ void WndResizer::onSizing(uint32_t fwKeys, CPoint &pt) {
     CRect rc;
     m_pWnd->getWindowRect(&rc);
     if (!rc.equal(m_rcResizing)) {
+#ifdef _WIN32
         m_pWnd->moveWindowSafely(m_rcResizing.left, m_rcResizing.top, m_rcResizing.width(), m_rcResizing.height(), true);
+#else
+        // Window::moveWindow 在 origin.y 不变时会保持窗口上边缘不动(模拟 Windows 语义)，
+        // 与拖动上边缘的意图冲突，这里直接设置最终的 frame。
+        m_pWnd->setFrameExact(m_rcResizing.left, m_rcResizing.top, m_rcResizing.width(), m_rcResizing.height(), true);
+#endif
     }
 }
 

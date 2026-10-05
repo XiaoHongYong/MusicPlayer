@@ -581,7 +581,8 @@ void CLyricShowObj::onEvent(const IEvent *pEvent) {
         onLyricsChanged();
     } else if (pEvent->eventType == ET_LYRICS_DRAW_UPDATE) {
         onPlayTimeChangedUpdate();
-    } else if (pEvent->eventType == ET_PLAYER_CUR_MEDIA_CHANGED) {
+    } else if (pEvent->eventType == ET_PLAYER_CUR_MEDIA_CHANGED
+        || pEvent->eventType == ET_PLAYER_CUR_MEDIA_INFO_CHANGED) {
         updateBgImage();
         invalidate();
     }

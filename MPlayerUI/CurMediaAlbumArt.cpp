@@ -1,5 +1,7 @@
 #include "MPlayerApp.h"
 #include "CurMediaAlbumArt.h"
+#include "AlbumArtQuery.h"
+#include "AlbumArtDownloadMgr.h"
 
 
 static cstr_t SZ_SUPPORTED_IMG_EXT[] = { ".jpg", ".gif", ".bmp", ".png" };
@@ -81,6 +83,14 @@ bool getCurrentMediaAlbumArtInSongDir(VecStrings &vPicFiles) {
         }
 
         //
+        // 与歌曲同名：Hey You.jpg
+        //
+        if (strcasecmp(strFileTitle.c_str(), fileGetTitle(szSongFile).c_str()) == 0) {
+            vPicFiles.push_back(strFile);
+            continue;
+        }
+
+        //
         // Folder.jpg
         //
         if (strcasecmp(strFileTitle.c_str(), "Folder") == 0) {
@@ -97,6 +107,39 @@ bool getCurrentMediaAlbumArtInSongDir(VecStrings &vPicFiles) {
     }
 
     return true;
+}
+
+static void addAlbumArtFilesByTitles(const string &dir, const VecStrings &titles, VecStrings &vPicFiles, SetStrings &added) {
+    if (dir.empty() || !isDirExist(dir.c_str())) {
+        return;
+    }
+    static cstr_t exts[] = { ".jpg", ".png", ".gif", ".bmp" };
+    for (auto &title : titles) {
+        if (title.empty()) {
+            continue;
+        }
+        for (auto *ext : exts) {
+            string fn = dir + title + ext;
+            if (isFileExist(fn.c_str()) && added.find(fn) == added.end()) {
+                vPicFiles.push_back(fn);
+                added.insert(fn);
+            }
+        }
+    }
+}
+
+static void getCurrentMediaAlbumArtInDownloadDir(VecStrings &vPicFiles) {
+    auto ids = extractMediaIdentityCandidates(g_player.getArtist(), g_player.getAlbum(),
+        g_player.getTitle(), g_player.getSrcMedia());
+    VecStrings titles;
+    titles.push_back(fileGetTitle(g_player.getSrcMedia()));
+    for (auto &id : ids) {
+        titles.push_back(albumArtFileTitle(id));
+    }
+
+    SetStrings added;
+    addAlbumArtFilesByTitles(g_albumArtDownloader.getCustomSaveDir(), titles, vPicFiles, added);
+    addAlbumArtFilesByTitles(albumArtAppDataDir(), titles, vPicFiles, added);
 }
 
 CCurMediaAlbumArt::CCurMediaAlbumArt() {
@@ -133,6 +176,9 @@ RawImageDataPtr CCurMediaAlbumArt::loadNext() {
     if (m_idxFilePicture != -1) {
         if (m_idxFilePicture == 0) {
             getCurrentMediaAlbumArtInSongDir(m_vAlbumPicFiles);
+            if (m_vAlbumPicFiles.empty()) {
+                getCurrentMediaAlbumArtInDownloadDir(m_vAlbumPicFiles);
+            }
         }
 
         if (m_idxFilePicture < m_vAlbumPicFiles.size()) {

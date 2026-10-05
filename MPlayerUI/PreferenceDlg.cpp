@@ -11,6 +11,7 @@
 #include "PreferPageSystem.h"
 #include "PreferPageUI.h"
 #include "PreferPageLyrics.h"
+#include "PreferPageAlbumArt.h"
 #include "PreferPageTheme.h"
 #include "PreferPageAdvanced.h"
 #include "PreferPageAssociation.h"
@@ -52,6 +53,7 @@ void registerPreferencePage(CSkinFactory *pSkinFactory) {
     registerPfThemePages(pSkinFactory);
     registerPfSystemPages(pSkinFactory);
     registerPfLyricsPages(pSkinFactory);
+    registerPfAlbumArtPages(pSkinFactory);
     AddUIObjNewer2(pSkinFactory, CPagePfAdvanced);
     AddUIObjNewer2(pSkinFactory, CPagePfRoot);
 }

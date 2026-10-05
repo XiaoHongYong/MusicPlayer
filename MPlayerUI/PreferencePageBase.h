@@ -25,6 +25,9 @@ enum PreferPageID {
     PAGE_LYR_SAVE_OPTIONS,
     PAGE_LYR_OUTPUT_PLUGINS,
 
+    // Album Art
+    PAGE_ALBUM_ART,
+
     PAGE_ADVANCED,
 };
 

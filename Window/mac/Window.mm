@@ -47,10 +47,10 @@ Window::~Window() {
 }
 
 bool Window::createForSkin(cstr_t szClassName, cstr_t szCaption, int x, int y, int nWidth, int nHeight, Window *pWndParent, bool bToolWindow, bool bTopmost, bool bVisible) {
+    // 不使用系统原生标题栏：chrome 由皮肤 <Caption os="..."> 绘制。
     NSRect frame = NSMakeRect(x, y, nWidth, nHeight);
     WindowMacImp* w = [[WindowMacImp alloc] initWithContentRect:frame
         styleMask: NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable
-                                                    // styleMask:NSWindowStyleMaskResizable
                                                     backing:NSBackingStoreBuffered
                                                           defer:NO];
     [w setOwnerBaseWnd:this];
@@ -63,6 +63,8 @@ bool Window::createForSkin(cstr_t szClassName, cstr_t szCaption, int x, int y, i
     m_handleHolder->view = view;
 
     [w setContentView:view];
+    [w setTitlebarAppearsTransparent:YES];
+    [w setTitleVisibility:NSWindowTitleHidden];
     [w makeFirstResponder:view];
     [w setAcceptsMouseMovedEvents:YES];
     // [w setBackgroundColor:[NSColor blueColor]];
@@ -178,11 +180,15 @@ void Window::minimizeNoActivate() {
 //}
 
 void Window::setMinSize(uint32_t width, uint32_t height) {
-    [m_handleHolder->window setMinSize:NSMakeSize(width, height)];
+    if (m_handleHolder->window) {
+        [m_handleHolder->window setMinSize:NSMakeSize(width, height)];
+    }
 }
 
 void Window::setMaxSize(uint32_t width, uint32_t height) {
-    [m_handleHolder->window setMaxSize:NSMakeSize(width, height)];
+    if (m_handleHolder->window) {
+        [m_handleHolder->window setMaxSize:NSMakeSize(width, height)];
+    }
 }
 
 void Window::screenToClient(CRect &rc) {
@@ -479,6 +485,12 @@ bool Window::moveWindow(int X, int Y, int nWidth, int nHeight, bool bRepaint) {
 
 bool Window::moveWindowSafely(int X, int Y, int nWidth, int nHeight, bool bRepaint) {
     return moveWindow(X, Y, nWidth, nHeight, bRepaint);
+}
+
+void Window::setFrameExact(int x, int y, int nWidth, int nHeight, bool bRepaint) {
+    if (m_handleHolder->window) {
+        [m_handleHolder->window setFrame:NSMakeRect(x, y, nWidth, nHeight) display:bRepaint ? YES : NO];
+    }
 }
 
 int Window::messageOut(cstr_t lpText, uint32_t uType, cstr_t lpCaption) {

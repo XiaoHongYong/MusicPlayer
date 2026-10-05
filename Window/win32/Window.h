@@ -57,6 +57,11 @@ public:
     void maximize();
     void restore();
 
+    // Windows 的皮肤窗口没有系统边框，缩放由 WndResizer 处理(其中已限制最小尺寸)，
+    // 此处仅为与 mac 保持一致的接口。
+    void setMinSize(uint32_t width, uint32_t height) { }
+    void setMaxSize(uint32_t width, uint32_t height) { }
+
     std::string getDlgItemText(int nIDItem);
     bool setDlgItemText(int nIDItem, cstr_t szString);
     bool setDlgItemInt(int nIDItem, uint32_t uValue, bool bSigned) { return ::SetDlgItemInt(m_hWnd, nIDItem, uValue, bSigned); }

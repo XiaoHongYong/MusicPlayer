@@ -15,6 +15,7 @@
 #include "utils/unittest.h"
 #include "DlgSaveLyrPrompt.h"
 #include "MPFloatingLyrWnd.h"
+#include "AlbumArtDownloadMgr.h"
 
 
 #define SZ_DEFSKIN          "Metal"
@@ -101,6 +102,7 @@ bool MPlayerApp::_init() {
     g_LyricSearch.init();
 
     g_LyricsDownloader.init();
+    g_albumArtDownloader.init();
 
     setDefaultLyricsEncoding(getDefaultLyricsEncodingSettings());
 
@@ -270,6 +272,10 @@ void MPlayerApp::onMediaChanged(bool bAutoDownloadIfNotExist) {
 
     if (bAutoDownloadIfNotExist && !bAssociateNone) {
         g_LyricsDownloader.onSongChanged();
+    }
+
+    if (bAutoDownloadIfNotExist) {
+        g_albumArtDownloader.onSongChanged();
     }
 }
 

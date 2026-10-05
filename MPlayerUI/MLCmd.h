@@ -200,6 +200,7 @@ DEFINE_CMD_ID(ID_SET_OPAQUE_10)                                     \
 \
 DEFINE_CMD_ID(ID_NEW_MENU_POS)                                      \
 DEFINE_CMD_ID(ID_SHOW_ERR_RESULT)                                   \
+DEFINE_CMD_ID(ID_DL_ALBUM_ART)                                      \
 
 #undef DEFINE_CMD_ID
 #define DEFINE_CMD_ID(uid) uid,

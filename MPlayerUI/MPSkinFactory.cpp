@@ -16,6 +16,7 @@
 #include "MPSkinInfoTextCtrlEx.h"
 #include "DlgAbout.h"
 #include "DlgSearchLyrics.h"
+#include "DlgAlbumArtDownload.h"
 #include "PreferenceDlg.h"
 #include "DlgUpload.h"
 #include "DlgAdjustHue.h"
@@ -54,6 +55,7 @@ int CMPSkinFactory::init() {
 
     registerAboutPage(this);
     registerSearchLyricsPage(this);
+    registerDownloadAlbumArtPage(this);
     registerPreferencePage(this);
     registerUploadLyrPage(this);
     registerAdjustHuePage(this);

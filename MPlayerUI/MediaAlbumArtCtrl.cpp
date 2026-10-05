@@ -243,6 +243,7 @@ void CMediaAlbumArtCtrl::resizeAlbumArt() {
     auto scaleFactor = m_pSkin->getScaleFactor();
     auto imageAlbumArtData = createScaleImage(m_imgOrg.getHandle(), m_rcObj.width() * scaleFactor, m_rcObj.height() * scaleFactor);
     if (imageAlbumArtData) {
-        m_img.attach(imageAlbumArtData);
+        // imageAlbumArtData 是按 scaleFactor 生成的物理像素图，逻辑尺寸仍为 m_rcObj 的大小
+        m_img.attach(imageAlbumArtData, scaleFactor);
     }
 }

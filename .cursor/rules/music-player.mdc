@@ -14,6 +14,8 @@ alwaysApply: true
 - `MediaTags/` — 标签与歌词解析（ID3/LRC/flac/ogg/m4a）
 - `LyricsLib/`、`LyricServer/`、`MLProtocol/` — 歌词显示与云端
 - `MPlayer/` — 媒体/播放列表/媒体库扫描
+- 无封面自动下载：`docs/album-art-download.md`（MusicBrainz，失败后网易云/iTunes 港台）
+- 皮肤 PNG：`Skins-Design/skin-for-ai/*.skin.json` + Compiler（`docs/skin-compiler.md`），不要写 `raw/*_gen_assets.py`
 - `MPlayerEngine/`、`Window/` — 播放内核与平台窗口封装（各 `mac|win32|linux` 子目录）
 - `LocalServer/` — 浏览器管理后台 HTTP+WebSocket
 - `third-parties/` — 第三方库

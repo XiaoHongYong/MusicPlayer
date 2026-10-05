@@ -107,6 +107,9 @@ public:
 
     bool moveWindowSafely(int X, int Y, int nWidth, int nHeight, bool bRepaint = true);
 
+    // 直接设置窗口 frame，不做 moveWindow 中 "origin.y 不变时保持上边缘不动" 的调整
+    void setFrameExact(int x, int y, int nWidth, int nHeight, bool bRepaint = true);
+
     int messageOut(cstr_t lpText, uint32_t uType = MB_ICONINFORMATION | MB_OK, cstr_t lpCaption = nullptr);
 
     bool replaceChildPos(int nIDChildSrcPos, Window *pChildNew);

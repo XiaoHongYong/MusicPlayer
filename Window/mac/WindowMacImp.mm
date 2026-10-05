@@ -9,7 +9,16 @@
 #import "WindowMacImp.h"
 #import "Window.h"
 #import "ViewMacImp.h"
+#include <math.h>
 
+static void flushWheelAxis(Window *wnd, float *accum, float delta, uint32_t keys, CPoint pt) {
+    *accum += delta;
+    if (fabsf(*accum) >= 1.f) {
+        int ticks = (int)*accum;
+        wnd->onMouseWheel(ticks, keys, pt);
+        *accum -= ticks;
+    }
+}
 
 @implementation WindowMacImp
 
@@ -45,29 +54,21 @@ backing:(NSBackingStoreType)bufferingType defer:(BOOL)flag {
 - (void)scrollWheel:(NSEvent *)theEvent {
     CPoint pt = NSPointToCPoint([theEvent locationInWindow], [self frame].size.height);
 
-    const int PER_SCROOLL = 20;
+    // 触摸板 / Magic Mouse：scrollingDelta 是像素；普通鼠标滚轮是「行」（一格约为 ±1）。
+    // 原先一律 / 20，鼠标一格只积 0.05，要约 20 格才滚一行。
+    const float kPixelsPerTick = 20.f;
 
     uint32_t modifierFlags = [theEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask;
 
-    float scrollingDeltaX = -[theEvent scrollingDeltaX];
-    mXScroll += scrollingDeltaX / PER_SCROOLL;
-    if (abs(mXScroll) >= 1) {
-        mBaseWnd->onMouseWheel((int)(mXScroll), modifierFlags| MK_SHIFT, pt);
-
-        int negative = mXScroll > 0 ? 1 : -1;
-        mXScroll = abs(mXScroll);
-        mXScroll = (mXScroll - (int)(mXScroll)) * negative;
+    float dx = -[theEvent scrollingDeltaX];
+    float dy = -[theEvent scrollingDeltaY];
+    if ([theEvent hasPreciseScrollingDeltas]) {
+        dx /= kPixelsPerTick;
+        dy /= kPixelsPerTick;
     }
 
-    float scrollingDeltaY = -[theEvent scrollingDeltaY];
-    mYScroll += scrollingDeltaY / PER_SCROOLL;
-    if (abs(mYScroll) >= 1) {
-        mBaseWnd->onMouseWheel((int)(mYScroll), modifierFlags, pt);
-
-        int negative = mYScroll > 0 ? 1 : -1;
-        mYScroll = abs(mYScroll);
-        mYScroll = (mYScroll - (int)(mYScroll)) * negative;
-    }
+    flushWheelAxis(mBaseWnd, &mXScroll, dx, modifierFlags | MK_SHIFT, pt);
+    flushWheelAxis(mBaseWnd, &mYScroll, dy, modifierFlags, pt);
 }
 
 - (BOOL)canBecomeKeyWindow {
