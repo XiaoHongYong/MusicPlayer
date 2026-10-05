@@ -1,0 +1,184 @@
+{
+  "schema": "skin.v1",
+  "meta": {
+    "name": "GlassBlue",
+    "version": "1.0.0",
+    "author": "AI",
+    "description": "Compiler 示例：浅蓝玻璃。交互脚本需手写 main.js。"
+  },
+
+  "tokens": {
+    "colors": {
+      "bg": "#20304ADD",
+      "bg-muted": "#101828EE",
+      "bg-surface": "#FFFFFF20",
+      "bg-solid": "#EBEBEB",
+      "fg": "#FFFFFF",
+      "fg-muted": "#FFFFFF99",
+      "fg-on-accent": "#FFFFFF",
+      "border": "#FFFFFF45",
+      "border-subtle": "#FFFFFF45",
+      "accent": "#5AA9FF",
+      "accent-muted": "#72B5FF",
+      "bg-hover": "#FFFFFF30",
+      "fg-hover": "#FFFFFF",
+      "bg-pressed": "#FFFFFF18",
+      "fg-pressed": "#FFFFFF",
+      "bg-focus": "#5AA9FF",
+      "fg-focus": "#FFFFFF",
+      "bg-selected": "#3D7ED0",
+      "fg-selected": "#FFFFFF",
+      "bg-disabled": "#FFFFFF10",
+      "fg-disabled": "#FFFFFF66"
+    },
+    "radius": { "small": 6, "medium": 10, "window": 24, "pill": 999 },
+    "dimensions": { "buttonHeight": 40, "captionHeight": 28 },
+    "typography": { "button": { "font": "system", "size": 13, "weight": 500 } },
+    "shadows": {
+      "control": { "offset": [0, 2], "blur": 8, "spread": 0, "color": "#00000020" }
+    }
+  },
+
+  "materials": {
+    "glass": {
+      "fill": "$tokens.colors.bg-surface",
+      "blur": 24,
+      "border": { "width": 1, "color": "$tokens.colors.border" },
+      "highlight": { "opacity": 0.15 }
+    }
+  },
+
+  "components": {
+    "windowBg": {
+      "type": "windowBackground",
+      "variant": "main",
+      "chrome": { "caption": 43, "bottom": 30, "mid": 20 },
+      "radius": "$tokens.radius.window",
+      "layers": [
+        {
+          "type": "roundedRect",
+          "radius": "$tokens.radius.window",
+          "fill": {
+            "type": "linear",
+            "angle": 180,
+            "stops": [[0, "$tokens.colors.bg"], [1, "$tokens.colors.bg-muted"]]
+          }
+        },
+        { "type": "border", "width": 2, "color": "$tokens.colors.border", "radius": "$tokens.radius.window" }
+      ]
+    },
+    "windowBgDialog": {
+      "type": "windowBackground",
+      "variant": "dialog",
+      "chrome": { "caption": 33, "bottom": 13, "mid": 18 },
+      "radius": "$tokens.radius.window",
+      "layers": [
+        { "type": "roundedRect", "radius": "$tokens.radius.window", "fill": "$tokens.colors.bg-solid" },
+        { "type": "border", "width": 2, "color": "$tokens.colors.border", "radius": "$tokens.radius.window" }
+      ]
+    },
+
+    "captionBar": {
+      "type": "captionBar",
+      "radius": "$tokens.radius.medium",
+      "layers": [
+        { "type": "roundedRect", "radius": "$tokens.radius.medium", "fill": "$tokens.colors.bg-surface" },
+        { "type": "highlight", "opacity": 0.12 }
+      ]
+    },
+
+    "captionBtns": {
+      "type": "captionToolbar",
+      "fullStatusImage": true,
+      "states": {
+        "normal": { "iconColor": "$tokens.colors.fg-muted" },
+        "hover": { "$extends": "normal", "fill": "$tokens.colors.bg-hover", "iconColor": "$tokens.colors.fg-hover" },
+        "pressed": { "$extends": "hover", "fill": "$tokens.colors.bg-pressed", "iconColor": "$tokens.colors.fg-pressed", "scale": 0.96 }
+      }
+    },
+
+    "playPause": {
+      "type": "toggleButton",
+      "size": { "width": 48, "height": 48 },
+      "iconOff": "triangle-right",
+      "iconOn": "pause-bars",
+      "states": {
+        "normal": {
+          "material": "$materials.glass",
+          "iconColor": "$tokens.colors.fg"
+        },
+        "hover": {
+          "$extends": "normal",
+          "iconColor": "$tokens.colors.fg-hover",
+          "fill": "$tokens.colors.bg-hover"
+        },
+        "pressed": { "$extends": "hover", "scale": 0.94 }
+      }
+    },
+
+    "prevNext": {
+      "type": "button",
+      "size": { "width": 40, "height": 40 },
+      "icons": ["prev", "next"],
+      "mask": true,
+      "states": {
+        "normal": { "iconColor": "$tokens.colors.fg-muted" },
+        "hover": { "$extends": "normal", "iconColor": "$tokens.colors.accent" },
+        "pressed": { "$extends": "hover", "iconColor": "$tokens.colors.accent-muted", "scale": 0.94 }
+      }
+    },
+
+    "seekSlider": {
+      "type": "slider",
+      "track": {
+        "height": 8,
+        "endWidth": 8,
+        "radius": 4,
+        "remaining": { "fill": "$tokens.colors.bg-surface" },
+        "played": { "fill": "$tokens.colors.accent" }
+      },
+      "thumb": {
+        "size": { "width": 15, "height": 15 },
+        "states": {
+          "normal": {
+            "fill": "$tokens.colors.fg",
+            "shadow": "$tokens.shadows.control"
+          },
+          "hover": { "$extends": "normal", "fill": "$tokens.colors.accent" },
+          "pressed": { "$extends": "hover" }
+        }
+      }
+    },
+
+    "panel": {
+      "type": "panel",
+      "radius": "$tokens.radius.medium",
+      "layers": [
+        { "type": "roundedRect", "radius": "$tokens.radius.medium", "fill": "$tokens.colors.bg-surface" },
+        { "type": "border", "width": 1, "color": "$tokens.colors.border", "radius": "$tokens.radius.medium" }
+      ]
+    },
+
+    "albumArt": {
+      "type": "albumArt",
+      "size": { "width": 220, "height": 220 },
+      "maskShape": "roundedRect",
+      "maskInset": 4
+    },
+
+    "playlist": {
+      "type": "playlist",
+      "stripeColors": ["#FFFFFF08", "#FFFFFF04"],
+      "selBgColor": "$tokens.colors.bg-selected",
+      "textColor": "$tokens.colors.fg-muted",
+      "selTextColor": "$tokens.colors.fg-selected",
+      "lineHeight": 30
+    }
+  },
+
+  "lyrics": {
+    "textColor": "#FFFFFFCC",
+    "highlightColor": "$tokens.colors.accent",
+    "bgColor": "#00000000"
+  }
+}

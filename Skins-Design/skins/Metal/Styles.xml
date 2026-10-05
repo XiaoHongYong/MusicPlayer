@@ -12,7 +12,7 @@
 		<Property Name="BgImage" Image="frame.png" ImageRect="0,0,425,31" HorzExtendPos="7,418" BlendPixMode="copy"/>
 		<Text ID="ID_CAPTION" Rect="24,8,w-80,20" CaptionText="true" FontName="Verdana" FontHeight="16" FontBold="false" TextColor="#FFFFFF" TextOutlinedColor="#000000" TextOutlined="true" LeftMargin="0" AlignText="AT_LEFT | AT_VCENTER"/>
 		<Toolbar ID="CID_TB_SYSBT" Rect="w-10-20,10,20,16" TranslucencyWithSkin="TRUE"
-			Image="caption_btn.png" enablehover="TRUE" units_x="16"
+			Image="caption-btn.png" enablehover="TRUE" units_x="16"
 			blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
 			MarginX="0" MarginY="0" ButtonSpacesCX="5" FullStatusImage="TRUE">
 		  <button ID="ID_CLOSE" Left="4" />
@@ -21,7 +21,7 @@
 	<DialogCaption.mac Extends="Container" Name="Caption bar" TranslucencyWithSkin="TRUE">
 		<Property Name="BgImage" Image="frame.png" ImageRect="0,0,425,31" HorzExtendPos="7,418" BlendPixMode="copy"/>
 		<Toolbar ID="CID_TB_SYSBT" Rect="12,8,16,16" TranslucencyWithSkin="TRUE"
-			Image="caption_btn_mac.png" enablehover="TRUE" units_x="16"
+			Image="caption-btn-mac.png" enablehover="TRUE" units_x="16"
 			blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
 			MarginX="0" MarginY="0" ButtonSpacesCX="8" FullStatusImage="TRUE">
 		  <button ID="ID_CLOSE" Left="4" />
@@ -39,7 +39,7 @@
 			BgColorPressed="#D0D0D0" BgPressedAlpha="127"/>
 		<Text ID="ID_CAPTION" Rect="w/2,8,w/2-10-60-10,20" CaptionText="true" FontName="Verdana" FontHeight="16" FontBold="false" TextColor="#FFFFFF" TextOutlinedColor="#000000" TextOutlined="true" LeftMargin="0" AlignText="AT_LEFT | AT_VCENTER"/>
 		<Toolbar ID="CID_TB_SYSBT" Rect="w-10-60,10,60,16" TranslucencyWithSkin="TRUE"
-			Image="caption_btn.png" enablehover="TRUE" units_x="16"
+			Image="caption-btn.png" enablehover="TRUE" units_x="16"
 			blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
 			MarginX="0" MarginY="0" ButtonSpacesCX="5" FullStatusImage="TRUE">
 			<button ID="ID_MINIMIZE" Left="1" />
@@ -50,7 +50,7 @@
 	<MenuCaption.mac Extends="Container" Name="Caption bar" TranslucencyWithSkin="TRUE">
 		<Property Name="BgImage" Image="frame.png" ImageRect="0,0,425,31" HorzExtendPos="7,418" BlendPixMode="copy"/>
 		<Toolbar ID="CID_TB_SYSBT" Rect="12,8,64,16" TranslucencyWithSkin="TRUE"
-			Image="caption_btn_mac.png" enablehover="TRUE" units_x="16"
+			Image="caption-btn-mac.png" enablehover="TRUE" units_x="16"
 			blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
 			MarginX="0" MarginY="0" ButtonSpacesCX="8" FullStatusImage="TRUE">
 			<button ID="ID_CLOSE" Left="4" />

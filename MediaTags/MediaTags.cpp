@@ -687,6 +687,20 @@ void testReadWritePicsInDir(const string &path) {
     }
 }
 
+TEST(MediaTagsTest, getPictureNotFoundWhenNoCover) {
+    string pic;
+    string fnMp3 = dirStringJoin(getTestDataFolder().c_str(), "samples", "cbr.mp3");
+    ASSERT_EQ(MediaTags::getEmbeddedPicture(fnMp3.c_str(), 0, pic), ERR_NOT_FOUND);
+
+    string fnFlac = dirStringJoin(getTestDataFolder().c_str(), "samples", "no-tags.flac");
+    ASSERT_EQ(MediaTags::getEmbeddedPicture(fnFlac.c_str(), 0, pic), ERR_NOT_FOUND);
+
+    string fnCover = dirStringJoin(getTestDataFolder().c_str(), "samples", "cover_img.mp3");
+    ASSERT_EQ(MediaTags::getEmbeddedPicture(fnCover.c_str(), 0, pic), ERR_OK);
+    ASSERT_FALSE(pic.empty());
+    ASSERT_EQ(MediaTags::getEmbeddedPicture(fnCover.c_str(), 1, pic), ERR_NOT_FOUND);
+}
+
 TEST(MediaTagsTest, readWritePictures) {
     string path = dirStringJoin(getTestDataFolder().c_str(), "test-pics");
     testReadWritePicsInDir(path);

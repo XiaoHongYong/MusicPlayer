@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<!-- Glass 浮动歌词窗口: 覆盖 assets/floatinglyr.xml(其 BgColor 写死为蓝色)。
+     文字配色由 theme.xml 的 FloatingLyr 节(蓝/深灰)写入 profile 控制。 -->
+<skinwnd Name="floatinglyrwnd" EnableTranslucency="true" TranslucencyAlpha="0" TranslucencyAlphaOnActive="228"
+    ToolTipBgColor="#2B2F3A" ToolTipTextColor="#FFFFFF"
+    MinWidth="400" MinHeight="60" Width="640" Height="200" BgColor="#EEF2F8" ContextMenu="LyricsMenu" CmdHandler="ch_floating_lyr" IsFloatingLyrics="true"
+  >
+  <DecorativeContainer Name="Caption" Rect="10,0,w-20,h" >
+    <LyricsShow Rect="0,0,w,h" EnableToolbar="FALSE" EnableAdjustVertAlign="FALSE" EnableStaticTextStyle="FALSE" UseAlbumArtAsBg="FALSE" OutlineLyrText="TRUE"/>
+    <Toolbar Rect="50,8,230,22" HideIfWndInactive="TRUE" HideIfMouseInactive="TRUE" Image="fl_buttons.png" enablehover="TRUE" units_x="22" blank_x="-1" blank_cx="22" seperator_x="220" seperator_cx="14" MarginX="0" MarginY="0" FullStatusImage="TRUE"
+              TranslucencyWithSkin="TRUE">
+      <button ID="ID_PREVIOUS" Left="0" />
+      <button ID="ID_PLAYPAUSE" Left="1" CanCheck="TRUE" checked_left="2"/>
+      <button ID="ID_NEXT" Left="3" />
+      <seperator/>
+      <button ID="ID_OPEN_LRC" Left="5" />
+      <button ID="ID_BACKWARD_LYRICS" Left="6" Continuous="TRUE"/>
+      <button ID="ID_FORWARD_LYRICS" Left="7" Continuous="TRUE"/>
+      <seperator/>
+      <button ID="ID_FONT_SIZE_INC" Left="8"/>
+      <button ID="ID_FONT_SIZE_DEC" Left="9"/>
+      <button ID="ID_LYR_HIGH_CLR_LIST" Left="14"/>
+    </Toolbar>
+    <Toolbar Rect="w-14-10,10,14,14" TranslucencyWithSkin="TRUE" Image="fl_cap_bt.png" enablehover="TRUE" units_x="14" blank_x="-1" blank_cx="14" seperator_x="0" seperator_cx="10" MarginX="0" MarginY="0" ButtonSpacesCX="2" FullStatusImage="TRUE">
+      <button ID="ID_CLOSE" Left="1" />
+    </Toolbar>
+    <Toolbar Rect="w-70,h-8-22,70,22" HideIfMouseInactive="TRUE" TranslucencyWithSkin="TRUE" Image="fl_buttons.png" enablehover="TRUE" units_x="22" blank_x="-1" blank_cx="22" seperator_x="220" seperator_cx="14" MarginX="0" MarginY="0" FullStatusImage="TRUE">
+      <button ID="ID_CLICK_THROUGH" Left="11"/>
+      <button ID="ID_CLR_PREV_HUE" Left="12"/>
+      <button ID="ID_CLR_NEXT_HUE" Left="13"/>
+    </Toolbar>
+  </DecorativeContainer>
+  <Image Rect="0,0,10,10" Image="fl_border_mask.png" ImageRect="0, 0, 10, 10" BlendPixMode="alpha_mask"/>
+  <Image Rect="w-10,0,10,10" Image="fl_border_mask.png" ImageRect="10, 0, 10, 10" BlendPixMode="alpha_mask"/>
+  <Image Rect="0,h-10,10,10" Image="fl_border_mask.png" ImageRect="0, 10, 10, 10" BlendPixMode="alpha_mask"/>
+  <Image Rect="w-10,h-10,10,10" Image="fl_border_mask.png" ImageRect="10, 10, 10, 10" BlendPixMode="alpha_mask"/>
+</skinwnd>

@@ -146,7 +146,12 @@ bool MPlayerApp::_init() {
 
     // onMediaChanged(true);
 
-    LocalServer::getInstance()->start();
+    try {
+        LocalServer::getInstance()->start();
+    } catch (const std::exception &e) {
+        // 本地管理后台端口占用等不应阻止播放器启动
+        ERR_LOG1("LocalServer start failed: %s", e.what());
+    }
 
     getInstance()->setRunningFlag();
 

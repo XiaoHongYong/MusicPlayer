@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<skin defmainwnd="MainWnd" mainwnds="MainWnd">
+	<include Name="Styles.xml"/>
+
+	<skinwnd Extends="NeonMainFrame" Name="MainWnd"
+			MinWidth="640" MinHeight="460" Width="800" Height="480" Menu="MainWndMenu"
+			CmdHandler="ch_common,ch_playlist" Script="main.js"
+			ContextMenu="MainContextMenu">
+
+		<Container Name="Body" Rect="0,0,w,h">
+
+			<!-- 左栏: 封面 + 媒体信息 -->
+			<Container Name="LeftPanel" Rect="5,5,h-77-10-5,h-10">
+				<AlbumArt Name="AlbumArt" Rect="5,5,w-10,w-10" ID="ID_ALBUMART" Image="albumart.png"/>
+
+				<Container Name="Info" Rect="0,w+5,w-10,72">
+					<MediaInfoText Name="Title" Rect="5,5,w,24" FontName="Tahoma" FontHeight="17" FontBold="TRUE" TextColor="#FFFFFF" Text="" MediaInfoType="Title"/>
+					<MediaInfoText Name="Artist - Album" Rect="5,29,w,16" FontName="Tahoma" FontHeight="12" FontBold="false" TextColor="#8FD8CB" Text="" MediaInfoType="Artist|Album" CombineWith=" - "/>
+					<RateButton id="ID_RATE" Rect="w/2-50,45,100,20" Image="rating.png" ImageRect="0,0,40,20" />
+				</Container>
+			</Container>
+
+			<!-- 右栏: 圆角面板(播放列表 / 歌词共用区域) -->
+			<Container Name="RightPanel" Rect="h-77-10-5+10,5,w-(h-77-10-5+10),h-10">
+				<Container ID="CID_PLAYLIST" Name="PlaylistArea" Rect="0,0,w,h">
+					<Text Name="PlHeader" Rect="16,12,150,22" Text="播放列表" FontName="Verdana" FontHeight="15" FontBold="TRUE" TextColor="#FFFFFF" AlignText="AT_LEFT | AT_VCENTER"/>
+
+					<Container Name="SearchBar" Rect="16,38,w-32,26">
+						<Property Name="BgImage" Image="search-bg.png" HorzExtendPos="16,48" VertExtendPos="13,14" BlendPixMode="alpha_blend"/>
+						<Image Name="Search" Rect="8,3,20,20" Image="search.png"/>
+						<NormalEdit ID="CID_E_SEARCH_MUSIC" Text="" PlaceHolder="搜索音乐" Rect="34,3,w-34-10,20" EnableBorder="false"/>
+					</Container>
+
+					<NeonPlaylist Rect="10,68,w-26,h-78" EnableHeader="false" EnableBorder="false" KeywordEdit="CID_E_SEARCH_MUSIC"/>
+				</Container>
+
+				<DecorativeContainer ID="CID_LYRICS" Name="LyricsArea" Rect="0,0,w,h" Visible="false">
+					<LyricsShow Rect="6,6,w-20,h-12" SetSkinBg="true"
+					  EnableToolbar="FALSE" EnableAutoResize="FALSE" />
+
+					<Container ID="CID_LYR_TOOL_BAR" Rect="w-110,10,94,30" Visible="False">
+						<Property Name="BgImage" Image="lyr-ctrl-bg.png" HorzExtendPos="8,22" BlendPixMode="alpha_blend"/>
+
+						<Toolbar ID="ID_TB_LYR_SYNC" Rect="12,4,70,22" Image="fl_buttons.png" enablehover="TRUE"
+								units_x="22" blank_x="-1" blank_cx="22" seperator_x="220" seperator_cx="14" ButtonSpacesCX="2"
+								MarginX="0" MarginY="0" FullStatusImage="TRUE">
+							<button ID="ID_OPEN_LRC" Left="5" />
+							<button ID="ID_BACKWARD_LYRICS" Left="6" Continuous="TRUE"/>
+							<button ID="ID_FORWARD_LYRICS" Left="7" Continuous="TRUE"/>
+						</Toolbar>
+
+						<Toolbar ID="ID_TB_LYR_TXT" Rect="12,4,50,22" Image="fl_buttons.png" enablehover="TRUE"
+								units_x="22" blank_x="-1" blank_cx="22" seperator_x="220" seperator_cx="14" ButtonSpacesCX="1"
+								Margin="8,1,0,0" MarginX="0" MarginY="0" FullStatusImage="TRUE">
+							<button ID="ID_OPEN_LRC" Left="5" />
+							<button ID="ID_LYR_EDITOR" Left="16"/>
+						</Toolbar>
+					</Container>
+				</DecorativeContainer>
+			</Container>
+		</Container>
+
+		<Animation ID="CID_AM_HIDE_LYR_TB" FadeOut="CID_LYR_TOOL_BAR"/>
+		<Animation ID="CID_AM_SHOW_LYR_TB" FadeIn="CID_LYR_TOOL_BAR"/>
+
+	</skinwnd>
+</skin>

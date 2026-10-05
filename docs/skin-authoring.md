@@ -69,7 +69,7 @@
 <Property Name="WindowImage" Image="bg-dialog.png" HorzExtendPos="13,51" VertExtendPos="33,51" />
 ```
 
-  `ImageRect`/`ImageMask`/`HorzExtendPos`/`VertExtendPos` 与控件 `BgImage` 相同，但不要写 `BlendPixMode`（窗口级忽略该字段，始终 copy）。旧属性名 `BgImage` 在 `<skinwnd>` 上仍兼容。控件内部背景继续用 `<Property Name="BgImage">`。
+  `ImageRect`/`ImageMask`/`HorzExtendPos`/`VertExtendPos` 与控件 `BgImage` 相同，但不要写 `BlendPixMode`（窗口级忽略该字段，始终 copy）。旧属性名 `BgImage` 在 `<skinwnd>` 上仍兼容。控件内部背景继续用 `<Property Name="BgImage">`。有 `WindowImage` 时 root 不再用 `BgColor` 整窗填充（见第 8 章第 7 条）。
 
 ## 3. 布局语法
 
@@ -82,40 +82,47 @@
 控件相对父容器定位，父容器移动/缩放时按公式重算。窗口可调整大小时务必用
 `w-x`、`h-x`、`w/2` 这类公式让布局自适应。
 
-## 3.1 按操作系统切换节点（`os`）与标题栏 `<Caption>`
+## 3.1 按操作系统切换样式（`Class.mac` / `Class.win` / `Class.linux`）
 
-各平台 **Window 都不使用原生标题栏**，chrome 一律由皮肤自绘。C++ 主逻辑只有一套
-（`ID_MINIMIZE` / `ID_MAXIMIZE` / `ID_CLOSE`、拖动空白处移动窗口、双击最大化）；
-布局、图标、是否画 MenuBar 写在皮肤里，用 `os` 过滤：
+各平台 **Window 都不使用原生标题栏**，chrome 由皮肤样式自绘。C++ 主逻辑只有一套
+（`ID_MINIMIZE` / `ID_MAXIMIZE` / `ID_CLOSE`）。在 `<style>` 里用**同类名 + 平台后缀**
+定义差异，窗口里只写一份实例：
 
 ```xml
-<Caption os="win,linux" Rect="2,2,w-4,41">
-  <MenuBar Name="Menu" .../>          <!-- 仅 Win/Linux 画窗口内菜单 -->
+<!-- Win/Linux 默认 -->
+<Caption Extends="Container" TranslucencyWithSkin="TRUE">
+  <MenuBar Name="Menu" .../>
   <Text ID="ID_CAPTION" .../>
-  <Toolbar ID="CID_TB_SYSBT" Image="caption_btn.png" ...>
+  <Toolbar ID="CID_TB_SYSBT" Image="caption-btn.png" ...>
     <button ID="ID_MINIMIZE" Left="1"/>
     <button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
     <button ID="ID_CLOSE" Left="4"/>
   </Toolbar>
 </Caption>
-<Caption os="mac" Rect="2,2,w-4,41">
-  <!-- macOS 菜单在系统菜单栏（AppDelegate 从 Menu="MainWndMenu" 同步），标题栏不画 MenuBar -->
-  <Toolbar ID="CID_TB_SYSBT" Image="caption_btn_mac.png" Rect="12,12,64,16"
-           units_x="16" ButtonSpacesCX="8" ...>
+<!-- 仅 macOS：注册为同名 Caption，覆盖通用定义 -->
+<Caption.mac Extends="Container" TranslucencyWithSkin="TRUE">
+  <Toolbar ID="CID_TB_SYSBT" Image="caption-btn-mac.png" ...>
     <button ID="ID_CLOSE" Left="4"/>
     <button ID="ID_MINIMIZE" Left="1"/>
     <button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
   </Toolbar>
   <Text ID="ID_CAPTION" AlignText="AT_CENTER | AT_VCENTER" .../>
-</Caption>
+</Caption.mac>
+
+<GlassMainFrame Extends="Window" ...>
+  <Caption Rect="2,2,w-4,41"/>
+  ...
+</GlassMainFrame>
 ```
 
-- `os`：`win` / `mac` / `linux`，逗号分隔；省略则全平台加载。别名 `windows`、`macos`/`osx`。
-- 任意 XML 子节点都可带 `os`（含 `<Property>`、Toolbar 的 `<button>`、顶层 style）。
-- `<Caption>` 是容器：空白处拖动窗口，双击最大化（`EnableDblClick` 默认 true）。
-- 系统按钮列语义不变：1=最小化 2=最大化 3=还原 4=关闭。mac 红绿灯图是
-  `skins/assets/caption_btn_mac.png`（皮肤目录同名文件可覆盖）；XML 里用按钮顺序
-  改成关闭-最小化-最大化即可。
+- 后缀：`.mac` / `.win` / `.linux`（别名 `.macos` `.osx` `.windows`）。当前 OS 的后缀在
+  `CSkinStyles::addStyle` 时**去掉**，按基名注册；其他 OS 的后缀节点直接忽略。
+- 平台专用样式已经注册后，**不能再用无后缀的通用样式覆盖它**（后写的 `Caption.mac`
+  可以覆盖先写的 `Caption`）。
+- 对话框另定义 `DialogCaption` / `MenuCaption`（及 `.mac`），不要和主窗口 `Caption` 抢同一个类名。
+- 任意子节点仍可用 `os="mac"` / `os="win,linux"` 做更细的过滤。
+- 系统按钮列语义不变：1=最小化 2=最大化 3=还原 4=关闭。mac 红绿灯图：
+  `skins/assets/caption-btn-mac.png`。
 - `skinwnd` 的 `Menu=` 仍要写：mac 系统菜单和 Win/Linux 的 MenuBar 共用同一份菜单定义。
 
 ## 4. 常用控件与图片精灵图约定
@@ -128,16 +135,16 @@ XML 标签名 = C++ 类名（注册表见 `Skin/SkinFactory.cpp` 与
 竖排 3 态精灵图（normal/hover/pressed）：
 
 ```xml
-<Button ID="ID_PREVIOUS" Image="prev_next.png" ImageSize="40,40"
+<Button ID="ID_PREVIOUS" Image="prev-next.png" ImageSize="40,40"
     ImagePos="0,0" ImageFocusPos="0,40" ImageSelPos="0,80"
-    ImageMask="prev_next.png" ImageMaskRect="0,0,40,40"/>
+    ImageMask="prev-next.png" ImageMaskRect="0,0,40,40"/>
 ```
 
 `ImageMask` 既是点击热区（按像素 alpha 命中测试），绘制时也会用它做 `maskBlt`
 裁剪。引擎绘制蒙版时**用按钮图自己的精灵坐标去采样蒙版**
 （`GfxRaw/RawImage.cpp::maskBltRawImage` 的 xMask/yMask 传的就是 xSrc/ySrc），
 所以独立蒙版文件必须与按钮图**保持相同的精灵图布局**（参考
-`Glass/prev_next-mask.png`，与 `prev_next.png` 同为 2 列 × 3 行）——否则
+`Glass/prev-next-mask.png`，与 `prev-next.png` 同为 2 列 × 3 行）——否则
 hover/pressed 行采样越界，按钮在悬停时直接消失。
 
 双状态按钮（如播放/暂停）用 `S0_*` / `S1_*` 两组属性，图片约定 **2 列 × 3 行**
@@ -168,7 +175,7 @@ hover/pressed 行采样越界，按钮在悬停时直接消失。
 `FullStatusImage="TRUE"` 表示整格（含背景）都取自图片。
 
 ```xml
-<Toolbar Image="caption_btn.png" units_x="16" blank_x="-1" blank_cx="16"
+<Toolbar Image="caption-btn.png" units_x="16" blank_x="-1" blank_cx="16"
     seperator_x="0" seperator_cx="10" ButtonSpacesCX="5" FullStatusImage="TRUE">
   <button ID="ID_MINIMIZE" Left="1" />
   <button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
@@ -179,7 +186,7 @@ hover/pressed 行采样越界，按钮在悬停时直接消失。
 - `CanCheck="TRUE"` + `checked_left="m"`：可选中按钮，选中时取第 m 列。
 - `RadioGroup="1"`：同组按钮互斥（radio），选中一个自动取消其他
   （`CSkinToolbar::groupButtonUncheckOld`）。Neon 右下角的「列表/歌词」
-  视图 Tab 即此用法（`view_tabs.png`：4 列 = 列表/歌词 × 未选/选中，3 行状态）。
+  视图 Tab 即此用法（`view-tabs.png`：4 列 = 列表/歌词 × 未选/选中，3 行状态）。
 - 标题栏按钮列语义（沿用 Classic/Metal 约定）：1=最小化 2=最大化 3=还原 4=关闭。
 
 ### 4.4 Frame（边框，可选）
@@ -211,7 +218,7 @@ hover/pressed 行采样越界，按钮在悬停时直接消失。
 ```
 
 `HorzExtendPos="a,b"`：0~a 与 b~图宽 不拉伸，中间水平拉伸；`VertExtendPos` 同理。
-圆角面板/气泡背景都用这个（`Neon/panel.png`、`search_bg.png`、`caption_bg.png`）。
+圆角面板/气泡背景都用这个（`Neon/panel.png`、`search-bg.png`、`caption-bg.png`）。
 
 ### 4.6 Playlist（播放列表）
 
@@ -286,7 +293,7 @@ profile.writeInt('Neon-ShowLyrics', 1);
 ## 7. 图片与 @2x
 
 - 皮肤 PNG 由 Skin Compiler 从 `Skins-Design/skin-for-ai/<name>.skin.json` 生成：
-  `cd Skins-Design/skin-for-ai/compiler && pnpm glass`（或 `pnpm neon` / `pnpm crystal`）。
+  `cd Skins-Design/skin-for-ai && ./compile.sh glass`（或 `neon` / `crystal`）。
   格式见 `docs/skin-compiler.md`。不要再写 `Skins-Design/raw/*_gen_assets.py`。
 
 ## 8. 调试技巧
@@ -310,12 +317,13 @@ profile.writeInt('Neon-ShowLyrics', 1);
    要么手动切换一次皮肤，要么直接改 ini 的 `[LyrDispaly]`/`[FloatingLyr]` 节。
 6. 窗口拖动/缩放异常时先检查 `<skinwnd>` 的 `MinWidth/MinHeight` 与 Rect 公式
    在小尺寸下是否为负。
-7. **窗口内部透明（只有底座和显式背景图可见）**：`<skinwnd>`/Window 样式上的
-   `BgColor` 会被转发给根容器（日志可见 "Property is set to Root Container"），
-   但根容器自身的背景填充在 mac 上不显示。主窗口请用窗口级
+7. **WindowImage 与 BgColor**：主窗口请用窗口级
    `<Property Name="WindowImage" ... />`（copy 铺满整窗，圆角外透明即打孔），
    对话框同样挂 `WindowImage` 即可，不必再叠 Frame。
-   参考 Glass/Crystal/Neon 的 `bg.png`（主窗口）与 `bg-dialog.png`（对话框）。
+   引擎在已有有效 `WindowImage` 时**不会**再让 root 用 `BgColor` 整窗填色
+   （否则会盖掉圆角透明与中段底色，看起来变方角/发白）；`BgColor` 仍保留给
+   子控件 `getBgColor()` 回退。参考 Glass/Crystal/Neon 的 `bg.png` /
+   `bg-dialog.png`。
 8. **浮动歌词窗口**：固定加载 `floatinglyr.xml`（`MPFloatingLyrWnd.cpp`），
    皮肤目录放同名文件即可覆盖 assets 版本（assets 版 `BgColor` 写死蓝色）。
 9. **专辑封面 FrameMask**：蒙版是相对于 `Image`（默认封面图）居中的内缩区域，

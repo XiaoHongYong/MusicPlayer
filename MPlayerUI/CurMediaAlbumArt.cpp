@@ -4,7 +4,7 @@
 #include "AlbumArtDownloadMgr.h"
 
 
-static cstr_t SZ_SUPPORTED_IMG_EXT[] = { ".jpg", ".gif", ".bmp", ".png" };
+static cstr_t SZ_SUPPORTED_IMG_EXT[] = { ".jpg", ".jpeg", ".gif", ".bmp", ".png" };
 
 bool isSupportedImageFile(cstr_t szFile) {
     cstr_t szExt;
@@ -77,15 +77,19 @@ bool getCurrentMediaAlbumArtInSongDir(VecStrings &vPicFiles) {
         if (strArAl.empty()) {
             strArAl = fileGetTitle(g_player.getSrcMedia());
         }
-        if (strcasecmp(strFileTitle.c_str(), strArAl.c_str()) == 0) {
+        if (strcasecmp(strFileTitle.c_str(), strArAl.c_str()) == 0
+            || strcasecmp(strFileTitle.c_str(), fileNameFilterInvalidChars(strArAl.c_str()).c_str()) == 0) {
             vPicFiles.push_back(strFile);
             continue;
         }
 
         //
-        // 与歌曲同名：Hey You.jpg
+        // 与歌曲同名：Hey You.jpg（保存时会过滤非法文件名字符）
         //
-        if (strcasecmp(strFileTitle.c_str(), fileGetTitle(szSongFile).c_str()) == 0) {
+        string songTitle = fileGetTitle(szSongFile);
+        string songTitleSafe = fileNameFilterInvalidChars(songTitle.c_str());
+        if (strcasecmp(strFileTitle.c_str(), songTitle.c_str()) == 0
+            || strcasecmp(strFileTitle.c_str(), songTitleSafe.c_str()) == 0) {
             vPicFiles.push_back(strFile);
             continue;
         }
@@ -113,7 +117,7 @@ static void addAlbumArtFilesByTitles(const string &dir, const VecStrings &titles
     if (dir.empty() || !isDirExist(dir.c_str())) {
         return;
     }
-    static cstr_t exts[] = { ".jpg", ".png", ".gif", ".bmp" };
+    static cstr_t exts[] = { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
     for (auto &title : titles) {
         if (title.empty()) {
             continue;
@@ -161,16 +165,24 @@ void CCurMediaAlbumArt::restartLoop() {
 RawImageDataPtr CCurMediaAlbumArt::loadNext() {
     string songFile = g_player.getSrcMedia();
     if (m_idxEmbeddedPicture != -1) {
-        string picData;
-        int ret = MediaTags::getEmbeddedPicture(songFile.c_str(), m_idxEmbeddedPicture, picData);
-        if (ret == ERR_OK) {
-            // 加载嵌入的图片
-            m_idxEmbeddedPicture++;
-            return loadRawImageDataFromMem(picData.c_str(), (int)picData.size());
-        }
+        while (true) {
+            string picData;
+            int ret = MediaTags::getEmbeddedPicture(songFile.c_str(), m_idxEmbeddedPicture, picData);
+            if (ret != ERR_OK) {
+                m_idxEmbeddedPicture = -1;
+                break;
+            }
 
-        // 没有嵌入的图片
-        m_idxEmbeddedPicture = -1;
+            m_idxEmbeddedPicture++;
+            if (picData.empty()) {
+                continue;
+            }
+
+            auto image = loadRawImageDataFromMem(picData.c_str(), (int)picData.size());
+            if (image) {
+                return image;
+            }
+        }
     }
 
     if (m_idxFilePicture != -1) {
@@ -181,14 +193,18 @@ RawImageDataPtr CCurMediaAlbumArt::loadNext() {
             }
         }
 
-        if (m_idxFilePicture < m_vAlbumPicFiles.size()) {
+        while (m_idxFilePicture >= 0 && m_idxFilePicture < (int)m_vAlbumPicFiles.size()) {
             int index = m_idxFilePicture;
             m_idxFilePicture++;
-            if (m_idxFilePicture >= m_vAlbumPicFiles.size()) {
-                m_idxFilePicture = -1;
+            auto image = loadRawImageDataFromFile(m_vAlbumPicFiles[index].c_str());
+            if (image) {
+                if (m_idxFilePicture >= (int)m_vAlbumPicFiles.size()) {
+                    m_idxFilePicture = -1;
+                }
+                return image;
             }
-            return loadRawImageDataFromFile(m_vAlbumPicFiles[index].c_str());
         }
+        m_idxFilePicture = -1;
     }
     return nullptr;
 }

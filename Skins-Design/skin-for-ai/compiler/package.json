@@ -1,0 +1,32 @@
+{
+  "name": "@musicplayer/skin-compiler",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Compile skin.json into MusicPlayer PNG sprites + XML",
+  "type": "module",
+  "bin": {
+    "skin-compiler": "./src/cli.ts"
+  },
+  "scripts": {
+    "compile": "tsx src/cli.ts compile",
+    "build": "tsc -p tsconfig.json",
+    "example": "tsx src/cli.ts compile examples/glass-blue.skin.json --out examples/out",
+    "glass": "tsx src/cli.ts compile ../glass.skin.json --out ../../skins --png-only --force",
+    "neon": "tsx src/cli.ts compile ../neon.skin.json --out ../../skins --png-only --force",
+    "crystal": "tsx src/cli.ts compile ../crystal.skin.json --out ../../skins --png-only --force"
+  },
+  "engines": {
+    "node": ">=18",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.15.9",
+  "dependencies": {
+    "sharp": "^0.33.5",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

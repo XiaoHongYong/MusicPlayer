@@ -329,10 +329,11 @@ int MP3FileTags::getPicture(cstr_t fileName, uint32_t index, string &imageDataOu
     ID3v2Pictures pictures;
     id3v2.getPictures(pictures);
 
-    if (index < pictures.m_vItems.size()) {
-        imageDataOut = pictures.m_vItems[index]->m_buffPic;
+    if (index >= pictures.m_vItems.size()) {
+        return ERR_NOT_FOUND;
     }
 
+    imageDataOut = pictures.m_vItems[index]->m_buffPic;
     return ERR_OK;
 }
 

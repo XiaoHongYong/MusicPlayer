@@ -1227,6 +1227,11 @@ bool CSkinWnd::setProperty(cstr_t szProperty, CSXNodeProperty *pProperties) {
     if (isPropertyName(szProperty, "WindowImage") || isPropertyName(szProperty, "BgImage")) {
         // WindowImage 固定 copy，铺满整窗；旧名 BgImage 仍接受。
         loadBgImageProperty(this, pProperties, m_imageBg, m_imageBgMask, m_bgImagePainter, nullptr);
+        if (m_imageBg.isValid()) {
+            // root 若再以 BgColor 整窗 fill，会盖掉圆角外透明与中段底色，看起来变方角/发白。
+            // 颜色仍保留在 m_clrBg，供子控件 getBgColor() 回退。
+            m_rootConainter.m_bgType = CUIObject::BG_NONE;
+        }
         return true;
     }
 
@@ -1311,6 +1316,12 @@ bool CSkinWnd::setProperty(cstr_t szProperty, cstr_t szValue) {
     } else if (iStartsWith(szProperty, SZ_PN_TOOLTIP) &&
             szProperty[ConstStrLen(SZ_PN_TOOLTIP)] != '\0') {
         return m_skinToolTip.setProperty(szProperty + ConstStrLen(SZ_PN_TOOLTIP), szValue);
+    } else if (isPropertyName(szProperty, "BgColor")) {
+        // 有 WindowImage 时只记颜色、不让 root 整窗填色(见上方 WindowImage 注释)。
+        getColorValue(m_rootConainter.m_clrBg, szValue);
+        m_rootConainter.m_clrBgOrg = m_rootConainter.m_clrBg;
+        m_rootConainter.m_bgType = m_imageBg.isValid() ? CUIObject::BG_NONE : CUIObject::BG_COLOR;
+        return true;
     } else if (m_rootConainter.setProperty(szProperty, szValue)) {
         DBG_LOG2("Property is set to Root Container: %s, %s", szProperty, szValue);
         return true;

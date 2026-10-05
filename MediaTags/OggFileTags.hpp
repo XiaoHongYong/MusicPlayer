@@ -27,7 +27,7 @@ public:
     VecStrings enumLyrics(cstr_t fileName) override;
     int getLyrics(cstr_t fileName, cstr_t lyricsUrl, bool isUseSpecifiedEncoding, CharEncodingType encodingSpecified, RawLyrics &rawLyricsOut) override;
 
-    int getPicture(cstr_t fileName, uint32_t index, string &imageDataOut) override { return ERR_OK; }
+    int getPicture(cstr_t fileName, uint32_t index, string &imageDataOut) override { return ERR_NOT_FOUND; }
     void getPictures(cstr_t fileName, VecStrings &vImagesDataOut) override { }
 
 };

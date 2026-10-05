@@ -203,6 +203,43 @@ RawImageDataPtr loadRawImageDataFromPngFile(IILIO *io);
 RawImageDataPtr loadRawImageDataFromJpgFile(IILIO *io);
 RawImageDataPtr loadRawImageDataFromGifFile(IILIO *io);
 
+static char SIGNATURE_BMP[2] = {'B', 'M'};
+static uint8_t SIGNATURE_PNG[8] = {137, 80, 78, 71, 13, 10, 26, 10};
+static uint8_t SIGNATURE_JPG[2] = {0xFF, 0xD8};
+static uint8_t SIGNATURE_GIF[4] = {'G', 'I', 'F', '8'};
+
+static RawImageDataPtr loadRawImageDataBySignature(IILIO *io) {
+    uint8_t head[8] = {0};
+    size_t n = io->read(head, sizeof(head));
+    io->seek(0, SEEK_SET);
+    if (n < 2) {
+        return nullptr;
+    }
+
+    if (n >= CountOf(SIGNATURE_BMP) && memcmp(head, SIGNATURE_BMP, CountOf(SIGNATURE_BMP)) == 0) {
+        return loadRawImageDataFromBmpFile(io);
+    }
+    if (n >= CountOf(SIGNATURE_PNG) && memcmp(head, SIGNATURE_PNG, CountOf(SIGNATURE_PNG)) == 0) {
+        return loadRawImageDataFromPngFile(io);
+    }
+    if (n >= CountOf(SIGNATURE_JPG) && memcmp(head, SIGNATURE_JPG, CountOf(SIGNATURE_JPG)) == 0) {
+        return loadRawImageDataFromJpgFile(io);
+    }
+    if (n >= CountOf(SIGNATURE_GIF) && memcmp(head, SIGNATURE_GIF, CountOf(SIGNATURE_GIF)) == 0) {
+        return loadRawImageDataFromGifFile(io);
+    }
+    return nullptr;
+}
+
+static RawImageDataPtr normalizeLoadedImage(RawImageDataPtr image) {
+    if (image) {
+        if (image->bitCount != 24 && image->bitCount != 32) {
+            return convertTo24BppRawImage(image);
+        }
+    }
+    return image;
+}
+
 RawImageDataPtr loadRawImageDataFromFile(cstr_t file) {
     CFileILIO io;
     if (!io.open(file)) {
@@ -216,32 +253,28 @@ RawImageDataPtr loadRawImageDataFromFile(cstr_t file) {
     } else if (strcasecmp(ext, ".png") == 0) {
         image = loadRawImageDataFromPngFile(&io);
     } else if (strcasecmp(ext, ".jpg") == 0
-        || strcasecmp(ext, "jpeg") == 0) {
+        || strcasecmp(ext, ".jpeg") == 0) {
         image = loadRawImageDataFromJpgFile(&io);
     } else if (strcasecmp(ext, ".gif") == 0) {
         image = loadRawImageDataFromGifFile(&io);
-    } else {
-        image = nullptr;
     }
 
-    if (image) {
-        if (image->bitCount != 24 && image->bitCount != 32) {
-            return convertTo24BppRawImage(image);
-        }
+    if (!image) {
+        io.seek(0, SEEK_SET);
+        image = loadRawImageDataBySignature(&io);
     }
 
-    return image;
+    return normalizeLoadedImage(image);
 }
-
-static char SIGNATURE_BMP[2] = {'B', 'M'};
-static uint8_t SIGNATURE_PNG[8] = {137, 80, 78, 71, 13, 10, 26, 10};
-static uint8_t SIGNATURE_JPG[2] = {0xFF, 0xD8};
-static uint8_t SIGNATURE_GIF[4] = {'G', 'I', 'F', '8'};
 
 RawImageDataPtr loadRawImageDataFromMem(const void *buf, int nSize) {
 #ifdef _IPHONE
     return nullptr;
 #else
+    if (!buf || nSize <= 0) {
+        return nullptr;
+    }
+
     CBuffILIO io;
 
     if (!io.open(buf, nSize)) {
@@ -250,13 +283,13 @@ RawImageDataPtr loadRawImageDataFromMem(const void *buf, int nSize) {
 
     RawImageDataPtr image;
 
-    if (memcmp(buf, SIGNATURE_BMP, CountOf(SIGNATURE_BMP)) == 0) {
+    if (nSize >= (int)CountOf(SIGNATURE_BMP) && memcmp(buf, SIGNATURE_BMP, CountOf(SIGNATURE_BMP)) == 0) {
         image = loadRawImageDataFromBmpFile(&io);
-    } else if (memcmp(buf, SIGNATURE_PNG, CountOf(SIGNATURE_PNG)) == 0) {
+    } else if (nSize >= (int)CountOf(SIGNATURE_PNG) && memcmp(buf, SIGNATURE_PNG, CountOf(SIGNATURE_PNG)) == 0) {
         image = loadRawImageDataFromPngFile(&io);
-    } else if (memcmp(buf, SIGNATURE_JPG, CountOf(SIGNATURE_JPG)) == 0) {
+    } else if (nSize >= (int)CountOf(SIGNATURE_JPG) && memcmp(buf, SIGNATURE_JPG, CountOf(SIGNATURE_JPG)) == 0) {
         image = loadRawImageDataFromJpgFile(&io);
-    } else if (memcmp(buf, SIGNATURE_GIF, CountOf(SIGNATURE_GIF)) == 0) {
+    } else if (nSize >= (int)CountOf(SIGNATURE_GIF) && memcmp(buf, SIGNATURE_GIF, CountOf(SIGNATURE_GIF)) == 0) {
         image = loadRawImageDataFromGifFile(&io);
     } else {
         image = nullptr;

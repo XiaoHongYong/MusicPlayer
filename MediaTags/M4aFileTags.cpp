@@ -1352,14 +1352,17 @@ int M4aFileTags::removeLyrics(cstr_t fileName, const VecStrings &lyrUrlsToRemove
 int M4aFileTags::getPicture(cstr_t fileName, uint32_t index, string &imageDataOut) {
     M4aTag tag;
     int ret = tag.open(fileName, false);
-    if (ret == ERR_OK) {
-        auto pics = tag.getPictures();
-        if (index < pics.size()) {
-            imageDataOut = pics[index];
-        }
+    if (ret != ERR_OK) {
+        return ret;
     }
 
-    return ret;
+    auto pics = tag.getPictures();
+    if (index >= pics.size()) {
+        return ERR_NOT_FOUND;
+    }
+
+    imageDataOut = pics[index];
+    return ERR_OK;
 }
 
 void M4aFileTags::getPictures(cstr_t fileName, VecStrings &vImagesDataOut) {

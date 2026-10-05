@@ -88,15 +88,15 @@
          FixedWidth="true" FixedHeight="true"
          BgColor="#ece9d8" EnableClickThrough="false">
         <XScaleImage Left="0" Top="0" Width="w" Height="5" Name="Top border"
-            Image="menu_frame.png" ImageRect="0,0,50,5"
+            Image="menu-frame.png" ImageRect="0,0,50,5"
             ImageScaleXStart="10" ImageScaleXEnd="40" BlendPixMode="copy"/>
         <XScaleImage Left="0" Top="h-5" Width="w" Height="5" Name="Bottom border"
-            Image="menu_frame.png" ImageRect="0,15,50,5"
+            Image="menu-frame.png" ImageRect="0,15,50,5"
             ImageScaleXStart="10" ImageScaleXEnd="40" BlendPixMode="copy"/>
         <Image Left="0" Top="5" Width="1" Height="h-10" Name="left frame" 
-            Image="menu_frame.png" ImageRect="0,5,1,10" BltMode="tile"/>
+            Image="menu-frame.png" ImageRect="0,5,1,10" BltMode="tile"/>
         <Image Left="w-1" Top="5" Width="1" Height="h-10" Name="left frame"
-            Image="menu_frame.png" ImageRect="49,5,1,10" BltMode="tile"/>
+            Image="menu-frame.png" ImageRect="49,5,1,10" BltMode="tile"/>
         <ClientArea Rect="1, 5, w-2, h-5-5"/>
     </PopupWndFrame>
 

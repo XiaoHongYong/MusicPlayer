@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding='utf-8'?>
+<Theme>
+  <LyrDispaly>
+    <BgColor>#1C1C38</BgColor>
+    <FgColor>#2EE6C8</FgColor>
+    <FgLowColor>#8A8AB0</FgLowColor>
+    <OutlineLyrText>0</OutlineLyrText>
+    <HilightOBM>1</HilightOBM>
+    <LowlightOBM>1</LowlightOBM>
+    <ThemeFont>, 16, normal, , , </ThemeFont>
+    <LyrDrawOpt>fadein</LyrDrawOpt>
+    <LyrDisplayStyle>LyricShowMultiRow</LyrDisplayStyle>
+  </LyrDispaly>
+  <FloatingLyr>
+    <BgColor>#14142B</BgColor>
+    <FgColor>#2EE6C8</FgColor>
+    <FgLowColor>#C9C9E0</FgLowColor>
+    <OutlineLyrText>1</OutlineLyrText>
+    <HilightOBM>1</HilightOBM>
+    <LowlightOBM>1</LowlightOBM>
+    <ThemeFont>, 16, bold, , , </ThemeFont>
+    <LyrDrawOpt>fadeout</LyrDrawOpt>
+    <LyrDisplayStyle>LyricShowMultiRow</LyrDisplayStyle>
+  </FloatingLyr>
+</Theme>

@@ -358,25 +358,30 @@ public:
         // Line 3
         //
 
+        // 底边固定区高度（源图与目标 1:1）。旧代码误用标题高度 srcVertExtendStart
+        // 当底栏高于标题时会竖向平铺，把底栏顶部分隔线再画到栏中间（Neon 72 vs caption 36）。
+        const int bottomSrcH = srcHeight - (srcVertExtendEnd - srcY);
+        const int bottomDstH = nDstY + nDstH - nDstVertExtendEnd;
+
         // draw area G
         blter(nDstX, nDstVertExtendEnd,
-            nDstHorzExtendStart - nDstX, nDstY + nDstH - srcVertExtendEnd,
+            nDstHorzExtendStart - nDstX, bottomDstH,
             srcX, srcVertExtendEnd);
 
         // draw area H
         if (nDstHorzExtendStart < nDstHorzExtendEnd) {
             tileBltT(nDstHorzExtendStart, nDstVertExtendEnd,
                 nDstHorzExtendEnd - nDstHorzExtendStart,
-                nDstY + nDstH - srcVertExtendEnd,    // Destination cy
-                srcHorzExtendStart, srcVertExtendEnd,        // Source x, y
+                bottomDstH,
+                srcHorzExtendStart, srcVertExtendEnd,
                 srcHorzExtendEnd - srcHorzExtendStart,
-                srcVertExtendStart - srcY, blter);
+                bottomSrcH, blter);
         }
 
         // draw area J
         blter(nDstHorzExtendEnd, nDstVertExtendEnd,
             nDstX + nDstW - nDstHorzExtendEnd,
-            nDstY + nDstH - srcVertExtendEnd,
+            bottomDstH,
             srcHorzExtendEnd, srcVertExtendEnd);
     }
 

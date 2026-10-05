@@ -39,7 +39,7 @@
 
 		<Container Rect="5,135,310,60" Name="PlayControl" >
 			<Button Rect="10,10,40,40" ID="ID_PREVIOUS"
-				Image="prev_next.png" ImageSize="40,40" ImagePos="0,0" ImageSelPos="0,80"
+				Image="prev-next.png" ImageSize="40,40" ImagePos="0,0" ImageSelPos="0,80"
 				ImageFocusPos="0,40" TranslucencyWithSkin="TRUE"/>
 
 			<Button Rect="60,3,55,55" ID="ID_PLAYPAUSE"
@@ -48,7 +48,7 @@
 				TranslucencyWithSkin="TRUE"/>
 
 			<Button Rect="125,10,40,40" ID="ID_NEXT"
-				Image="prev_next.png" ImageSize="40,40" ImagePos="40,0" ImageSelPos="40,80"
+				Image="prev-next.png" ImageSize="40,40" ImagePos="40,0" ImageSelPos="40,80"
 				ImageFocusPos="40,40" TranslucencyWithSkin="TRUE"/>
 
 			<Image Name="Volume" Rect="w-110-14-5,25,14,14" Image="volume.png" />
@@ -60,7 +60,7 @@
 				EnableToolbar="FALSE" EnableAutoResize="FALSE" />
 
 			<Container ID="CID_LYR_TOOL_BAR" Rect="w-100,10,94,30" Visible="False">
-				<Property Name="BgImage" Image="lyr_ctrl_bg.png" HorzExtendPos="8,22" BlendPixMode="alpha_blend"/>
+				<Property Name="BgImage" Image="lyr-ctrl-bg.png" HorzExtendPos="8,22" BlendPixMode="alpha_blend"/>
 
 				<Toolbar ID="ID_TB_LYR_SYNC" Rect="12,4,70,22" Image="fl_buttons.png" enablehover="TRUE"
 						units_x="22" blank_x="-1" blank_cx="22" seperator_x="220" seperator_cx="14" ButtonSpacesCX="2"

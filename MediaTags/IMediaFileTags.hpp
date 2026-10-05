@@ -40,7 +40,7 @@ public:
     virtual int setLyrics(cstr_t fileName, const VecStrings &lyricsUrls, const RawLyrics &rawLyrics) { return ERR_NOT_SUPPORT_FILE_FORMAT; }
     virtual int removeLyrics(cstr_t fileName, const VecStrings &lyrUrlsToRemove) { return ERR_NOT_FOUND; }
 
-    virtual int getPicture(cstr_t fileName, uint32_t index, string &imageDataOut) { return ERR_OK; }
+    virtual int getPicture(cstr_t fileName, uint32_t index, string &imageDataOut) { return ERR_NOT_FOUND; }
     virtual void getPictures(cstr_t fileName, VecStrings &vImagesDataOut) { }
     virtual int setPictures(cstr_t fileName, const VecStrings &picturesData) { return ERR_NOT_SUPPORT_FILE_FORMAT; }
 

@@ -93,14 +93,14 @@ Skins-Design/skins/<SkinName>/
 ├── bg.png / bg@2x.png              ← 主窗口 WindowImage（圆角+描边+标题条/底栏镀铬）
 ├── bg-dialog.png / bg-dialog@2x.png ← 对话框 WindowImage（仅标题条，无底栏）
 ├── frame.png / frame@2x.png  ← 可选；仅旧式独立 Frame 控件需要
-├── prev_next.png (+ -mask.png) / @2x
+├── prev-next.png (+ -mask.png) / @2x
 ├── playpause.png / @2x
-├── caption_btn.png / @2x
-├── caption_btn_mac.png / @2x   ← mac 红绿灯（与 captionToolbar 一并产出）
+├── caption-btn.png / @2x
+├── caption-btn-mac.png / @2x   ← mac 红绿灯（与 captionToolbar 一并产出）
 ├── progress.png, thumb.png / @2x
 ├── panel.png, edit.png, checks.png, combo-box.png / @2x
-├── menu_frame.png, menu-check.png, menu-expand-*.png / @2x
-├── albumart.png, albumart-mask.png / @2x
+├── menu-frame.png, menu-check.png, menu-expand-*.png / @2x
+├── albumart-mask.png / @2x   ← 仅蒙版；albumart.png 不由 Compiler 生成
 └── ...（见第 7 章组件清单）
 ```
 
@@ -116,20 +116,22 @@ Compiler 的核心职责是把"组件 + 状态"翻译成引擎约定的精灵图
 |---|---|---|---|
 | `windowBackground` | `bg.png` 或 `bg-dialog.png` | 非方形 9-slice。圆角**外必须透明**，描边/标题镀铬画在同一张图。`variant` 缺省/`main` → `bg.png`；`dialog` → `bg-dialog.png`。`chrome.caption/bottom` 决定高度与 `VertExtendPos={caption},{H-bottom}`；`HorzExtendPos` = `{R+1},{W-R-1}`。无 chrome 时仍可方形（如 64/R12 → `13,51`） | 主窗口 / `WindowFrame` 的 `<Property Name="WindowImage">`（**固定 copy**，不再写 Frame） |
 | `windowFrame` | `frame.png` | **可选**。默认 64×64@1x；仅当不要把边框画进 `bg.png`、仍要独立 `<Frame>` 时使用。有 `windowBackground` 时 Compiler **不**往 XML 里塞 Frame | 无 `WindowImage` 时才生成 `<Frame BlendPixMode="copy">` |
-| `captionToolbar` | `caption_btn.png` + `caption_btn_mac.png` | Win/Linux：5 列 × 3 行，格宽默认 16。列 0 留空，**1=最小化 2=最大化 3=还原 4=关闭**。mac 图为同布局的红绿灯（关闭/最小化/最大化顺序由 XML 按钮排列，不改列号）。`FullStatusImage` 时整格含背景 | `<Caption os="win,linux">` / `<Caption os="mac">` 各一套，见 skin-authoring.md 3.1 |
-| `captionBar` | `caption_bg.png` | 9-slice 标题条底（对话框 `WindowFrame` 也引用） | 标题栏容器 `BgImage` |
-| `button` | `{name}.png`（snake_case）+ 可选 `-mask.png` | 默认 **1 列 × 3 行**（normal/hover/pressed）。`icons: ["prev","next"]` 时改为 **N 列 × 3 行** 打进同一张图（如 `prev_next.png`）。mask **必须同布局**（引擎用按钮图精灵坐标采样蒙版） | `<Button Image= ImagePos= ImageFocusPos= ImageSelPos= ImageMask=>` |
+| `captionToolbar` | `caption-btn.png` + `caption-btn-mac.png` | Win/Linux：5 列 × 3 行，格宽默认 16。列 0 留空，**1=最小化 2=最大化 3=还原 4=关闭**。mac 图为同布局的红绿灯（关闭/最小化/最大化顺序由 XML 按钮排列，不改列号）。`FullStatusImage` 时整格含背景 | 样式 `DialogCaption`/`MenuCaption` + `.mac` 后缀；窗口里只写一份实例，见 skin-authoring.md 3.1 |
+| `captionBar` | `caption-bg.png` | 9-slice 标题条底（对话框 `WindowFrame` 也引用） | 标题栏容器 `BgImage` |
+| `button` | `{name}.png`（kebab-case）+ 可选 `-mask.png` | 默认 **1 列 × 3 行**（normal/hover/pressed）。`icons: ["prev","next"]` 时改为 **N 列 × 3 行** 打进同一张图（如 `prev-next.png`）。mask **必须同布局**（引擎用按钮图精灵坐标采样蒙版） | `<Button Image= ImagePos= ImageFocusPos= ImageSelPos= ImageMask=>` |
 | `toggleButton` | `{name}.png`（`playPause` → `playpause.png`） | **2 列 × 3 行**（列 = S0=`iconOff` / S1=`iconOn`，行 = 三状态） | `<Button S0_Image=... S1_Image=...>` |
 | `slider` | `progress.png` + `thumb.png` | track：**上半未播放 / 下半已播放**（`SkinSeekCtrl` 对半切，`EndWidth` 端点不拉伸）；thumb：竖排 3 态。多个 slider **共用**这两张图（音量与进度同款，与 StyleBase 一致） | `<Slider ImageTrack= ImageThumb= EndWidth=>` |
 | `checkbox` | `checks.png` | **4 列 × 4 行、26px/格**（与 `StyleBase.xml` 的 `NormalCheckBox`/`NormalRadioBt` 一致）：列 = 复选关/开、单选关/开；行 = **disabled / normal / pressed / hover**。一张图同时服务复选和单选 | 覆盖 `NormalCheckBox`/`NormalRadioBt` 即可，不必再出 radio 专图 |
 | `edit` | `edit.png` | **3 行 × 26px**（disabled / normal / hover+focus），`RoundWidth=4` `ThickWidth=3` 的框。编辑框**内容底色引擎写死白色**，深色皮肤应用 `searchBar`/`panel` 做容器 | `EditCtrlFrame` 样式 |
 | `comboBox` | `combo-box.png` | **4 行 × 26px**（disabled/normal/hover/pressed）+ 右侧箭头区（`ExtendPos="10,40"`） | `NormalComboBox` 样式 |
-| `menu` | `menu_frame.png`（50×20）、`menu-check.png`、`menu-expand-{up,down,right}.png`（18×18） | frame 给 `PopupWndFrame` 切顶/底/边；箭头/勾为单图 | `MenuItemsContainer` / `PopupWndFrame` |
-| `albumArt` | `albumart.png` + `albumart-mask.png` | mask = 白 RGB + alpha 形状，**比默认封面小一圈并居中**（引擎把封面缩到 mask 尺寸后相乘；mask 跟的是 `Image` 不是控件 Rect） | `<AlbumArt Image= FrameMask=>` |
+| `menu` | `menu-frame.png`（50×20）、`menu-check.png`、`menu-expand-{up,down,right}.png`（18×18） | frame 给 `PopupWndFrame` 切顶/底/边；箭头/勾为单图 | `MenuItemsContainer` / `PopupWndFrame` |
+| `albumArt` | **仅** `albumart-mask.png`（`albumart.png` 手绘/外置，Compiler 不生成） | mask = 白 RGB + alpha 形状，比默认封面小一圈并居中（引擎把封面缩到 mask 尺寸后相乘；mask 跟的是 `Image` 不是控件 Rect） | `<AlbumArt Image= FrameMask=>` |
 | `panel` | `panel.png`（或 `{name}.png`） | 9-slice，ExtendPos 由圆角推导 | 容器 `BgImage` |
-| `searchBar` | `search_bg.png` | 9-slice 搜索条底 | 搜索容器 `BgImage` |
-| `scrollbar` | `scrollbar-vert.png` | **4 列 × 4 段**：列 = normal/pushdown/focus/spare；行高 15+30+20+15（上按钮 / thumb / track / 下按钮），宽 15。与 StyleBase `VScrollBar` 一致 | 同名覆盖即可 |
-| `toolbar` | `{name}.png`（视图 Tab 用 `view_tabs.png`） | 列 = 按钮×（未选/选中），行 = 三状态；`Left` 0-based | `<Toolbar RadioGroup=... checked_left=>` |
+| `searchBar` | `search-bg.png` | 9-slice 搜索条底 | 搜索容器 `BgImage` |
+| `scrollbar` | `scrollbar-vert.png` / `scrollbar-horz.png` | 竖直：**4 列 × 4 段**（列 = normal/pushdown/focus/spare；行高 15+30+20+15）。水平：同样四段横排、**4 行**状态，`orientation: "horizontal"`。与 StyleBase `VScrollBar`/`HScrollBar` 一致 | 同名覆盖即可 |
+| `tabButton` | `button-group.png` | **60×144**，与普通 button 精灵图不同。每行是**一条**圆角胶囊（高 24，圆角约 10）+ 中缝 2px；`ButtunBorderWidth=13` 切左右端帽，中间 3px 作拉伸面。行 0–2 未选三态、行 3–5 选中三态（左右半边是端帽几何，不是未选/选中）。对应 StyleBase `NormalTabButton` | 同名覆盖 |
+| `toolbar` | `{name}.png`（视图 Tab 用 `view-tabs.png`） | 列 = 按钮×（未选/选中），行 = 三状态；`Left` 0-based。`indicator: "top"\|"bottom"` 画 focus 横线；`indicatorGap` 控制横线与图标间距（底部 Tab 用 `top`，顶部 Tab 用 `bottom`） | `<Toolbar RadioGroup=... checked_left=>` |
+| `iconStrip` | `{file}.png`（歌词编辑器用 `lyr-tb.png`） | **单行**图标条。默认 40 列 × 22×26，列号与 `LyricsEditor.xml` 的 `Left=` 一致；`iconColor` 用皮肤 fg。暗色皮肤覆盖 `assets/lyr-tb.png`（那张是给浅色底的深色图标） | 无需改 XML，同名覆盖即可 |
 | `playlist` | （无图） | 纯配色。XML 属性名是 **`StripeColor`**（逗号分隔两色），不是 `StripeColors` | `<XxxPlaylist Extends="NormalPlaylist">` |
 | `lyrics`（顶层节，不是 component） | （无图） | JSON `textColor`→`FgLowColor`，`highlightColor`→`FgColor`，`bgColor`→`BgColor` | `theme.xml` 的 **`LyrDispaly`**（引擎历史拼写）/ `FloatingLyr` |
 
@@ -181,16 +183,44 @@ Compiler 的核心职责是把"组件 + 状态"翻译成引擎约定的精灵图
 
 五类，全部可选但强烈建议定义；控件中禁止出现"魔法数字"，应引用 token。
 
+颜色 token 用语义名：基础层是 `bg` / `fg` / `border`。叠加状态必须成对写成
+`bg-hover`/`fg-hover`、`bg-pressed`/`fg-pressed`、`bg-focus`/`fg-focus`、
+`bg-selected`/`fg-selected`、`bg-disabled`/`fg-disabled`（以及 `bg-danger`/
+`fg-danger` 等），**同一状态的 bg 与 fg 要保持对比度**（选中行用 `bg-selected`
+填底、`fg-selected` 写字）。再按需要加 `bg-surface`、`fg-muted`、`fg-subtle`、
+`border-subtle`。皮肤特有色（如 Neon 的 `teal`）可以额外加。
+
 ```json
 "tokens": {
   "colors": {
-    "accent":        "#5AA9FF",
-    "accentHover":   "#72B5FF",
-    "surface":       "#FFFFFF20",
-    "surfaceHover":  "#FFFFFF30",
-    "textPrimary":   "#FFFFFF",
-    "textSecondary": "#FFFFFF99",
-    "border":        "#FFFFFF45"
+    "bg":            "#DDE9F7E4",
+    "bg-muted":      "#F3EDF5E4",
+    "bg-surface":    "#FFFFFFBE",
+    "bg-solid":      "#FFFFFF",
+    "bg-chrome":     "#FAFBFDEB",
+    "bg-track":      "#D8DEE8",
+    "fg":            "#2B2F3A",
+    "fg-muted":      "#5B6372",
+    "fg-subtle":     "#8A93A3",
+    "fg-on-accent":  "#FFFFFF",
+    "border":        "#FFFFFF99",
+    "border-subtle": "#C9D2E0",
+    "accent":        "#4A9DFF",
+    "accent-muted":  "#2F7FE0",
+    "bg-hover":      "#F4F8FE",
+    "fg-hover":      "#2B2F3A",
+    "bg-pressed":    "#E8F2FC",
+    "fg-pressed":    "#2B2F3A",
+    "bg-focus":      "#4A9DFF",
+    "fg-focus":      "#FFFFFF",
+    "bg-selected":   "#D6E8FA",
+    "fg-selected":   "#1E4A8C",
+    "bg-disabled":   "#F5F7FA",
+    "fg-disabled":   "#8A93A3",
+    "bg-danger":     "#E5484D",
+    "fg-danger":     "#FFFFFF",
+    "bg-danger-pressed": "#B23338",
+    "fg-danger-pressed": "#FFFFFF"
   },
   "dimensions": {
     "buttonHeight": 40,
@@ -223,7 +253,7 @@ Compiler 的核心职责是把"组件 + 状态"翻译成引擎约定的精灵图
 ```json
 "materials": {
   "glass": {
-    "fill":   "$tokens.colors.surface",
+    "fill":   "$tokens.colors.bg-surface",
     "blur":   24,
     "border": { "width": 1, "color": "$tokens.colors.border" },
     "noise":  0.03
@@ -258,7 +288,7 @@ SVG filter 实现）、`border`、`noise`（0~1 噪点强度）、`highlight`
 |---|---|---|
 | `windowBackground` | 窗口 9-slice 底座（圆角外透明） | `variant: "main"\|"dialog"`；`file`；`chrome: { caption, bottom, mid, captionFill, bottomFill, hairlineColor, bottomChrome }` |
 | `windowFrame` | 可选的独立边框精灵图 | `roundWidth`, `thickWidth`, `layers` |
-| `captionToolbar` | 标题栏按钮条 | `file`（如 `caption_btn_lg`）、`cellSize`。`caption_btn` 会额外出 `caption_btn_mac` 红绿灯 |
+| `captionToolbar` | 标题栏按钮条 | `file`（如 `caption-btn-lg`）、`cellSize`。`caption-btn` 会额外出 `caption-btn-mac` 红绿灯 |
 | `captionBar` | 标题栏 9-slice 底 | `layers` / `file` |
 | `button` | 图标按钮 | `icon`/`icons`，`mask: true\|"hitbox"`（hitbox=居中方块点击区） |
 | `toggleButton` | 双态按钮 | `iconOff`, `iconOn` |
@@ -267,11 +297,13 @@ SVG filter 实现）、`border`、`noise`（0~1 噪点强度）、`highlight`
 | `edit` | 输入框边框 | `layers` |
 | `comboBox` | 下拉框 | `layers` |
 | `menu` | 菜单框与箭头 | `frame` |
-| `albumArt` | 封面+蒙版 | `maskShape`, `maskInset`, `defaultCover` |
-| `panel` | 圆角面板底 | `file` 可改输出名（如 lyrCtrlBg → `lyr_ctrl_bg.png`） |
+| `albumArt` | 仅蒙版（不出默认封面图） | `maskShape`, `maskInset`, `size` |
+| `panel` | 圆角面板底 | `file` 可改输出名（如 lyrCtrlBg → `lyr-ctrl-bg.png`） |
 | `searchBar` | 搜索条底 | `size`, `layers` |
-| `scrollbar` | 垂直滚动条 | `file` |
-| `toolbar` | 视图 Tab | `items`, `cellSize` |
+| `scrollbar` | 滚动条 | `orientation: "vertical"\|"horizontal"`（默认竖直 → `scrollbar-vert.png`） |
+| `tabButton` | 分段 Tab（StyleBase `NormalTabButton`） | 输出 `button-group.png` |
+| `toolbar` | 视图 Tab | `items`, `cellSize`；`indicator: "top"\|"bottom"`；可选 `indicatorColor` / `indicatorHeight` / `indicatorMargin` / `indicatorPadding`（贴边距，默认 2）/ `indicatorGap`（横线与图标盒间距，默认 1，可负值贴得更紧）/ `iconInset` |
+| `iconStrip` | 单行工具条图标（`lyr-tb.png`） | `columns`（默认 40）、`cell`、`iconColor`；省略 `slots` 时用歌词编辑器列布局 |
 | `icon` | 单张小图 | `icon` 内置名或 `layers`（volume/search/vinyl） |
 | `sprite` | 竖排状态条 | `file`, `cell`, `layout: ["normal","hover",…]` |
 | `playlist` | 播放列表配色 | 见 9.5 |
@@ -282,11 +314,12 @@ SVG filter 实现）、`border`、`noise`（0~1 噪点强度）、`highlight`
 "states": {
   "normal": {
     "material": "$materials.glass",
-    "textColor": "$tokens.colors.textPrimary"
+    "textColor": "$tokens.colors.fg"
   },
   "hover": {
     "$extends": "normal",
-    "fill": "$tokens.colors.surfaceHover"
+    "fill": "$tokens.colors.bg-hover",
+    "textColor": "$tokens.colors.fg-hover"
   },
   "pressed": {
     "$extends": "hover",
@@ -315,7 +348,7 @@ SVG filter 实现）、`border`、`noise`（0~1 噪点强度）、`highlight`
 ```json
 "layers": [
   { "type": "shadow",      "shadow": "$tokens.shadows.control" },
-  { "type": "roundedRect", "fill": "$tokens.colors.surface",
+  { "type": "roundedRect", "fill": "$tokens.colors.bg-surface",
     "radius": "$tokens.radius.medium" },
   { "type": "border",      "width": 1, "color": "$tokens.colors.border",
     "radius": "$tokens.radius.medium" },
@@ -372,17 +405,17 @@ SVG filter 实现）、`border`、`noise`（0~1 噪点强度）、`highlight`
 "components": {
   "playlist": {
     "type": "playlist",
-    "stripeColors":       ["#1B1B36", "#17172E"],
-    "selBgColor":         "#5B3BD6",
-    "nowPlayingBgColor":  "#12786B",
-    "nowPlayingTextColor":"#FFFFFF",
-    "textColor":          "#C9C9E0",
-    "selTextColor":       "#FFFFFF",
+    "stripeColors":       ["$tokens.colors.bg-surface", "$tokens.colors.bg-muted"],
+    "selBgColor":         "$tokens.colors.bg-selected",
+    "nowPlayingBgColor":  "$tokens.colors.bg-pressed",
+    "nowPlayingTextColor":"$tokens.colors.fg-pressed",
+    "textColor":          "$tokens.colors.fg-muted",
+    "selTextColor":       "$tokens.colors.fg-selected",
     "lineHeight":         30
   }
 },
 "lyrics": {
-  "textColor":      "#FFFFFF",
+  "textColor":      "$tokens.colors.fg-muted",
   "highlightColor": "$tokens.colors.accent",
   "bgColor":        "#00000000"
 }
@@ -452,9 +485,11 @@ Compiler 写出的 XML/INI 键必须跟引擎一致：
 
   "tokens": {
     "colors": {
-      "accent": "#5AA9FF", "surface": "#FFFFFF20",
-      "surfaceHover": "#FFFFFF30", "textPrimary": "#FFFFFF",
-      "textSecondary": "#FFFFFF99", "border": "#FFFFFF45"
+      "bg": "#20304ADD", "bg-muted": "#101828EE",
+      "bg-surface": "#FFFFFF20", "bg-hover": "#FFFFFF30", "fg-hover": "#FFFFFF",
+      "fg": "#FFFFFF", "fg-muted": "#FFFFFF99", "fg-on-accent": "#FFFFFF",
+      "border": "#FFFFFF45", "accent": "#5AA9FF",
+      "bg-selected": "#3D7ED0", "fg-selected": "#FFFFFF"
     },
     "radius": { "medium": 10, "window": 24 },
     "dimensions": { "buttonHeight": 40, "captionHeight": 28 },
@@ -466,7 +501,7 @@ Compiler 写出的 XML/INI 键必须跟引擎一致：
 
   "materials": {
     "glass": {
-      "fill": "$tokens.colors.surface", "blur": 24,
+      "fill": "$tokens.colors.bg-surface", "blur": 24,
       "border": { "width": 1, "color": "$tokens.colors.border" }
     }
   },
@@ -501,7 +536,7 @@ Compiler 写出的 XML/INI 键必须跟引擎一致：
       "iconOff": "triangle-right",
       "iconOn":  "pause-bars",
       "states": {
-        "normal":  { "iconColor": "$tokens.colors.textPrimary" },
+        "normal":  { "iconColor": "$tokens.colors.fg" },
         "hover":   { "$extends": "normal", "iconColor": "$tokens.colors.accent" },
         "pressed": { "$extends": "hover", "scale": 0.94 }
       }
@@ -511,13 +546,13 @@ Compiler 写出的 XML/INI 键必须跟引擎一致：
       "type": "slider",
       "track": {
         "height": 8, "endWidth": 8, "radius": 4,
-        "remaining": { "fill": "$tokens.colors.surface" },
+        "remaining": { "fill": "$tokens.colors.bg-surface" },
         "played":    { "fill": "$tokens.colors.accent" }
       },
       "thumb": {
         "size": { "width": 15, "height": 15 },
         "states": {
-          "normal":  { "fill": "$tokens.colors.textPrimary",
+          "normal":  { "fill": "$tokens.colors.fg",
                        "shadow": "$tokens.shadows.control" },
           "hover":   { "$extends": "normal", "fill": "$tokens.colors.accent" },
           "pressed": { "$extends": "hover" }
@@ -528,9 +563,9 @@ Compiler 写出的 XML/INI 键必须跟引擎一致：
     "playlist": {
       "type": "playlist",
       "stripeColors": ["#FFFFFF08", "#FFFFFF04"],
-      "selBgColor": "$tokens.colors.accent",
-      "textColor": "$tokens.colors.textSecondary",
-      "selTextColor": "#FFFFFF",
+      "selBgColor": "$tokens.colors.bg-selected",
+      "textColor": "$tokens.colors.fg-muted",
+      "selTextColor": "$tokens.colors.fg-selected",
       "lineHeight": 30
     }
   },
