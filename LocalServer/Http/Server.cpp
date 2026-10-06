@@ -7,7 +7,7 @@
 namespace HttpServer {
 
 Server::Server(const std::string &address, const std::string &port)
-    : m_ioContext(1), m_signals(m_ioContext),
+    : m_address(address), m_port(port), m_ioContext(1), m_signals(m_ioContext),
       m_acceptor(m_ioContext), m_connectionManager()
 {
     m_signals.add(SIGINT);
@@ -17,10 +17,13 @@ Server::Server(const std::string &address, const std::string &port)
 #endif // defined(SIGQUIT)
 
     doAwaitStop();
+    // bind/listen 放到 run()：端口占用等错误应在工作线程里捕获，不能拖垮主线程启动。
+}
 
+void Server::openAcceptor() {
     // Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
     asio::ip::tcp::resolver resolver(m_ioContext);
-    asio::ip::tcp::endpoint endpoint = *resolver.resolve(address, port).begin();
+    asio::ip::tcp::endpoint endpoint = *resolver.resolve(m_address, m_port).begin();
     m_acceptor.open(endpoint.protocol());
     m_acceptor.set_option(asio::ip::tcp::acceptor::reuse_address(true));
     m_acceptor.bind(endpoint);
@@ -30,6 +33,8 @@ Server::Server(const std::string &address, const std::string &port)
 }
 
 void Server::run() {
+    openAcceptor();
+
     // The io_context::run() call will block until all asynchronous operations
     // have finished. While the Server is running, there is always at least one
     // asynchronous operation outstanding: the asynchronous accept call waiting

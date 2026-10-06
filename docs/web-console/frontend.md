@@ -109,7 +109,7 @@ src/
 ├── features/
 │   ├── home/
 │   ├── library/
-│   ├── player/
+│   ├── player/          # Mini/Full Player、Queue、LyricsPanel
 │   ├── playlists/
 │   ├── history/
 │   ├── statistics/
@@ -147,6 +147,7 @@ feature/
 - Search result
 - Playlist detail
 - Bootstrap
+- Song lyrics（按 song_id 缓存）
 
 ### Zustand
 

@@ -110,6 +110,7 @@ DEFINE_CMD_ID_TIP(ID_SHOW_MAIN_WND,     _TLM("Show main window"))   \
 DEFINE_CMD_ID_TIP(ID_PREFERENCES,       _TLM("Preferences"))        \
 DEFINE_CMD_ID_TIP(ID_RELOAD_LYR,        _TLM("Reload lyrics"))      \
 DEFINE_CMD_ID_TIP(ID_FLOATING_LYRICS,   _TLM("Floating Lyrics"))    \
+DEFINE_CMD_ID_TIP(ID_OPEN_MEDIA_CENTER, _TLM("Media Center"))       \
 \
 DEFINE_CMD_ID(ID_RATE_LYR_1)                                        \
 DEFINE_CMD_ID(ID_RATE_LYR_2)                                        \

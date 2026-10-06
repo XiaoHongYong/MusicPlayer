@@ -7,6 +7,7 @@
 
 #include "LocalServer.hpp"
 #include "Http/StaticFilesHandler.hpp"
+#include "Http/ApiHandler.hpp"
 #include "WebSocketHandlers/InitConnectionHandler.hpp"
 #include "WebSocketHandlers/PlayerRemoteCtrlHandler.hpp"
 #include "GenRsaKey.hpp"
@@ -106,11 +107,24 @@ LocalServer *LocalServer::getInstance() {
     return _instance;
 }
 
-LocalServer::LocalServer(cstr_t address, cstr_t httpPort, cstr_t webSocketPort, cstr_t docRoot, const mbedtls_pk_context &rsaKey, const std::string &publicKey) : m_httpServer(address, httpPort), m_webSocketServer(atoi(webSocketPort), rsaKey, publicKey) {
+LocalServer::LocalServer(cstr_t address, cstr_t httpPort, cstr_t webSocketPort, cstr_t docRoot, const mbedtls_pk_context &rsaKey, const std::string &publicKey)
+    : m_address(address)
+    , m_httpPort(httpPort)
+    , m_httpServer(address, httpPort)
+    , m_webSocketServer(atoi(webSocketPort), rsaKey, publicKey) {
+    // 注意：请求处理器按注册顺序前缀匹配，先注册者优先.
+    // REST API 处理器必须先于 "/" 静态文件处理器注册，
+    // 否则 /api/v1/... 会被静态文件处理器截走.
+    m_httpServer.registerRequestHandler(make_shared<HttpServer::ApiHandler>());
+
     auto handler = make_shared<HttpServer::StaticFilesHandler>("/", docRoot);
     m_httpServer.registerRequestHandler(handler);
 
     m_playerEventSender = make_shared<PlayerEventSender>(&m_webSocketServer);
+}
+
+string LocalServer::getHttpBaseUrl() const {
+    return "http://" + m_address + ":" + m_httpPort + "/";
 }
 
 void LocalServer::start() {

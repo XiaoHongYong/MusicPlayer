@@ -230,6 +230,20 @@
       }
     },
 
+    "mediaCenter": {
+      "type": "toolbar",
+      "file": "media-center",
+      "cellSize": { "width": 40, "height": 28 },
+      "items": [{ "icon": "media-center" }],
+      "iconInset": 0.16,
+      "states": {
+        "normal": { "iconColor": "$tokens.colors.fg-subtle" },
+        "hover": { "$extends": "normal", "iconColor": "$tokens.colors.fg-muted" },
+        "pressed": { "$extends": "hover" },
+        "checked": { "iconColor": "$tokens.colors.accent-muted" }
+      }
+    },
+
     "search": {
       "type": "icon",
       "icon": "search",

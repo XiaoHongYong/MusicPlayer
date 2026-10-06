@@ -44,6 +44,20 @@ struct MediaCategory {
 
 using VecMediaCategories = vector<MediaCategory>;
 
+// 30 天播放历史上报的聚合结果（docs/web-console/data-model.md）。
+struct PlayHistoryItem {
+    int                         songId = 0;
+    int                         count = 0;
+    string                      lastPlayedAt;
+};
+
+struct PlayHistoryDay {
+    string                      date;
+    vector<PlayHistoryItem>     items;
+};
+
+using VecPlayHistoryDays = vector<PlayHistoryDay>;
+
 cstr_t mediaCategoryTypeToString(MediaCategory::Type type);
 
 enum MediaLibOrderBy {
@@ -134,6 +148,10 @@ public:
     ResultCode rate(Media *media, uint32_t nRating);
 
     ResultCode markPlayFinished(Media *media);
+
+    ResultCode addPlayHistory(int songId, cstr_t playedAt);
+    void cleanupPlayHistory(int keepDays = 30);
+    VecPlayHistoryDays getRecentPlayHistory(int days);
 
 public:
     int init();

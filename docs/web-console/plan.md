@@ -5,10 +5,14 @@
 
 ## 执行状态
 
-- **阶段 0（后端 REST API 层）**：✅ 已实现（`LocalServer/Http/ApiHandler.{hpp,cpp}`，注册于 `/api/v1`），编译 + 链接通过（`xcodebuild` Debug 构建成功）。
-  - 端点：`bootstrap`、`library/snapshot`、`player/state`、`player/queue`、`player/{play|pause|next|previous|seek|volume|shuffle|repeat}`、`songs/{id}/stream`（含 HTTP Range 206）。
-  - 遗留：运行态联调需在本机正常启动 App 后 `curl http://127.0.0.1:12120/api/v1/bootstrap`。（无头启动 GUI App 时 LocalServer 尚未 reachable，故未在本环境完成端到端验证。）
-- 阶段 1~8：待实施（见下）。
+- **阶段 0（后端 REST API 层）**：✅ 已实现（`LocalServer/Http/ApiHandler.{hpp,cpp}`，注册于 `/api/v1`）。
+  - 端点：`bootstrap`、`library/snapshot`、`player/state`、`player/queue`、`player/{play|pause|next|previous|seek|volume|shuffle|repeat}`、`songs/{id}`、`songs/{id}/stream`（Range 206）、`songs/{id}/cover`、`songs/{id}/lyrics`。
+  - Snapshot 歌曲含 `has_lyrics`；歌词接口返回 `content` + 解析 `lines`（含嵌入歌词）。
+- **阶段 1（Library Scan）**：✅ `POST /library/scan`、`GET /library/scan/status`（异步刷新已入库媒体元数据）。
+- **阶段 2~4（前端 Shell + Library + Player/歌词）**：✅ `LocalServer/www`（Vite + React）。Songs 表 `has_lyrics` + 歌词对话框；全屏 Now Playing 歌词区；流式 Mini Player / Queue。
+- **阶段 5（Playlists / Rating / History）**：✅ `PUT /songs/{id}/rating`；playlists CRUD（含加歌/删歌/排序）；`play_history` 表 + `POST /history` + `GET /history/recent`；前端歌单页、评分、有效播放上报与 History 页。
+- **阶段 6（部分）**：Statistics 页先用 Library Snapshot 在前端聚合 Top Artists / Genre / Rating（完整 `GET /statistics/snapshot` 仍待做）。
+- 阶段 7、8：WS 事件对齐与全局搜索仍待做。
 
 ## 1. 现状盘点
 
@@ -18,7 +22,7 @@
 |---|---|---|---|
 | 后端语言/框架 | Rust + Axum | **C++17** 自定义 `HttpServer` + websocketpp `WebSocket`，`LocalServer/` | 不重写，在现有 C++ LocalServer 上扩展 |
 | 数据库 | SQLite 归一化表（artists/albums/genres/songs） | 已有 SQLite `medialib.db`（`medialib`/`playlists` 单表，artist/genre 为 TEXT 列），`MPlayer/MediaLibrary.cpp` | 保留现有表，新增历史/队列表做增量 |
-| 前端 | React + TypeScript + Vite + shadcn/ui + ECharts | `LocalServer/www` 仅有 Quasar(Vue) 脚手架配置，**无任何实际页面** | 前端从零重建（对齐文档技术栈） |
+| 前端 | React + TypeScript + Vite + shadcn/ui + ECharts | `LocalServer/www`：Vite + React（阶段 2~4 已落地；Playlists/History/WS 仍在推进） | 按文档技术栈重建，不复活 Quasar |
 | HTTP API | REST `/api/v1/...` + OpenAPI | 只有静态文件服务（`StaticFilesHandler` 挂在 `/`），无任何 API 路由 | 新增 REST 路由层 |
 | 实时事件 | WS `/ws/events` + 事件枚举 + `state_version` | 已有二进制 WS（RSA→AES），`TYPE_PLAYER_NOTIFICATION` 推状态；命名沿用旧事件 | 保留加密通道，对齐事件命名并加 `state_version` |
 | 播放/队列/统计 | 服务器持 Player State、队列、统计快照 | `MPlayer` 内核已有 `g_player`、`CMediaLibrary`、`getNowPlaying`、countPlayed | 在现有内核上封装 View Model |
@@ -54,7 +58,7 @@ P0  阶段0  后端 REST 层脚手架 + bootstrap + player state（本计划最�
 P0  阶段1  Library Snapshot API + Scanner 触发
 P0  阶段2  前端项目脚手架 + App Shell + 主题
 P0  阶段3  Songs/Albums/Artists/Genres 页（基于 Snapshot，前端内存筛选）
-P0  阶段4  Streaming + AudioEngine + Mini Player + Queue
+P0  阶段4  Streaming + AudioEngine + Mini Player + Queue + Now Playing 歌词
 P1  阶段5  Playlists / Rating / History
 P1  阶段6  Statistics Snapshot + Crossfilter + ECharts
 P1  阶段7  WebSocket Remote Control 对齐 + 事件完善
@@ -85,7 +89,9 @@ P1  阶段8  全屏 Now Playing / Search / 设置
 | `POST /api/v1/player/play` `pause` `next` `previous` `seek` `volume` `shuffle` `repeat` | 命令端点 | 映射到 `PlayerRemoteCtrlHandler.cpp` 已有的 `g_player.*` 调用点 |
 | `GET /api/v1/player/queue` | 返回队列 item_id + song 摘要 | `g_player.getNowPlaying()` |
 | `GET /api/v1/songs/{id}/stream` | **HTTP Range 206 支持** | 由 `medialib.url` 定位本地文件 |
-| `GET /api/v1/songs/{id}/cover` | 封面图片 | `media.lyricsFile/cover` 或内嵌封面 |
+| `GET /api/v1/songs/{id}` | 单曲 View Model | `CMediaLibrary::getMediaByID` |
+| `GET /api/v1/songs/{id}/cover` | 封面图片 | 内嵌封面 `MediaTags::getEmbeddedPicture` |
+| `GET /api/v1/songs/{id}/lyrics` | 歌词正文 + 解析行 | `lyricsFile` / 目录匹配 / 嵌入歌词 |
 
 ### 3.3 PlayerState 契约（对齐 player.md §2 与 api.md §9）
 
@@ -115,13 +121,16 @@ P1  阶段8  全屏 Now Playing / Search / 设置
 - `GET /api/v1/library/scan/status` → 返回扫描状态（idle/running/finished + 版本号）。
 - Snapshot 版本号：用 `scan_state.snapshot_version` 或 `medialib` 变更计数；WS 收到 `library.updated` 后前端比对版本决定是否重拉（architecture.md §7）。
 
-## 5. 阶段 2~3：前端脚手架 + 页面（React）
+## 5. 阶段 2~4：前端脚手架 + Library + Player（含歌词）
 
-按 `frontend.md` 落地：
+按 `frontend.md` 落地，源码目录 `LocalServer/www`：
+
 - 目录结构 `src/app|components/ui|features|api|stores|hooks|analytics|lib`。
 - `features/*` 各带 `api.ts/types.ts/hooks.ts/selectors.ts/components/utils.ts`（ai-coding.md §13）。
 - App Shell 三层布局 + Mini Player（player.md §4）。
-- Library Snapshot 驱动，TanStack Query 缓存，前端内存筛选/虚拟滚动。
+- Library Snapshot 驱动，TanStack Query 缓存，前端内存筛选/虚拟滚动；Songs 表展示 `has_lyrics`，可打开歌词对话框。
+- `HTMLAudioElement` 流式播放 + Queue；全屏 Now Playing 右侧歌词区（player.md §5）。
+- 开发：`pnpm dev` 将 `/api` 代理到 `http://127.0.0.1:12120`；生产构建输出 `dist/`，由 LocalServer 静态托管（`LocalWWW` 或 app `local-server`）。
 
 ## 6. 阶段 5：Playlists / Rating / History
 

@@ -89,6 +89,7 @@ CREATE TABLE songs (
   rating REAL NOT NULL DEFAULT 0,
   play_count INTEGER NOT NULL DEFAULT 0,
   last_played_at TEXT,
+  lyrics_file TEXT,                 -- 现有 medialib.lyricsFile：外部路径或 song:// 嵌入 URL
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   FOREIGN KEY (artist_id) REFERENCES artists(id),
@@ -297,3 +298,7 @@ HistoryItem
 ```
 
 这样 UI 模型发生变化时不会把数据库 schema 直接绑定到页面。
+
+### 16.1 Lyrics View Model
+
+歌词不单独建表。列表用 snapshot 的 `has_lyrics`；详情与播放页请求 `GET /songs/{id}/lyrics`，得到 `content` + `lines[{time,text}]`。

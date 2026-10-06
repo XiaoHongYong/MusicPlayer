@@ -27,9 +27,15 @@ public:
     void stopConnection(const ConnectionPtr &connection);
 
 private:
+    /// 打开 acceptor 并 bind/listen。失败时抛 std::system_error（由工作线程捕获）。
+    void openAcceptor();
+
     void doAccept();
 
     void doAwaitStop();
+
+    std::string                     m_address;
+    std::string                     m_port;
 
     asio::io_context                m_ioContext;
 

@@ -1,50 +1,16 @@
-# MusicPlayer
+# Web Console 前端
 
-MusicPlayer
+Personal Music Center（`docs/web-console/`）。
 
-## 环境搭建
-* nvm use v12.22.12
-* nvm use  v14.21.2
-* https://quasar.dev/start/quasar-cli
-* 使用国内的 NPM 源: https://cloud.tencent.com/developer/article/1372949
-
-## 依赖的库
-* 加解密: forge https://github.com/digitalbazaar/forge
-
-## Install the dependencies
 ```bash
-yarn
-# or
-npm install
+pnpm install
+pnpm dev          # http://localhost:5173 ，/api 代理到 127.0.0.1:12120
+pnpm build        # 输出 dist/，由 LocalServer 静态托管
+pnpm typecheck && pnpm test
 ```
 
-### Start the app in development mode (hot-code reloading, error reporting, etc.)
-```bash
-quasar dev
-```
+`./build.sh -b` 会自动 `pnpm build`，并把 `dist/` 装入
+`MusicPlayer.app/Contents/Resources/local-server/`，由 LocalServer
+（默认 `http://127.0.0.1:12120/`）静态托管。
 
-
-### Lint the files
-```bash
-yarn lint
-# or
-npm run lint
-```
-
-
-### Format the files
-```bash
-yarn format
-# or
-npm run format
-```
-
-
-
-### Build the app for production
-```bash
-quasar build
-```
-
-### Customize the configuration
-See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-webpack/quasar-config-js).
+Debug 开发也可在 `MusicPlayer.ini` 设置 `LocalWWW` 指向本目录的 `dist/`。

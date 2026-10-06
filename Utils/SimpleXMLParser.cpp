@@ -385,6 +385,20 @@ SimpleXMLParserError CSimpleXMLParser::doParse(const char *szData, int nLen, CSi
     SXNode node;
 
     nPos = nPosNext;
+    // XML 允许 prolog 与根元素之间有 Misc（注释 / 空白 / PI）。
+    // 以前只 ignoreSpace，遇到 <!-- 会把 '<' 当成根标签起点，导致解析失败或错乱。
+    while (1) {
+        ignoreSpace(nPos, nPosNext);
+        nPos = nPosNext;
+        string strMisc;
+        ElementType miscType = readElemnt(ET_COMMENTS, strMisc, nPos, nPosNext);
+        if (miscType == ET_COMMENTS) {
+            nPos = nPosNext;
+            continue;
+        }
+        break;
+    }
+
     m_nDeepth = 0;
     // parse root entity
     Error = parseEntity(nPos, nPosNext, &node);

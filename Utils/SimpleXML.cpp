@@ -306,6 +306,23 @@ TEST(SimpleXML, ParseCDATA) {
     ASSERT_TRUE(xml.m_pRoot->strContent == "valuevalue");
 }
 
+TEST(SimpleXML, ParseCommentBetweenPrologAndRoot) {
+    // 浮动歌词等皮肤 XML 常在 <?xml?> 后写注释；必须能正确跳过。
+    CSimpleXML xml;
+    cstr_t SZ_XML = "<?xml version=\"1.0\" encoding='UTF-8'?>\n"
+        "<!-- comment with 中文 and\n"
+        "     multiple lines -->\n"
+        "<skinwnd Name=\"floatinglyrwnd\" BgColor=\"#1C1C38\">\n"
+        "  <LyricsShow OutlineLyrText=\"TRUE\"/>\n"
+        "</skinwnd>";
+
+    ASSERT_TRUE(xml.parseData(SZ_XML, strlen(SZ_XML)));
+    ASSERT_TRUE(xml.m_pRoot != nullptr);
+    ASSERT_TRUE(xml.m_pRoot->name == "skinwnd");
+    ASSERT_TRUE(strcmp(xml.m_pRoot->getPropertySafe("Name"), "floatinglyrwnd") == 0);
+    ASSERT_TRUE(strcmp(xml.m_pRoot->getPropertySafe("BgColor"), "#1C1C38") == 0);
+}
+
 TEST(SimpleXML, SXNode) {
     SXNode node;
 

@@ -39,6 +39,11 @@ App 加载的仍是现有格式的皮肤目录（`main.xml` + `Styles.xml` + PNG
 与「运行时动态 Skin」区分开：本方案把不确定性全部留在编译期，
 运行时行为与手写皮肤完全一致，可用 skin-authoring.md 第 8 节的方法调试。
 
+当前源文件在 `Skins-Design/skin-for-ai/`：`glass`、`neon` 全量由 compiler
+产出控件 PNG；`classic`、`metal`、`fantasy` 同样产出 StyleBase 控件 PNG，
+但主窗 `frame.png`（及 Fantasy 的 `frame-mask.png`/`title_line.png`）保持手绘，
+JSON 里不要用 `windowFrame` 覆盖它们。编译：`./compile.sh classic`。
+
 ## 2. 设计原则
 
 1. **JSON 描述"视觉"，不描述"程序逻辑"**。只允许颜色、尺寸、圆角、边框、
@@ -585,7 +590,8 @@ Compiler 写出的 XML/INI 键必须跟引擎一致：
 4. layer `type` 只能用 9.2 表格里的类型（含 `border`/`highlight`）。
 5. 主窗口必备：`windowBackground`、`captionToolbar`、`toggleButton`(播放)、
    `slider`、`playlist`。建议再给对话框一份 `variant:"dialog"`。
-   `windowFrame` 不是必备。现有 Neon/Glass/Crystal 用 `--png-only` 只换 PNG。
+   `windowFrame` 不是必备。Classic/Metal/Fantasy 的主窗 `frame.png` 为手绘纹理，
+   JSON 里不要用 `windowFrame`/`file: frame` 覆盖它。现有皮肤用 `--png-only` 只换 PNG。
 6. 不写任何脚本、事件、表达式；不要输出 `@2x` 相关字段（Compiler 自动）。
 7. 需要交互（视图切换 tab 等）时，只在 `layout` 里放 `CID_*` 控件并
    在 `meta.description` 注明需要手写 main.js，不要在 JSON 里写 JS。

@@ -24,11 +24,17 @@ public:
     void start();
     void stop();
 
+    /** 媒体中心 HTTP 入口，如 http://127.0.0.1:12120/ */
+    string getHttpBaseUrl() const;
+
     static void httpServerThread(void *param);
     static void webSocketServerThread(void *param);
 
 protected:
     static LocalServer          *_instance;
+
+    string                      m_address;
+    string                      m_httpPort;
 
     HttpServer::Server          m_httpServer;
     WebSocket::Server           m_webSocketServer;

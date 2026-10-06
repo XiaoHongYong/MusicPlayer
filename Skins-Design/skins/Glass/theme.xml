@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Theme>
   <LyrDispaly>
-    <BgColor>#00000000</BgColor>
+    <BgColor>#F3F3F3</BgColor>
     <FgColor>#4A9DFF</FgColor>
     <FgLowColor>#5B6372</FgLowColor>
     <OutlineLyrText>0</OutlineLyrText>
@@ -12,7 +12,7 @@
     <LyrDisplayStyle>LyricShowMultiRow</LyrDisplayStyle>
   </LyrDispaly>
   <FloatingLyr>
-    <BgColor>#00000000</BgColor>
+    <BgColor>#F3F3F3</BgColor>
     <FgColor>#4A9DFF</FgColor>
     <FgLowColor>#5B6372</FgLowColor>
     <OutlineLyrText>1</OutlineLyrText>

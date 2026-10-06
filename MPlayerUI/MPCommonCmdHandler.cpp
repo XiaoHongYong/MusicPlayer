@@ -16,6 +16,7 @@
 #include "MPHelper.h"
 #include "MPFloatingLyrWnd.h"
 #include "../Skin/SkinRateCtrl.h"
+#include "../LocalServer/LocalServer.hpp"
 
 
 bool g_bInModalDlLrcSelDlg;
@@ -141,6 +142,17 @@ bool CMPCommonCmdHandler::onCommand(uint32_t nID) {
     case ID_ADJUST_HUE:
         {
             showAdjustHueDialog(m_pSkinWnd);
+        }
+        break;
+
+    case ID_OPEN_MEDIA_CENTER:
+        {
+            // 确保 LocalServer 已启动，再打开浏览器访问媒体中心.
+            try {
+                openUrl(m_pSkinWnd, LocalServer::getInstance()->getHttpBaseUrl().c_str());
+            } catch (const std::exception &e) {
+                ERR_LOG1("Open media center failed: %s", e.what());
+            }
         }
         break;
 

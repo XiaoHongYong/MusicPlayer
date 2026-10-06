@@ -293,7 +293,7 @@ profile.writeInt('Neon-ShowLyrics', 1);
 ## 7. 图片与 @2x
 
 - 皮肤 PNG 由 Skin Compiler 从 `Skins-Design/skin-for-ai/<name>.skin.json` 生成：
-  `cd Skins-Design/skin-for-ai && ./compile.sh glass`（或 `neon` / `crystal`）。
+  `cd Skins-Design/skin-for-ai && ./compile.sh glass`（或 `neon` / `classic` / `metal` / `fantasy`）。
   格式见 `docs/skin-compiler.md`。不要再写 `Skins-Design/raw/*_gen_assets.py`。
 
 ## 8. 调试技巧

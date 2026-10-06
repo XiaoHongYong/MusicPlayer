@@ -1123,6 +1123,10 @@
           "ID_FLOATING_LYRICS"
         ],
         [
+          "&Media Center...",
+          "ID_OPEN_MEDIA_CENTER"
+        ],
+        [
           "&Preferences...",
           "ID_PREFERENCES"
         ],

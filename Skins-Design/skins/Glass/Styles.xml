@@ -97,14 +97,19 @@
 
 		<Container Name="BottomBar" Rect="0,h-30,w,30" TranslucencyWithSkin="TRUE">
 			<PlayingTimeText Name="TimeElapsed" Rect="16,7,44,16" FontName="Verdana" FontHeight="12" TextColor="#5B6372" AlignText="AT_LEFT | AT_VCENTER"/>
-			<Slider Name="Seek" ID="ID_SEEK" Rect="68,8,w-68-160,14"/>
-			<MediaInfoText Name="Duration" Rect="w-150,7,44,16" FontName="Verdana" FontHeight="12" TextColor="#8A93A3" Text="" MediaInfoType="Duration" AlignText="AT_LEFT | AT_VCENTER"/>
-			<!-- 播放列表 / 歌词切换放在右下角，进度条相应缩短 -->
-			<Toolbar ID="CID_TB_VIEW" Rect="w-96,1,80,28" Image="view-tabs.png" enablehover="TRUE"
+			<Slider Name="Seek" ID="ID_SEEK" Rect="68,8,w-68-200,14"/>
+			<MediaInfoText Name="Duration" Rect="w-190,7,44,16" FontName="Verdana" FontHeight="12" TextColor="#8A93A3" Text="" MediaInfoType="Duration" AlignText="AT_LEFT | AT_VCENTER"/>
+			<!-- 播放列表 / 歌词切换，右侧为媒体中心入口 -->
+			<Toolbar ID="CID_TB_VIEW" Rect="w-136,1,80,28" Image="view-tabs.png" enablehover="TRUE"
 					units_x="40" blank_x="-1" blank_cx="40" seperator_x="0" seperator_cx="0"
 					MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
 				<button ID="CID_SHOW_PLAYLIST" Left="0" CanCheck="TRUE" checked_left="2" RadioGroup="1" Checked="TRUE" ToolTip="播放列表"/>
 				<button ID="CID_SHOW_LYRICS" Left="1" CanCheck="TRUE" checked_left="3" RadioGroup="1" ToolTip="歌词"/>
+			</Toolbar>
+			<Toolbar ID="CID_TB_MEDIA_CENTER" Rect="w-48,1,40,28" Image="media-center.png" enablehover="TRUE"
+					units_x="40" blank_x="-1" blank_cx="40" seperator_x="0" seperator_cx="0"
+					MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
+				<button ID="ID_OPEN_MEDIA_CENTER" Left="0" ToolTip="媒体中心"/>
 			</Toolbar>
 		</Container>
 	</GlassMainFrame>

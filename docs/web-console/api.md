@@ -68,10 +68,58 @@ PATCH  /api/v1/songs/{id}
 DELETE /api/v1/songs/{id}
 GET    /api/v1/songs/{id}/stream
 GET    /api/v1/songs/{id}/cover
+GET    /api/v1/songs/{id}/lyrics
 GET    /api/v1/songs/{id}/waveform
 ```
 
 列表页面不建议依赖 `/songs?xxx` 做高频复杂筛选；列表初始数据直接来自 Library Snapshot。
+
+Library Snapshot 中每首 `song` 带 `has_lyrics`（廉价判断：已关联歌词文件 / 同目录同名 `.lrc` / 已记录的嵌入歌词 URL）。列表用该字段展示「有歌词」标记；**是否真能打开歌词以本接口为准**。
+
+### GET `/api/v1/songs/{id}/lyrics`
+
+返回一首歌的歌词内容与解析行，供全屏播放页滚动高亮、媒体库查看歌词。
+
+查找顺序：
+
+1. 媒体库已关联的 `lyricsFile`（外部文件或 `song://…` 嵌入歌词 URL）
+2. 歌曲所在目录按歌手/歌名匹配的最佳歌词文件
+3. 音频文件内嵌歌词（ID3 / Vorbis / MP4 等）
+
+```json
+{
+  "song_id": 123,
+  "has_lyrics": true,
+  "synced": true,
+  "source": "/Music/Artist/Song.lrc",
+  "source_type": "lrc",
+  "content": "[00:12.00]hello\n[00:15.50]world\n",
+  "lines": [
+    { "time": 12.0, "text": "hello" },
+    { "time": 15.5, "text": "world" }
+  ]
+}
+```
+
+字段：
+
+| 字段 | 说明 |
+|---|---|
+| `has_lyrics` | 是否找到可解析歌词 |
+| `synced` | 是否带时间轴（LRC / karaoke）；纯文本为 `false` |
+| `source` | 歌词来源路径或嵌入 URL |
+| `source_type` | `lrc` / `txt` / `embedded` |
+| `content` | 原始/导出文本 |
+| `lines[].time` | 行开始时间（秒）；无时间轴时为 `null` |
+| `lines[].text` | 该行歌词 |
+
+无歌词时 HTTP 仍为 200：
+
+```json
+{ "song_id": 123, "has_lyrics": false }
+```
+
+歌曲不存在时 404 `SONG_NOT_FOUND`。
 
 ## 5. Artists
 

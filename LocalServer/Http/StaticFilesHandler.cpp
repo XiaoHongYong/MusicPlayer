@@ -16,10 +16,19 @@ const std::string &guestMimeType(const string &fn) {
         { "htm", "text/html" },
         { "html", "text/html" },
         { "css", "text/css" },
-        { "js", "application/x-javascript;" },
+        { "js", "text/javascript" },
+        { "mjs", "text/javascript" },
+        { "json", "application/json" },
+        { "svg", "image/svg+xml" },
+        { "ico", "image/x-icon" },
         { "jpg", "image/jpeg" },
+        { "jpeg", "image/jpeg" },
         { "png", "image/png" },
         { "gif", "image/gif" },
+        { "webp", "image/webp" },
+        { "woff", "font/woff" },
+        { "woff2", "font/woff2" },
+        { "map", "application/json" },
     };
 
     static const std::string defaultMime = "text/plain";
@@ -94,6 +103,10 @@ bool StaticFilesHandler::onRequestHeader(const ConnectionPtr &connection) {
 
     auto uri = req.uri.substr(m_uriPath.size());
     uri = uriUnquote(uri.c_str());
+    size_t qpos = uri.find('?');
+    if (qpos != string::npos) {
+        uri = uri.substr(0, qpos);
+    }
     if (!isValidRequestUri(uri)) {
         connection->sendStockResponse(Response::BAD_REQUEST);
         return true;
@@ -118,6 +131,18 @@ bool StaticFilesHandler::onRequestHeader(const ConnectionPtr &connection) {
     if (!fn.empty() && isFileExist(fn.c_str())) {
         sendFile(connection, fn);
         return true;
+    }
+
+    // SPA：无扩展名的路径回退到 index.html，交给前端路由.
+    if (req.method == "GET" || req.method == "HEAD") {
+        bool looksLikeFile = uri.find('.') != string::npos;
+        if (!looksLikeFile && isDirExist(m_pathOrFile.c_str())) {
+            string indexHtml = searchDefaultHtmlFile(m_pathOrFile);
+            if (!indexHtml.empty()) {
+                sendFile(connection, indexHtml);
+                return true;
+            }
+        }
     }
 
     connection->sendStockResponse(Response::NOT_FOUND);

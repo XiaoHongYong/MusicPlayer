@@ -1,8 +1,9 @@
-#include "../Skin/Skin.h"
+﻿#include "../Skin/Skin.h"
 #include "MediaLibrary.h"
 #include "Player.h"
 #include "MediaScanner.h"
 #include "Utils/rapidjson.h"
+#include <algorithm>
 
 
 #define ALBUM_ARTIST_SEP        "~@~"
@@ -98,6 +99,19 @@ DROP INDEX IF EXISTS mli_music_hash;"
 #define SQL_ADD_PLAYLIST            "INSERT INTO playlists (name, duration, count, rating, is_up_to_date, time_modified, media_ids) VALUES (?, ?, ?, ?, ?, ?, ?);"
 #define SQL_UPDATE_PLAYLIST_BY_ID   "UPDATE playlists SET name=?, duration=?, count=?, rating=?, is_up_to_date=?, time_modified=?, media_ids=? WHERE id=?"
 #define SQL_DELETE_PLAYLIST_BY_ID   "DELETE FROM playlists WHERE id=?"
+
+#define SQL_CREATE_TABLE_PLAY_HISTORY "CREATE TABLE IF NOT EXISTS play_history \
+(\
+  id integer Primary Key,\
+  song_id integer NOT NULL,\
+  played_at text NOT NULL\
+);"
+
+#define SQL_CREATE_IDX_PLAY_HISTORY_AT "CREATE INDEX IF NOT EXISTS idx_play_history_played_at ON play_history(played_at DESC);"
+#define SQL_CREATE_IDX_PLAY_HISTORY_SONG "CREATE INDEX IF NOT EXISTS idx_play_history_song_time ON play_history(song_id, played_at DESC);"
+#define SQL_ADD_PLAY_HISTORY "INSERT INTO play_history (song_id, played_at) VALUES (?, ?);"
+#define SQL_QUERY_PLAY_HISTORY_SINCE "SELECT song_id, played_at FROM play_history WHERE played_at >= ? ORDER BY played_at DESC;"
+#define SQL_CLEANUP_PLAY_HISTORY "DELETE FROM play_history WHERE played_at < ?;"
 
 #define SQLITE3_BIND_TEXT(sqlstmt, strData)            \
     ret = sqlstmt.bindText(n, strData.c_str(), (int)strData.size());\
@@ -813,6 +827,127 @@ ResultCode CMediaLibrary::rate(Media *media, uint32_t nRating) {
     return executeSQL(szSql);
 }
 
+static string isoUtcFromTime(time_t t) {
+    char buf[40];
+    strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%SZ", gmtime(&t));
+    return buf;
+}
+
+ResultCode CMediaLibrary::addPlayHistory(int songId, cstr_t playedAt) {
+    if (!isOK()) {
+        return m_nInitResult;
+    }
+    if (songId <= 0) {
+        return ERR_NOT_FOUND;
+    }
+
+    string at = playedAt && playedAt[0] ? playedAt : isoUtcFromTime(time(nullptr));
+    RMutexAutolock autolock(m_mutexDataAccess);
+
+    CSqlite3Stmt stmt;
+    auto ret = stmt.prepare(&m_db, SQL_ADD_PLAY_HISTORY);
+    if (ret != ERR_OK) {
+        return ret;
+    }
+    ret = stmt.bindInt(1, songId);
+    if (ret != ERR_OK) {
+        return ret;
+    }
+    ret = stmt.bindText(2, at.c_str(), at.size());
+    if (ret != ERR_OK) {
+        return ret;
+    }
+    ret = stmt.step();
+    if (ret != ERR_OK) {
+        return ret;
+    }
+
+    cleanupPlayHistory(30);
+    return ERR_OK;
+}
+
+void CMediaLibrary::cleanupPlayHistory(int keepDays) {
+    if (!isOK() || keepDays <= 0) {
+        return;
+    }
+    time_t cutoff = time(nullptr) - (time_t)keepDays * 86400;
+    string iso = isoUtcFromTime(cutoff);
+    CSqlite3Stmt stmt;
+    if (stmt.prepare(&m_db, SQL_CLEANUP_PLAY_HISTORY) != ERR_OK) {
+        return;
+    }
+    if (stmt.bindText(1, iso.c_str(), iso.size()) != ERR_OK) {
+        return;
+    }
+    stmt.step();
+}
+
+VecPlayHistoryDays CMediaLibrary::getRecentPlayHistory(int days) {
+    VecPlayHistoryDays out;
+    if (!isOK()) {
+        return out;
+    }
+    if (days <= 0) {
+        days = 30;
+    }
+    if (days > 90) {
+        days = 90;
+    }
+
+    time_t cutoff = time(nullptr) - (time_t)days * 86400;
+    string iso = isoUtcFromTime(cutoff);
+
+    RMutexAutolock autolock(m_mutexDataAccess);
+    CSqlite3Stmt stmt;
+    if (stmt.prepare(&m_db, SQL_QUERY_PLAY_HISTORY_SINCE) != ERR_OK) {
+        return out;
+    }
+    if (stmt.bindText(1, iso.c_str(), iso.size()) != ERR_OK) {
+        return out;
+    }
+
+    // date -> songId -> item（按 played_at DESC 扫描，首次见到的即 last_played_at）
+    unordered_map<string, unordered_map<int, PlayHistoryItem>> grouped;
+    vector<string> dateOrder;
+    auto ret = stmt.step();
+    while (ret == ERR_SL_OK_ROW) {
+        int songId = stmt.columnInt(0);
+        string playedAt = stmt.columnText(1);
+        string date = playedAt.size() >= 10 ? playedAt.substr(0, 10) : playedAt;
+        auto git = grouped.find(date);
+        if (git == grouped.end()) {
+            dateOrder.push_back(date);
+            grouped[date][songId] = PlayHistoryItem{ songId, 1, playedAt };
+        } else {
+            auto &songs = git->second;
+            auto sit = songs.find(songId);
+            if (sit == songs.end()) {
+                songs[songId] = PlayHistoryItem{ songId, 1, playedAt };
+            } else {
+                sit->second.count++;
+            }
+        }
+        ret = stmt.step();
+    }
+
+    for (auto &date : dateOrder) {
+        PlayHistoryDay day;
+        day.date = date;
+        auto &songs = grouped[date];
+        vector<PlayHistoryItem> items;
+        items.reserve(songs.size());
+        for (auto &kv : songs) {
+            items.push_back(kv.second);
+        }
+        std::sort(items.begin(), items.end(), [](const PlayHistoryItem &a, const PlayHistoryItem &b) {
+            return a.lastPlayedAt > b.lastPlayedAt;
+        });
+        day.items = std::move(items);
+        out.push_back(std::move(day));
+    }
+    return out;
+}
+
 ResultCode CMediaLibrary::markPlayFinished(Media *media) {
     if (!isOK()) {
         return m_nInitResult;
@@ -864,6 +999,21 @@ int CMediaLibrary::init() {
     if (m_nInitResult != ERR_OK) {
         return m_nInitResult;
     }
+
+    // 播放历史：CREATE IF NOT EXISTS，不走 destructive 版本升级。
+    m_nInitResult = m_db.exec(SQL_CREATE_TABLE_PLAY_HISTORY);
+    if (m_nInitResult != ERR_OK) {
+        return m_nInitResult;
+    }
+    m_nInitResult = m_db.exec(SQL_CREATE_IDX_PLAY_HISTORY_AT);
+    if (m_nInitResult != ERR_OK) {
+        return m_nInitResult;
+    }
+    m_nInitResult = m_db.exec(SQL_CREATE_IDX_PLAY_HISTORY_SONG);
+    if (m_nInitResult != ERR_OK) {
+        return m_nInitResult;
+    }
+    cleanupPlayHistory(30);
 
     m_nInitResult = m_stmtUpdateMediaPlayTime.prepare(&m_db, SQL_UPDATE_MEDIA_PLAY_TIME);
     assert(m_nInitResult == ERR_OK);

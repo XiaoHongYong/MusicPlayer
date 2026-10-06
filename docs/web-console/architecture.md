@@ -35,6 +35,7 @@
 │ ├─ Bootstrap                                                │
 │ ├─ Library                                                  │
 │ ├─ Player                                                   │
+│ ├─ Lyrics                                                   │
 │ ├─ Playlist                                                 │
 │ ├─ Rating                                                   │
 │ ├─ History                                                  │
@@ -123,8 +124,9 @@ songs[]
 - play_count
 - year
 - duration
+- has_lyrics
 
-这样列表筛选无需为了显示名称进行前端多表 join。
+这样列表筛选无需为了显示名称进行前端多表 join。歌词正文不进 snapshot，按需请求 `/songs/{id}/lyrics`。
 
 ### 4.3 Statistics Snapshot
 

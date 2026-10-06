@@ -81,22 +81,18 @@ Queue 支持：
 ┌──────────────────────────────────────────────────┐
 │ ← Back                                  Queue    │
 │                                                  │
-│                 ┌──────────────┐                 │
-│                 │              │                 │
-│                 │    COVER     │                 │
-│                 │              │                 │
-│                 └──────────────┘                 │
+│ ← Back                                  Queue    │
 │                                                  │
-│ Song Title                                       │
-│ Artist                               ★★★★☆       │
-│                                                  │
-│ ━━━━━━━━━━━━━━━○━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │
-│ 1:32                                      4:05   │
-│                                                  │
-│           ◀         ▶         ▶                 │
-│                                                  │
+│   ┌──────────┐     上一行                         │
+│   │  COVER   │     当前歌词（高亮）                 │
+│   └──────────┘     下一行                         │
+│   Song / Artist                                  │
+│   ━━━━━○━━━━━      无歌词时显示空状态               │
+│      ◀ ▶ ▶                                       │
 └──────────────────────────────────────────────────┘
 ```
+
+歌词数据来自 `GET /api/v1/songs/{id}/lyrics`，随 `song_id` 变化重新请求。同步滚动只使用本地 `HTMLAudioElement` 的 `currentTime`，不要为歌词向服务器轮询位置。
 
 ## 6. Audio Playback
 
@@ -216,7 +212,7 @@ P2 再考虑：
 - Gapless Playback
 - Crossfade
 - ReplayGain
-- Lyrics synchronization
+- Karaoke 逐字高亮
 - Waveform seek
 - Sleep Timer
 - Smart queue

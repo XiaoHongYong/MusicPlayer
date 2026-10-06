@@ -36,3 +36,14 @@ obj
 LyricServer
 version.h
 ~$*
+
+# App icons generated from Skins-Design/raw/app-icon-master-1024.png
+# Run: python3 tools/generate_app_icons.py
+MusicPlayer/MusicPlayer.icns
+MusicPlayer/win32/player.ico
+MusicPlayer/tray-icons/menu-logo.png
+MusicPlayer/tray-icons/menu-logo@2x.png
+MusicPlayer/Assets.xcassets/AppIcon.appiconset/*.png
+Skins-Design/skins/assets/logo.png
+Skins-Design/raw/app-icon-512.png
+Skins-Design/raw/app-icon-source-512.png

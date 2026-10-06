@@ -1,51 +1,43 @@
 {
-  "name": "www",
-  "version": "0.0.1",
-  "description": "Music Player",
-  "productName": "Music",
-  "author": "Xiao Hongyong <hongyongxiao@gmail.com>",
+  "name": "music-center",
   "private": true,
+  "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "lint": "eslint --ext .js,.ts,.vue ./",
-    "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
-    "test": "echo \"No test specified\" && exit 0"
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.app.json --pretty false",
+    "lint": "eslint src --ext .ts,.tsx",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@quasar/extras": "^1.0.0",
-    "core-js": "^3.6.5",
+    "@tanstack/react-query": "^5.62.8",
+    "@tanstack/react-virtual": "^3.11.2",
+    "clsx": "^2.1.1",
     "crossfilter2": "^1.5.4",
-    "echarts": "^5.4.1",
-    "quasar": "^2.6.0",
-    "vue": "^3.0.0",
-    "vue-echarts": "^6.5.4",
-    "vue-i18n": "^9.2.2",
-    "vue-router": "^4.0.0",
-    "yarn": "^1.22.19"
+    "echarts": "^5.5.1",
+    "echarts-for-react": "^3.0.2",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0",
+    "tailwind-merge": "^2.6.0",
+    "zustand": "^5.0.2"
   },
   "devDependencies": {
-    "@quasar/app-webpack": "^3.0.0",
-    "@types/node": "^12.20.21",
-    "@typescript-eslint/eslint-plugin": "^5.10.0",
-    "@typescript-eslint/parser": "^5.10.0",
-    "eslint": "^8.10.0",
-    "eslint-config-prettier": "^8.1.0",
-    "eslint-plugin-vue": "^9.0.0",
-    "prettier": "^2.5.1"
-  },
-  "browserslist": [
-    "last 10 Chrome versions",
-    "last 10 Firefox versions",
-    "last 4 Edge versions",
-    "last 7 Safari versions",
-    "last 8 Android versions",
-    "last 8 ChromeAndroid versions",
-    "last 8 FirefoxAndroid versions",
-    "last 10 iOS versions",
-    "last 5 Opera versions"
-  ],
-  "engines": {
-    "node": ">= 12.22.1",
-    "npm": ">= 6.13.4",
-    "yarn": ">= 1.21.1"
+    "@types/react": "^18.3.14",
+    "@types/react-dom": "^18.3.2",
+    "@typescript-eslint/parser": "^8.18.1",
+    "@types/node": "^22.10.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vitest": "^2.1.8"
   }
 }

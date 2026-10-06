@@ -1,6 +1,4 @@
 {
-  "extends": "@quasar/app-webpack/tsconfig-preset",
-  "compilerOptions": {
-    "baseUrl": "."
-  }
+  "files": [],
+  "references": [{ "path": "./tsconfig.app.json" }]
 }

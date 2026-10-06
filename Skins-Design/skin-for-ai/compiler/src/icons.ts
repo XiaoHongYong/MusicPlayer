@@ -24,6 +24,12 @@ export function resolveIconName(name: string): string | undefined {
 }
 
 const FRAGMENTS: Record<string, (color: string) => string> = {
+    // 媒体中心：四宫格入口图标
+    "media-center": (c) =>
+        `<rect x="4.5" y="4.5" width="6.2" height="6.2" rx="1.2" fill="none" stroke="${c}" stroke-width="1.7"/>` +
+        `<rect x="13.3" y="4.5" width="6.2" height="6.2" rx="1.2" fill="none" stroke="${c}" stroke-width="1.7"/>` +
+        `<rect x="4.5" y="13.3" width="6.2" height="6.2" rx="1.2" fill="none" stroke="${c}" stroke-width="1.7"/>` +
+        `<rect x="13.3" y="13.3" width="6.2" height="6.2" rx="1.2" fill="none" stroke="${c}" stroke-width="1.7"/>`,
     volume: (c) =>
         `<path d="M3 9 h3.5 l5 -4 v14 l-5 -4 H3 z" fill="${c}"/>` +
         `<path d="M14.2 9.2 a3.2 3.2 0 0 1 0 5.6" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/>` +

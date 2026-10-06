@@ -20,10 +20,49 @@ function create_music_player_ini() {
         echo "Creating ${file_ini} ..."
 
         echo "[MusicPlayer]
-SkinRootDir=${CUR_DIR}/Skins-Design/skins" > ${file_ini}
+SkinRootDir=${CUR_DIR}/Skins-Design/skins
+LocalWWW=${CUR_DIR}/LocalServer/www/dist" > ${file_ini}
         exit_if_err "Failed to create ${file_ini}."
         echo "OK"
+    elif ! grep -q '^LocalWWW=' "${file_ini}" ; then
+        # 已有 ini：补上 Debug 开发用的媒体中心静态目录
+        echo "LocalWWW=${CUR_DIR}/LocalServer/www/dist" >> "${file_ini}"
+        echo "Added LocalWWW to ${file_ini}"
     fi
+}
+
+# 编译媒体中心前端，并把 dist 拷进 App Bundle 的 Resources/local-server/
+function build_and_install_media_center() {
+    local www_dir="${CUR_DIR}/LocalServer/www"
+    local dist_dir="${www_dir}/dist"
+    local app_resources="${CUR_DIR}/build/${BUILD_TYPE}/MusicPlayer.app/Contents/Resources"
+    local dest_dir="${app_resources}/local-server"
+
+    if ! command -v pnpm >/dev/null 2>&1 ; then
+        echo "ERROR: pnpm not found; cannot build media center (LocalServer/www)."
+        exit 1
+    fi
+
+    echo "Build media center web (LocalServer/www)..."
+    if [ ! -d "${www_dir}/node_modules" ] ; then
+        (cd "${www_dir}" && pnpm install)
+        exit_if_err "Failed to pnpm install LocalServer/www."
+    fi
+    (cd "${www_dir}" && pnpm build)
+    exit_if_err "Failed to build LocalServer/www."
+
+    if [ ! -d "${app_resources}" ] ; then
+        echo "Skip installing media center: app Resources not found at ${app_resources}"
+        return 0
+    fi
+
+    echo "Install media center → ${dest_dir}"
+    rm -rf "${dest_dir}"
+    mkdir -p "${dest_dir}"
+    # dist 内容直接落在 local-server/ 下（需有 index.html）
+    cp -R "${dist_dir}/." "${dest_dir}/"
+    exit_if_err "Failed to copy media center dist to app bundle."
+    echo "OK"
 }
 
 function create_music_player_update_json() {
@@ -136,6 +175,9 @@ if [ $ACTION_BUILD ] ; then
     xcodebuild -project build/MusicPlayer.xcodeproj -scheme MusicPlayer -configuration $BUILD_TYPE $XCODE_ATTRS
     exit_if_err
 
+    # 媒体中心网页：编译并装入 Bundle，供 LocalServer 静态托管（默认 127.0.0.1:12120）
+    build_and_install_media_center
+
     # 带符号构建：显式生成 dSYM，便于 atos/Instruments 做行级符号化。
     APP_BIN="build/${BUILD_TYPE}/MusicPlayer.app/Contents/MacOS/MusicPlayer"
     if [ $ACTION_SYMBOLS ] && [ -f "${APP_BIN}" ] ; then
@@ -148,6 +190,11 @@ if [ $ACTION_PACK ] ; then
     if [ "$BUILD_TYPE" != "Release" ] ; then
         echo "Skip packaging: only supported for Release (got $BUILD_TYPE)."
     else
+        # 仅 -p 时也确保媒体中心已装入 Bundle（避免漏跑 -b 的安装步骤）
+        if [[ ! $ACTION_BUILD ]] ; then
+            build_and_install_media_center
+        fi
+
         echo "Make package: MusicPlayer.dmg ..."
 
         rm -f build/MusicPlayer.dmg

@@ -180,6 +180,19 @@
         "checked": { "iconColor": "$tokens.colors.teal" }
       }
     },
+    "mediaCenter": {
+      "type": "toolbar",
+      "file": "media-center",
+      "cellSize": { "width": 40, "height": 28 },
+      "items": [{ "icon": "media-center" }],
+      "iconInset": 0.16,
+      "states": {
+        "normal": { "iconColor": "$tokens.colors.fg-subtle" },
+        "hover": { "$extends": "normal", "iconColor": "$tokens.colors.fg-muted" },
+        "pressed": { "$extends": "hover" },
+        "checked": { "iconColor": "$tokens.colors.teal" }
+      }
+    },
     "lyrTb": {
       "type": "iconStrip",
       "file": "lyr-tb",

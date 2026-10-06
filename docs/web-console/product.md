@@ -121,11 +121,11 @@ Songs                                      [Scan] [More]
 
 [Search songs...] [Genre ▼] [Artist ▼] [Rating ▼] [Sort ▼]
 
-┌───┬───────────────┬────────────┬──────────┬────────┬─────┐
-│   │ Title         │ Artist     │ Album    │ Rating │ ... │
-├───┼───────────────┼────────────┼──────────┼────────┼─────┤
-│▶  │ ...           │ ...        │ ...      │ ★★★★☆  │ ... │
-└───┴───────────────┴────────────┴──────────┴────────┴─────┘
+┌───┬───────────────┬────────────┬──────────┬────────┬─────┬─────┐
+│   │ Title         │ Artist     │ Album    │ Rating │ 歌词 │ ... │
+├───┼───────────────┼────────────┼──────────┼────────┼─────┼─────┤
+│▶  │ ...           │ ...        │ ...      │ ★★★★☆  │  有  │ ... │
+└───┴───────────────┴────────────┴──────────┴────────┴─────┴─────┘
 
 [1–50]                           [50 / page]
 ```
@@ -133,6 +133,7 @@ Songs                                      [Scan] [More]
 关键交互：
 
 - 行 Hover 显示 Play / Add to Queue / Favorite / Rating。
+- 「歌词」列根据 snapshot 的 `has_lyrics` 显示有/无；点击打开歌词查看（请求 `GET /songs/{id}/lyrics`）。
 - 点击整行进入歌曲/专辑上下文，不打断播放。
 - 筛选和排序使用前端内存数据。
 - 表格建议使用虚拟滚动，确保 100,000 行数据仍保持流畅。
@@ -280,7 +281,25 @@ Settings
 
 ### 4.13 Fullscreen Now Playing
 
-从 Mini Player 点击封面进入全屏；保持专辑封面为视觉中心，下面显示标题、Artist、Rating、波形/进度、播放控制和 Queue。
+从 Mini Player 点击封面进入全屏。桌面端左右分栏：左侧封面与控制，右侧歌词。
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│ ← Back                                              Queue       │
+│                                                                 │
+│        ┌──────────┐         上一行歌词（muted）                   │
+│        │  COVER   │         ▶ 当前行（高亮、略放大）              │
+│        └──────────┘         下一行歌词                            │
+│        Song / Artist        …滚动跟随播放进度…                    │
+│        ━━━━━○━━━━━                                              │
+│           ◀ ▶ ▶                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+- 有时间轴的歌词按 `position` 高亮当前行并滚动居中。
+- 纯文本歌词可滚动阅读，不高亮时间轴。
+- 无歌词时显示空状态（「暂无歌词」），不挡住封面。
+- 窄屏改为封面上方、歌词下方。
 
 ## 5. 非功能需求
 
@@ -296,7 +315,7 @@ Settings
 
 ### P0
 
-App Shell、Home、Songs、Albums、Artists、Genres、Album/Artist Detail、Streaming、Mini Player、Queue、播放控制、Light/Dark、主题色、Library Scan。
+App Shell、Home、Songs、Albums、Artists、Genres、Album/Artist Detail、Streaming、Mini Player、Queue、播放控制、Now Playing 歌词、媒体库歌词查看、Light/Dark、主题色、Library Scan。
 
 ### P1
 
@@ -304,4 +323,4 @@ Playlists、Rating、Favorites、History、Statistics、WebSocket Remote Control
 
 ### P2
 
-Waveform、Smart Playlist、Lyrics、Tag Editing、Crossfade、Recommendation、Duplicate Detection。
+Waveform、Smart Playlist、Tag Editing、Crossfade、Recommendation、Duplicate Detection。

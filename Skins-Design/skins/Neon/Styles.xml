@@ -135,11 +135,16 @@
 			<Image Name="VolumeIcon" Rect="w/2+100,26,20,20" Image="volume.png" />
 			<Slider Name="Volume" ID="ID_VOLUME" Rect="w/2+124,28,80,15"/>
 
-			<Toolbar ID="CID_TB_VIEW" Rect="w-96,22,80,28" Image="view-tabs.png" enablehover="TRUE"
+			<Toolbar ID="CID_TB_VIEW" Rect="w-136,22,80,28" Image="view-tabs.png" enablehover="TRUE"
 					units_x="40" blank_x="-1" blank_cx="40" seperator_x="0" seperator_cx="0"
 					MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
 				<button ID="CID_SHOW_PLAYLIST" Left="0" CanCheck="TRUE" checked_left="2" RadioGroup="1" Checked="TRUE" ToolTip="播放列表"/>
 				<button ID="CID_SHOW_LYRICS" Left="1" CanCheck="TRUE" checked_left="3" RadioGroup="1" ToolTip="歌词"/>
+			</Toolbar>
+			<Toolbar ID="CID_TB_MEDIA_CENTER" Rect="w-48,22,40,28" Image="media-center.png" enablehover="TRUE"
+					units_x="40" blank_x="-1" blank_cx="40" seperator_x="0" seperator_cx="0"
+					MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
+				<button ID="ID_OPEN_MEDIA_CENTER" Left="0" ToolTip="媒体中心"/>
 			</Toolbar>
 		</Container>
     </NeonMainFrame>
