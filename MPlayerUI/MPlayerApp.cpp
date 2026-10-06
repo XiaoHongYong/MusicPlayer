@@ -62,6 +62,7 @@ void dispatchPlayPosEvent(int nPlayPos) {
     if (nPlayPos != nPlayPosLast) {
         nPlayPosLast = nPlayPos;
         MPlayerApp::getEventsDispatcher()->dispatchSyncEvent(ET_PLAYER_POS_UPDATE);
+        g_player.maybeRecordPlayHistory();
     }
 }
 

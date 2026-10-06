@@ -14,8 +14,8 @@
 				<AlbumArt Name="AlbumArt" Rect="5,5,w-10,w-10" ID="ID_ALBUMART" Image="albumart.png"/>
 
 				<Container Name="Info" Rect="0,w+5,w-10,72">
-					<MediaInfoText Name="Title" Rect="5,5,w,24" FontName="Tahoma" FontHeight="17" FontBold="TRUE" TextColor="#FFFFFF" Text="" MediaInfoType="Title"/>
-					<MediaInfoText Name="Artist - Album" Rect="5,29,w,16" FontName="Tahoma" FontHeight="12" FontBold="false" TextColor="#8FD8CB" Text="" MediaInfoType="Artist|Album" CombineWith=" - "/>
+					<MediaInfoText Name="Title" Rect="5,5,w-10,24" FontName="Tahoma" FontHeight="17" FontBold="TRUE" TextColor="#FFFFFF" Text="" MediaInfoType="Title" AlignText="AT_CENTER | AT_VCENTER"/>
+					<MediaInfoText Name="Artist - Album" Rect="5,29,w-10,16" FontName="Tahoma" FontHeight="12" FontBold="false" TextColor="#8FD8CB" Text="" MediaInfoType="Artist|Album" CombineWith=" - " AlignText="AT_CENTER | AT_VCENTER"/>
 					<RateButton id="ID_RATE" Rect="w/2-50,45,100,20" Image="rating.png" ImageRect="0,0,40,20" />
 				</Container>
 			</Container>

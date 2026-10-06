@@ -15,6 +15,7 @@
 
 #include "ApiHandler.hpp"
 #include "Connection.hpp"
+#include "EventStream.hpp"
 #include "Utils/Utils.h"
 #include "Utils/rapidjson.h"
 #include "MPlayer/Player.h"
@@ -37,9 +38,6 @@ using std::string;
 using std::vector;
 using rapidjson::Value;
 using rapidjson::Document;
-
-// player 行为的 state_version（单调递增，未与 WS 事件联动，阶段 7 再与事件流统一）.
-static long s_playerStateVersion = 0;
 
 bool mediaCheapHasLyrics(Media *media);
 bool findSongLyricsSource(Media *media, string &sourcePath, string &sourceType);
@@ -138,7 +136,7 @@ void writePlayerStateJson(RapidjsonWriter &w) {
     w.Key("volume"); w.Double(g_player.getVolume() / 100.0);
     w.Key("shuffle"); w.Bool(g_player.isShuffle());
     w.Key("repeat"); w.String(loopModeToString(g_player.getLoop()));
-    w.Key("state_version"); w.Int64(s_playerStateVersion);
+    w.Key("state_version"); w.Int64(EventStream::instance().stateVersion());
     w.EndObject();
 }
 
@@ -376,8 +374,6 @@ void writeLyricsJson(const ConnectionPtr &connection, Media *media) {
 // ---------- 播放命令 ----------
 
 void applyPlayerCommand(const char *cmd, cstr_t param) {
-    s_playerStateVersion++;
-
     if (strcmp(cmd, "play") == 0) {
         g_player.play();
     } else if (strcmp(cmd, "pause") == 0) {
@@ -690,6 +686,25 @@ void ApiHandler::handleRoute(const ConnectionPtr &connection, const vector<strin
         return;
     }
 
+    // GET /events (SSE)
+    if (tokens.size() == 1 && tokens[0] == "events" && eqNoCase(m_method, "GET")) {
+        connection->beginSse();
+        EventStream::instance().addSubscriber(connection);
+        rapidjson::StringBuffer buf;
+        RapidjsonWriter w(buf);
+        writePlayerStateJson(w);
+        EventStream::instance().sendTo(connection, "player.state_changed", buf.GetString(),
+                                       EventStream::instance().stateVersion());
+        {
+            rapidjson::StringBuffer qbuf;
+            RapidjsonWriter qw(qbuf);
+            writePlayerQueueJson(qw);
+            EventStream::instance().sendTo(connection, "player.queue_changed", qbuf.GetString(),
+                                           EventStream::instance().stateVersion());
+        }
+        return;
+    }
+
     // GET /bootstrap
     if (tokens.size() == 1 && tokens[0] == "bootstrap" && eqNoCase(m_method, "GET")) {
         rapidjson::StringBuffer buf;
@@ -770,6 +785,75 @@ void ApiHandler::handleRoute(const ConnectionPtr &connection, const vector<strin
         return;
     }
 
+    // POST /player/queue  { action: replace|insert, song_ids, index, play }
+    // insert 的 index：插入位置，-1 或省略表示队尾；play=true 时从插入的第一首开始播。
+    if (tokens.size() == 2 && tokens[0] == "player" && tokens[1] == "queue" && eqNoCase(m_method, "POST")) {
+        Document doc;
+        if (!parseJsonBody(connection, doc)) {
+            sendJsonError(connection, Response::BAD_REQUEST, "BAD_REQUEST", "JSON body required");
+            return;
+        }
+        vector<int> ids = parseSongIds(doc);
+        if (ids.empty()) {
+            sendJsonError(connection, Response::BAD_REQUEST, "BAD_REQUEST", "song_ids required");
+            return;
+        }
+        auto extra = g_player.getMediaLibrary()->getMediaByIDs(ids);
+        if (!extra || extra->getCount() == 0) {
+            sendJsonError(connection, Response::NOT_FOUND, "SONG_NOT_FOUND", "No playable songs");
+            return;
+        }
+
+        string action = "insert";
+        if (doc.HasMember("action") && doc["action"].IsString()) {
+            action = doc["action"].GetString();
+        }
+
+        bool play = false;
+        if (doc.HasMember("play")) {
+            if (doc["play"].IsBool()) play = doc["play"].GetBool();
+            else if (doc["play"].IsNumber()) play = doc["play"].GetInt() != 0;
+        }
+
+        int index = -1;
+        if (doc.HasMember("index") && doc["index"].IsNumber()) {
+            index = doc["index"].GetInt();
+        } else if (doc.HasMember("position") && doc["position"].IsString()) {
+            string pos = doc["position"].GetString();
+            if (pos == "next") index = g_player.getCurrentMediaIndex() + 1;
+            else index = -1;
+        }
+
+        if (action == "replace") {
+            g_player.setNowPlaying(extra);
+            int start = index < 0 ? 0 : index;
+            if (start >= (int)extra->getCount()) start = 0;
+            if (play) g_player.playMedia(start);
+        } else {
+            auto now = g_player.getNowPlaying();
+            int insertAt = index;
+            if (insertAt < 0 || insertAt > (int)now->getCount()) {
+                insertAt = (int)now->getCount();
+            }
+            now->insert(insertAt, extra->getAll());
+            if (play) {
+                int playAt = insertAt;
+                auto first = extra->getItem(0);
+                if (first) {
+                    now->getItemIndex(first, playAt);
+                }
+                if (playAt < 0 || playAt >= (int)now->getCount()) playAt = 0;
+                g_player.playMedia(playAt);
+            }
+        }
+
+        rapidjson::StringBuffer buf;
+        RapidjsonWriter w(buf);
+        writePlayerStateJson(w);
+        sendJson(connection, buf.GetString());
+        return;
+    }
+
     // POST /player/<command>
     // play 可带 body: { "song_ids": [...], "index": 0 } 在桌面播放器上开播。
     if (tokens.size() == 2 && tokens[0] == "player" && eqNoCase(m_method, "POST")) {
@@ -790,10 +874,23 @@ void ApiHandler::handleRoute(const ConnectionPtr &connection, const vector<strin
                     if (index < 0) index = 0;
                     if (index >= (int)playlist->getCount()) index = 0;
 
-                    s_playerStateVersion++;
                     g_player.setNowPlaying(playlist);
                     g_player.playMedia(index);
 
+                    rapidjson::StringBuffer buf;
+                    RapidjsonWriter w(buf);
+                    writePlayerStateJson(w);
+                    sendJson(connection, buf.GetString());
+                    return;
+                }
+                if (doc.HasMember("index") && doc["index"].IsNumber()) {
+                    int index = doc["index"].GetInt();
+                    auto now = g_player.getNowPlaying();
+                    if (now && now->getCount() > 0) {
+                        if (index < 0) index = 0;
+                        if (index >= (int)now->getCount()) index = 0;
+                        g_player.playMedia(index);
+                    }
                     rapidjson::StringBuffer buf;
                     RapidjsonWriter w(buf);
                     writePlayerStateJson(w);
@@ -867,6 +964,8 @@ void ApiHandler::handleRoute(const ConnectionPtr &connection, const vector<strin
         }
         uint32_t nRating = (uint32_t)std::lround(rating * 2.0) * 50; // 步长 0.5 → 0~500
         lib->rate(media.get(), nRating);
+        EventStream::instance().publish("rating.changed",
+            stringPrintf("{\"song_id\":%d,\"rating\":%g}", media->ID, rating));
         rapidjson::StringBuffer buf;
         RapidjsonWriter w(buf);
         writeMediaJson(w, media.get());
@@ -901,6 +1000,8 @@ void ApiHandler::handleRoute(const ConnectionPtr &connection, const vector<strin
             return;
         }
         auto playlist = g_player.getMediaLibrary()->newPlaylist(name.c_str());
+        EventStream::instance().publish("playlist.updated",
+            stringPrintf("{\"playlist_id\":%d}", playlist->id));
         rapidjson::StringBuffer buf;
         RapidjsonWriter w(buf);
         writePlaylistDetailJson(w, playlist.get());
@@ -935,6 +1036,8 @@ void ApiHandler::handleRoute(const ConnectionPtr &connection, const vector<strin
             playlist->name = doc["name"].GetString();
             lib->savePlaylist(playlist);
         }
+        EventStream::instance().publish("playlist.updated",
+            stringPrintf("{\"playlist_id\":%d}", playlist->id));
         rapidjson::StringBuffer buf;
         RapidjsonWriter w(buf);
         writePlaylistDetailJson(w, playlist.get());
@@ -951,6 +1054,7 @@ void ApiHandler::handleRoute(const ConnectionPtr &connection, const vector<strin
             return;
         }
         lib->deltePlaylist(id);
+        EventStream::instance().publish("playlist.updated", "{\"playlist_id\":null}");
         sendNoContent(connection);
         return;
     }
@@ -977,6 +1081,8 @@ void ApiHandler::handleRoute(const ConnectionPtr &connection, const vector<strin
             lib->addToPlaylist(playlist->id, extra);
             playlist = lib->getPlaylist(playlist->id);
         }
+        EventStream::instance().publish("playlist.updated",
+            stringPrintf("{\"playlist_id\":%d}", playlist->id));
         rapidjson::StringBuffer buf;
         RapidjsonWriter w(buf);
         writePlaylistDetailJson(w, playlist.get());
@@ -1001,6 +1107,8 @@ void ApiHandler::handleRoute(const ConnectionPtr &connection, const vector<strin
         }
         playlist->removeItem(index);
         lib->savePlaylist(playlist);
+        EventStream::instance().publish("playlist.updated",
+            stringPrintf("{\"playlist_id\":%d}", playlist->id));
         sendNoContent(connection);
         return;
     }
@@ -1025,6 +1133,8 @@ void ApiHandler::handleRoute(const ConnectionPtr &connection, const vector<strin
             playlist->insert(-1, ordered->getAll());
         }
         lib->savePlaylist(playlist);
+        EventStream::instance().publish("playlist.updated",
+            stringPrintf("{\"playlist_id\":%d}", playlist->id));
         rapidjson::StringBuffer buf;
         RapidjsonWriter w(buf);
         writePlaylistDetailJson(w, playlist.get());
@@ -1050,6 +1160,7 @@ void ApiHandler::handleRoute(const ConnectionPtr &connection, const vector<strin
             playedAt = doc["played_at"].GetString();
         }
         lib->addPlayHistory(songId, playedAt.c_str());
+        EventStream::instance().publish("history.updated", stringPrintf("{\"song_id\":%d}", songId));
         sendJson(connection, "{}", Response::CREATED);
         return;
     }

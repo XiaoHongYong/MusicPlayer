@@ -2,6 +2,7 @@
 #include <utility>
 #include <vector>
 #include "ConnectionManager.hpp"
+#include "EventStream.hpp"
 #include "Server.hpp"
 #include "Utils/url.h"
 #include "Utils/Utils.h"
@@ -19,6 +20,10 @@ void Connection::start() {
 }
 
 void Connection::stop() {
+    if (m_streaming) {
+        EventStream::instance().removeSubscriber(shared_from_this());
+        m_streaming = false;
+    }
     m_socket.close();
 }
 
@@ -134,6 +139,55 @@ void Connection::sendResponseBodyChunked(const std::string &data, AsioWriteCallb
 
         handler(ec, bytesSent);
     });
+}
+
+void Connection::beginSse() {
+    m_streaming = true;
+    m_response.status = Response::OK;
+    m_ssePreamble =
+        "HTTP/1.0 200 OK\r\n"
+        "Content-Type: text/event-stream\r\n"
+        "Cache-Control: no-cache\r\n"
+        "Connection: keep-alive\r\n"
+        "Access-Control-Allow-Origin: *\r\n"
+        "X-Accel-Buffering: no\r\n"
+        "\r\n";
+    m_streamQueue.push_front(m_ssePreamble);
+    flushStreamQueue();
+    watchClientClose();
+}
+
+void Connection::writeStream(const std::string &data) {
+    if (!m_streaming || data.empty()) {
+        return;
+    }
+    m_streamQueue.push_back(data);
+    flushStreamQueue();
+}
+
+void Connection::flushStreamQueue() {
+    if (m_streamWriteInFlight || m_streamQueue.empty()) {
+        return;
+    }
+    m_streamWriteInFlight = true;
+    m_streamWriteBuf = std::move(m_streamQueue.front());
+    m_streamQueue.pop_front();
+
+    auto self(shared_from_this());
+    m_state = IN_WRITING;
+    asio::async_write(m_socket, asio::buffer(m_streamWriteBuf),
+        [this, self](std::error_code ec, std::size_t) {
+        m_streamWriteInFlight = false;
+        if (ec) {
+            m_server->stopConnection(self);
+            return;
+        }
+        flushStreamQueue();
+    });
+}
+
+void Connection::watchClientClose() {
+    doRead();
 }
 
 const std::string &Connection::stateToString(State state) {

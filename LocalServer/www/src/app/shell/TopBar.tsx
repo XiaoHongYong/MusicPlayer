@@ -1,19 +1,35 @@
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Monitor, Radio, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { useWebSocketStatus } from '@/features/realtime/useWebSocketStatus';
+import { useRealtimeStatus } from '@/features/realtime/useRealtimeStatus';
 import { usePlayerStore } from '@/features/player/store';
 import { useUiStore, type PlaybackTarget } from '@/stores/ui-store';
 
-function WsStatusIcon() {
-  const status = useWebSocketStatus();
+function ConnectionStatusIcon() {
+  const { status, reconnect } = useRealtimeStatus();
+  const offline = status !== 'connected';
   const label =
-    status === 'connected' ? 'WebSocket 已连接' : status === 'connecting' ? 'WebSocket 连接中…' : 'WebSocket 已断开';
+    status === 'connected'
+      ? '已连接播放器'
+      : status === 'connecting'
+        ? '正在连接播放器…点击重试'
+        : '已断开，点击重新连接';
+
   return (
-    <div
-      className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground"
+    <button
+      type="button"
+      className={cn(
+        'flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground',
+        offline && 'hover:bg-accent hover:text-foreground',
+        !offline && 'cursor-default',
+      )}
       title={label}
       aria-label={label}
+      onClick={() => {
+        if (offline) reconnect();
+      }}
     >
       <span
         className={cn(
@@ -24,8 +40,10 @@ function WsStatusIcon() {
         )}
       />
       <Radio size={14} className={status === 'connected' ? 'text-emerald-500' : 'text-muted-foreground'} />
-      <span className="hidden sm:inline">{status === 'connected' ? '已连接' : status === 'connecting' ? '连接中' : '已断开'}</span>
-    </div>
+      <span className="hidden sm:inline">
+        {status === 'connected' ? '已连接' : status === 'connecting' ? '连接中' : '已断开'}
+      </span>
+    </button>
   );
 }
 
@@ -75,20 +93,51 @@ function PlaybackTargetSwitch() {
 }
 
 export function TopBar() {
-  const toggle = useUiStore((s) => s.setSidebarCollapsed);
-  const collapsed = useUiStore((s) => s.sidebarCollapsed);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const qFromUrl = location.pathname === '/search' ? params.get('q') ?? '' : '';
+  const [q, setQ] = useState(qFromUrl);
+
+  useEffect(() => {
+    setQ(qFromUrl);
+  }, [qFromUrl]);
+
+  const goSearch = (value: string) => {
+    setQ(value);
+    if (location.pathname === '/search') {
+      navigate(value ? `/search?q=${encodeURIComponent(value)}` : '/search', { replace: true });
+      return;
+    }
+    if (value.trim()) {
+      navigate(`/search?q=${encodeURIComponent(value)}`);
+    }
+  };
+
   return (
     <header className="flex h-14 items-center gap-3 border-b border-border px-4">
-      <button className="text-sm text-muted-foreground" onClick={() => toggle(!collapsed)}>
-        {collapsed ? '展开' : '收起'}
-      </button>
-      <div className="relative max-w-md flex-1">
+      <form
+        className="relative max-w-md flex-1"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const trimmed = q.trim();
+          navigate(trimmed ? `/search?q=${encodeURIComponent(trimmed)}` : '/search');
+        }}
+      >
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="搜索（即将接入）" className="pl-9" readOnly />
-      </div>
+        <Input
+          placeholder="搜索歌曲、艺人、专辑、歌单"
+          className="pl-9"
+          type="search"
+          autoComplete="off"
+          value={q}
+          onChange={(e) => goSearch(e.target.value)}
+          aria-label="搜索媒体库"
+        />
+      </form>
       <div className="ml-auto flex items-center gap-2">
         <PlaybackTargetSwitch />
-        <WsStatusIcon />
+        <ConnectionStatusIcon />
       </div>
     </header>
   );

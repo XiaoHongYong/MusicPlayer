@@ -175,6 +175,9 @@ public:
 
     void notifyPlaylistChanged(Playlist *playlist, IMPEvent::PlaylistChangeAction action, int nIndex, int nIndexOld);
 
+    // 有效播放（约 10 秒或 20%）写入与网页共用的 play_history。
+    void maybeRecordPlayHistory();
+
 protected:
     void onMediaChanged();
     void setCurrentMedia(MediaPtr &media);
@@ -221,7 +224,10 @@ protected:
     EQualizer                   m_equalizer;
 
     bool                        m_isCurMediaPlayed = false;
+    bool                        m_playHistoryRecorded = false;
     int                         m_idxCurrentMedia = 0;
+
+    void recordPlayHistory(bool forceEnough);
 
     bool                        m_isAutoAddToMediaLib = true;
 

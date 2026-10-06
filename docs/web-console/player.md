@@ -122,7 +122,7 @@ React 不直接充当音频缓冲层。
 - song changed
 - volume changed（可选）
 
-WebSocket 广播状态时包含 `state_version`。
+SSE 广播状态时包含 `state_version`。
 
 ## 8. Remote Control
 
@@ -157,16 +157,20 @@ Output / Player
 
 ## 10. 播放历史触发
 
-不要以 `play()` 事件直接记历史。
+不要以 `play()` 事件直接记历史。有效播放阈值：约 10 秒或时长的 20%。
 
-推荐客户端维护一个简单的 `playedEnough` 状态：
+两条路径，**提交与推送分开**：
 
 ```text
-play
- ↓
-10 sec or 20% threshold
- ↓
-POST /history
+浏览器播放（网页是 Player）
+  play → 本地 HTMLAudioElement 进度
+       → POST /api/v1/history
+       → 服务端写入后 SSE history.updated
+
+桌面播放（应用是 Player）
+  play → 播放器进程内记账
+       → SSE history.updated
+  网页不轮询、不代为 POST。
 ```
 
 同一首歌连续暂停/继续不重复记录。

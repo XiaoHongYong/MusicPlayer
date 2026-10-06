@@ -117,8 +117,6 @@ set(SRC_PATHS
     ${PROJECT_SOURCE_DIR}/ImageLib/jpeg
     ${PROJECT_SOURCE_DIR}/LocalServer
     ${PROJECT_SOURCE_DIR}/LocalServer/Http
-    ${PROJECT_SOURCE_DIR}/LocalServer/WebSocket
-    ${PROJECT_SOURCE_DIR}/LocalServer/WebSocketHandlers
     ${PROJECT_SOURCE_DIR}/LyricsLib
     ${PROJECT_SOURCE_DIR}/MediaTags
     ${PROJECT_SOURCE_DIR}/MediaTags/ID3
@@ -224,7 +222,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/third-parties/tiny-AES-c
     ${PROJECT_SOURCE_DIR}/third-parties/mbedtls/include
     ${PROJECT_SOURCE_DIR}/third-parties/asio/include
-    ${PROJECT_SOURCE_DIR}/third-parties/websocketpp
 )
 
 if(WIN32)

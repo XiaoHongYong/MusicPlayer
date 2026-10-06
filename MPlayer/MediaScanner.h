@@ -1,10 +1,11 @@
-#pragma once
+﻿#pragma once
 
 
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
+#include <functional>
 #include "Media.h"
 
 
@@ -24,6 +25,9 @@ public:
     // idle | running | finished
     const char *rescanStatus() const;
 
+    using RescanListener = std::function<void(const char *phase, int done, int total, int version)>;
+    void setRescanListener(RescanListener fn) { _rescanListener = std::move(fn); }
+
     void quit();
 
 protected:
@@ -41,6 +45,7 @@ protected:
     std::atomic<int>            _rescanDone { 0 };
     std::atomic<int>            _snapshotVersion { 1 };
     std::atomic<bool>           _everFinished { false };
+    RescanListener              _rescanListener;
 };
 
 extern MediaScanner g_mediaScanner;

@@ -8,6 +8,7 @@ import { StatisticsPage } from '@/features/statistics/StatisticsPage';
 import { PlaylistsPage } from '@/features/playlists/components/PlaylistsPage';
 import { PlaylistDetailPage } from '@/features/playlists/components/PlaylistDetailPage';
 import { HistoryPage } from '@/features/history/components/HistoryPage';
+import { SearchPage } from '@/features/search/SearchPage';
 
 export const router = createBrowserRouter([
   {
@@ -15,6 +16,7 @@ export const router = createBrowserRouter([
     element: <AppShell />,
     children: [
       { index: true, element: <HomePage /> },
+      { path: 'search', element: <SearchPage /> },
       { path: 'library/songs', element: <SongsPage /> },
       { path: 'library/albums', element: <AlbumsPage /> },
       { path: 'library/artists', element: <ArtistsPage /> },

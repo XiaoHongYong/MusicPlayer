@@ -5,8 +5,10 @@ import { MiniPlayer } from '@/features/player/components/MiniPlayer';
 import { NowPlaying } from '@/features/player/components/NowPlaying';
 import { QueueDrawer } from '@/features/player/components/QueueDrawer';
 import { LyricsDialog } from '@/features/library/components/LyricsDialog';
+import { ToastHost } from '@/components/ToastHost';
 import { useDesktopSync } from '@/features/player/useDesktopSync';
-import { useUiStore } from '@/stores/ui-store';
+import { applyThemeMode, useUiStore } from '@/stores/ui-store';
+import { usePlayerStore } from '@/features/player/store';
 import { useEffect } from 'react';
 
 export function AppShell() {
@@ -14,11 +16,19 @@ export function AppShell() {
   useDesktopSync();
 
   useEffect(() => {
-    const dark =
-      mode === 'dark' ||
-      (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    document.documentElement.classList.toggle('dark', dark);
+    applyThemeMode(mode);
+    if (mode !== 'system') return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = () => applyThemeMode('system');
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
   }, [mode]);
+
+  useEffect(() => {
+    if (useUiStore.getState().playbackTarget === 'desktop') {
+      usePlayerStore.getState().onTargetChanged('desktop');
+    }
+  }, []);
 
   return (
     <div className="flex h-full flex-col">
@@ -30,11 +40,12 @@ export function AppShell() {
             <Outlet />
           </main>
         </div>
+        <QueueDrawer />
       </div>
       <MiniPlayer />
       <NowPlaying />
-      <QueueDrawer />
       <LyricsDialog />
+      <ToastHost />
     </div>
   );
 }

@@ -29,6 +29,16 @@ export const api = {
     request<import('./types').ScanStatus>('/api/v1/library/scan', { method: 'POST' }),
   playerState: () => request<import('./types').PlayerState>('/api/v1/player/state'),
   playerQueue: () => request<{ items: import('./types').QueueItem[] }>('/api/v1/player/queue'),
+  setQueue: (body: {
+    action: 'replace' | 'insert';
+    song_ids: number[];
+    index?: number;
+    play?: boolean;
+  }) =>
+    request<import('./types').PlayerState>('/api/v1/player/queue', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   playerCommand: (cmd: string, body?: unknown) =>
     request<import('./types').PlayerState>(`/api/v1/player/${cmd}`, {
       method: 'POST',

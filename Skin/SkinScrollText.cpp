@@ -73,7 +73,19 @@ void CSkinScrollText::draw(CRawGraph *canvas) {
         m_nPosScroll = -WIDTH_TXT_STILL;
     }
 
-    int nLeftClip = getDrawOffset(rc.width());
+    int nVisibleWidth = rc.width();
+    int nLeftClip = getDrawOffset(nVisibleWidth);
+
+    // 文本未超出可视区时尊重 AlignText（滚动中仍从左裁切）。
+    if (nLeftClip == 0 && m_nWidthText < nVisibleWidth) {
+        if (isFlagSet(m_dwAlignText, AT_CENTER)) {
+            rc.left += (nVisibleWidth - m_nWidthText) / 2;
+            rc.right = rc.left + m_nWidthText;
+        } else if (isFlagSet(m_dwAlignText, AT_RIGHT)) {
+            rc.left += nVisibleWidth - m_nWidthText;
+        }
+    }
+
     rc.left -= nLeftClip;
 
     // 整串先栅格化进离屏缓存，每帧只做一次切片 blt：滚动只改切片原点，不再每帧逐字形重跑 drawGlyph*。

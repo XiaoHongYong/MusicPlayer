@@ -9,6 +9,11 @@
   - MusicPlayer/win32/player.ico
   - MusicPlayer/tray-icons/menu-logo{,@2x}.png
   - Skins-Design/skins/assets/logo.png
+  - LocalServer/www/public/favicon.ico
+  - LocalServer/www/public/favicon-16.png
+  - LocalServer/www/public/favicon-32.png
+  - LocalServer/www/public/apple-touch-icon.png
+  - LocalServer/www/public/app-icon.png
 
 用法:
   python3 tools/generate_app_icons.py
@@ -37,6 +42,14 @@ ICO_OUT = ROOT / "MusicPlayer" / "win32" / "player.ico"
 LOGO_OUT = ROOT / "Skins-Design" / "skins" / "assets" / "logo.png"
 MENU_LOGO = ROOT / "MusicPlayer" / "tray-icons" / "menu-logo.png"
 MENU_LOGO_2X = ROOT / "MusicPlayer" / "tray-icons" / "menu-logo@2x.png"
+WWW_PUBLIC = ROOT / "LocalServer" / "www" / "public"
+WWW_FAVICON_ICO = WWW_PUBLIC / "favicon.ico"
+WWW_FAVICON_16 = WWW_PUBLIC / "favicon-16.png"
+WWW_FAVICON_32 = WWW_PUBLIC / "favicon-32.png"
+WWW_APPLE_TOUCH = WWW_PUBLIC / "apple-touch-icon.png"
+WWW_APP_ICON = WWW_PUBLIC / "app-icon.png"
+
+FAVICON_ICO_SIZES = [16, 32, 48]
 
 # macOS iconutil 命名: (文件名, 像素边长)
 ICONSET_SIZES = [
@@ -123,16 +136,28 @@ def build_appiconset(master: Image.Image) -> None:
     print(f"  {contents_path.relative_to(ROOT)}")
 
 
-def build_ico(master: Image.Image) -> None:
-    imgs = [resize(master, s) for s in ICO_SIZES]
-    ICO_OUT.parent.mkdir(parents=True, exist_ok=True)
+def write_ico(path: Path, master: Image.Image, sizes: list[int]) -> None:
+    imgs = [resize(master, s) for s in sizes]
+    path.parent.mkdir(parents=True, exist_ok=True)
     imgs[-1].save(
-        ICO_OUT,
+        path,
         format="ICO",
-        sizes=[(s, s) for s in ICO_SIZES],
+        sizes=[(s, s) for s in sizes],
         append_images=imgs[:-1],
     )
-    print(f"  {ICO_OUT.relative_to(ROOT)} ({ICO_OUT.stat().st_size} bytes)")
+    print(f"  {path.relative_to(ROOT)} ({path.stat().st_size} bytes)")
+
+
+def build_ico(master: Image.Image) -> None:
+    write_ico(ICO_OUT, master, ICO_SIZES)
+
+
+def build_www_icons(master: Image.Image) -> None:
+    write_ico(WWW_FAVICON_ICO, master, FAVICON_ICO_SIZES)
+    write_png(WWW_FAVICON_16, resize(master, 16))
+    write_png(WWW_FAVICON_32, resize(master, 32))
+    write_png(WWW_APPLE_TOUCH, resize(master, 180))
+    write_png(WWW_APP_ICON, resize(master, 64))
 
 
 def main() -> int:
@@ -154,6 +179,7 @@ def main() -> int:
     write_png(LOGO_OUT, resize(master, 92))
     write_png(MENU_LOGO, resize(master, 24))
     write_png(MENU_LOGO_2X, resize(master, 48))
+    build_www_icons(master)
 
     print("完成.")
     return 0

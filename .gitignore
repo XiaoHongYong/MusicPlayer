@@ -45,5 +45,10 @@ MusicPlayer/tray-icons/menu-logo.png
 MusicPlayer/tray-icons/menu-logo@2x.png
 MusicPlayer/Assets.xcassets/AppIcon.appiconset/*.png
 Skins-Design/skins/assets/logo.png
+LocalServer/www/public/favicon.ico
+LocalServer/www/public/favicon-16.png
+LocalServer/www/public/favicon-32.png
+LocalServer/www/public/apple-touch-icon.png
+LocalServer/www/public/app-icon.png
 Skins-Design/raw/app-icon-512.png
 Skins-Design/raw/app-icon-source-512.png

@@ -5,6 +5,7 @@ import { useUiStore } from '@/stores/ui-store';
 import { usePlayerStore } from '../store';
 import { LyricsPanel } from './LyricsPanel';
 import { Button } from '@/components/ui/button';
+import { PlaybackExtraControls } from './PlaybackExtraControls';
 
 export function NowPlaying() {
   const open = useUiStore((s) => s.nowPlayingOpen);
@@ -65,6 +66,7 @@ export function NowPlaying() {
               <SkipForward />
             </button>
           </div>
+          <PlaybackExtraControls />
         </div>
         <div className="min-h-0 rounded-2xl bg-card">
           <LyricsPanel songId={song?.id ?? null} position={position} />

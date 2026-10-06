@@ -26,7 +26,7 @@
 │                                                             │
 │ HTMLAudioElement + Media Session API                        │
 └───────────────┬───────────────────────────┬─────────────────┘
-                │ REST                      │ WebSocket
+                │ REST                      │ SSE (events)
                 ▼                           ▼
 ┌─────────────────────────────────────────────────────────────┐
 │ Rust + Axum                                                  │
@@ -75,7 +75,7 @@
 | ORM/DB access | SQLx |
 | Serialization | Serde |
 | API contract | OpenAPI |
-| Realtime | WebSocket |
+| Realtime | SSE (`GET /api/v1/events`) |
 | Audio | HTMLAudioElement |
 | OS media integration | Media Session API |
 | E2E | Playwright |
@@ -238,7 +238,7 @@ Emit library.updated
 }
 ```
 
-前端记录 `version`，WebSocket 收到 `library.updated` 后比较版本：
+前端记录 `version`，SSE 收到 `library.updated` 后比较版本：
 
 ```text
 same version → ignore
@@ -253,10 +253,11 @@ Server 是 Player State 的权威源：
 
 ```text
 Controller A ─┐
-Controller B ─┼─ WebSocket ─→ Server Player State
-Controller C ─┘                     │
-                                    ▼
-                             playback target
+Controller B ─┼─ REST 命令 ─→ Server Player State
+Controller C ─┘         │
+                        │ SSE 推送
+                        ▼
+                 各网页 EventSource
 ```
 
 播放器客户端本地使用 `HTMLAudioElement` 播放文件，Server 保存逻辑播放状态和队列。
@@ -268,8 +269,8 @@ Controller C ─┘                     │
 
 ## 9. 一致性原则
 
-- REST 用于 snapshot、CRUD、初始化和非实时操作。
-- WebSocket 用于 player state 和 library update notification。
+- REST 用于 snapshot、CRUD、初始化、播放控制和非实时操作。
+- SSE 用于 player state 和 library / playlist / rating 变更通知。
 - Player state 的写入顺序由 server 串行化。
 - 客户端收到状态后根据 `state_version` 或时间戳丢弃过期状态。
 
@@ -279,8 +280,7 @@ Controller C ─┘                     │
 
 ```text
 music-server
-├── HTTP API
-├── WebSocket
+├── HTTP API（含 SSE /api/v1/events）
 ├── Library Scanner
 ├── SQLite
 └── Static Web Assets

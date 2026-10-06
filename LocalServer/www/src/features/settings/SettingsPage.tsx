@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { useUiStore } from '@/stores/ui-store';
@@ -6,7 +6,8 @@ import { useUiStore } from '@/stores/ui-store';
 export function SettingsPage() {
   const mode = useUiStore((s) => s.themeMode);
   const setMode = useUiStore((s) => s.setThemeMode);
-  const { data } = useQuery({ queryKey: ['scan-status'], queryFn: api.scanStatus, refetchInterval: 2000 });
+  const qc = useQueryClient();
+  const { data } = useQuery({ queryKey: ['scan-status'], queryFn: api.scanStatus });
 
   return (
     <div className="space-y-8 p-6">
@@ -29,7 +30,7 @@ export function SettingsPage() {
         </p>
         <Button
           onClick={() => {
-            void api.startScan();
+            void api.startScan().then((s) => qc.setQueryData(['scan-status'], s));
           }}
         >
           Scan now

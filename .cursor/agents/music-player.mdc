@@ -15,7 +15,7 @@ model: agent
 - `Skin/`：TinyJS + Agg 自绘皮肤引擎，`JsXXX` 对象对 JS 暴露
 - `MediaTags/`：标签 + 歌词解析（LRC/ID3/flac/ogg/m4a/aac），歌词入口 `LrcParser.cpp::{parseLyricsString,parseLyricsBinary}`
 - `LyricsLib/`：歌词显示；`MPlayer/`：播放列表/媒体库
-- `LocalServer/`：浏览器管理后台（HTTP + WebSocket，RSA→AES）
+- `LocalServer/`：浏览器管理后台（HTTP REST + SSE）
 - `MPlayerEngine/`、`Window/`：按 `mac|win32|linux` 各子目录实现的播放内核与窗口封装
 
 ## 硬性规则（违反会导致线上闪退或构建失败）

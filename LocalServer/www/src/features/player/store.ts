@@ -1,12 +1,25 @@
 import { create } from 'zustand';
 import type { PlayerState, RepeatMode, Song } from '@/api/types';
 import { api } from '@/api/client';
+import { queryClient } from '@/api/query-client';
 import { useUiStore, type PlaybackTarget } from '@/stores/ui-store';
 import { audioEngine } from './audio-engine';
 import { shouldRecordPlayHistory } from './utils';
 
+function invalidatePlayStats() {
+  void queryClient.invalidateQueries({ queryKey: ['history-recent'] });
+  void queryClient.invalidateQueries({ queryKey: ['library-snapshot'] });
+}
+
 function target(): PlaybackTarget {
   return useUiStore.getState().playbackTarget;
+}
+
+export type QueueActionMode = 'replace' | 'addThis' | 'addAll';
+
+export interface QueueActionResult {
+  kind: 'replace' | 'add';
+  count: number;
 }
 
 interface PlayerStore {
@@ -21,6 +34,14 @@ interface PlayerStore {
   historyReported: boolean;
   playSongs: (songs: Song[], startIndex?: number) => void;
   addToQueue: (songs: Song[]) => void;
+  applyQueueAction: (opts: {
+    mode: QueueActionMode;
+    thisSongs: Song[];
+    allSongs: Song[];
+    startIndex: number;
+    playNow: boolean;
+    addToFront: boolean;
+  }) => QueueActionResult;
   playPause: () => void;
   next: () => void;
   prev: () => void;
@@ -28,6 +49,7 @@ interface PlayerStore {
   setVolume: (v: number) => void;
   setShuffle: (v: boolean) => void;
   setRepeat: (v: RepeatMode) => void;
+  cycleRepeat: () => void;
   applyServerState: (state: PlayerState, queueSongs?: Song[]) => void;
   onTargetChanged: (next: PlaybackTarget) => void;
   tick: () => void;
@@ -41,6 +63,46 @@ function bindSession(song: Song | null) {
     next: () => usePlayerStore.getState().next(),
     prev: () => usePlayerStore.getState().prev(),
   });
+}
+
+function commitLocalQueue(nextQueue: Song[], nextIndex: number, playNow: boolean, reload: boolean) {
+  const song = nextQueue[nextIndex] ?? null;
+  const wasPlaying = usePlayerStore.getState().playing;
+  usePlayerStore.setState({
+    queue: nextQueue,
+    index: song ? nextIndex : -1,
+    playing: playNow || (!reload && wasPlaying),
+    historyReported: reload ? false : usePlayerStore.getState().historyReported,
+    position: reload ? 0 : usePlayerStore.getState().position,
+  });
+  if (target() === 'desktop') {
+    audioEngine.pause();
+    bindSession(song);
+    return;
+  }
+  if (reload && song) {
+    audioEngine.load(song);
+    audioEngine.setVolume(usePlayerStore.getState().volume);
+    if (playNow) audioEngine.play();
+    else audioEngine.pause();
+  }
+  bindSession(song);
+}
+
+function syncDesktopQueue(
+  action: 'replace' | 'insert',
+  songs: Song[],
+  index: number,
+  play: boolean,
+) {
+  void api
+    .setQueue({ action, song_ids: songs.map((s) => s.id), index, play })
+    .then((state) => {
+      if (state && typeof state === 'object' && 'state' in state) {
+        usePlayerStore.getState().applyServerState(state, undefined);
+      }
+    })
+    .catch(() => undefined);
 }
 
 export const usePlayerStore = create<PlayerStore>((set, get) => ({
@@ -86,7 +148,57 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   },
 
   addToQueue: (songs) => {
-    set({ queue: [...get().queue, ...songs] });
+    get().applyQueueAction({
+      mode: 'addAll',
+      thisSongs: songs,
+      allSongs: songs,
+      startIndex: 0,
+      playNow: false,
+      addToFront: false,
+    });
+  },
+
+  applyQueueAction: ({ mode, thisSongs, allSongs, startIndex, playNow, addToFront }) => {
+    const { queue, index } = get();
+    if (mode === 'replace') {
+      const next = allSongs;
+      if (!next.length) return { kind: 'replace', count: 0 };
+      const nextIndex = Math.min(Math.max(0, startIndex), next.length - 1);
+      commitLocalQueue(next, nextIndex, playNow, true);
+      if (target() === 'desktop') syncDesktopQueue('replace', next, nextIndex, playNow);
+      return { kind: 'replace', count: next.length };
+    }
+
+    const incoming = mode === 'addThis' ? thisSongs : allSongs;
+    if (!incoming.length) return { kind: 'add', count: 0 };
+    const inQueue = new Set(queue.map((s) => s.id));
+    const toAdd = incoming.filter((s) => !inQueue.has(s.id));
+    const insertAt = addToFront || queue.length === 0 ? 0 : queue.length;
+    const nextQueue =
+      toAdd.length > 0
+        ? [...queue.slice(0, insertAt), ...toAdd, ...queue.slice(insertAt)]
+        : queue;
+
+    let nextIndex = index;
+    if (playNow) {
+      const firstId = incoming[0].id;
+      const found = nextQueue.findIndex((s) => s.id === firstId);
+      nextIndex = found >= 0 ? found : insertAt;
+      get().playSongs(nextQueue, Math.max(0, nextIndex));
+      return { kind: 'add', count: toAdd.length };
+    }
+    if (toAdd.length && insertAt <= index) {
+      nextIndex = index + toAdd.length;
+    }
+
+    const shouldReload = queue.length === 0 && toAdd.length > 0;
+    if (toAdd.length) {
+      commitLocalQueue(nextQueue, nextQueue.length ? Math.max(0, nextIndex) : -1, false, shouldReload);
+      if (target() === 'desktop') {
+        syncDesktopQueue('insert', toAdd, addToFront ? 0 : -1, false);
+      }
+    }
+    return { kind: 'add', count: toAdd.length };
   },
 
   playPause: () => {
@@ -192,6 +304,12 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     set({ repeat: v });
   },
 
+  cycleRepeat: () => {
+    const cur = get().repeat;
+    const next: RepeatMode = cur === 'off' ? 'all' : cur === 'all' ? 'one' : 'off';
+    get().setRepeat(next);
+  },
+
   applyServerState: (state, queueSongs) => {
     const queue = queueSongs ?? get().queue;
     let index = get().index;
@@ -249,7 +367,11 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       })
     ) {
       set({ historyReported: true });
-      void api.postHistory(song.id).catch(() => undefined);
+      // 浏览器播放写入后端 play_history，并累加歌曲 play_count；桌面播放由应用端同一套接口记账，此处不重复上报。
+      void api
+        .postHistory(song.id)
+        .then(() => invalidatePlayStats())
+        .catch(() => undefined);
     }
     if (ended) {
       audioEngine.pause();

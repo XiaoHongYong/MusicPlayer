@@ -12,7 +12,8 @@
 - **阶段 2~4（前端 Shell + Library + Player/歌词）**：✅ `LocalServer/www`（Vite + React）。Songs 表 `has_lyrics` + 歌词对话框；全屏 Now Playing 歌词区；流式 Mini Player / Queue。
 - **阶段 5（Playlists / Rating / History）**：✅ `PUT /songs/{id}/rating`；playlists CRUD（含加歌/删歌/排序）；`play_history` 表 + `POST /history` + `GET /history/recent`；前端歌单页、评分、有效播放上报与 History 页。
 - **阶段 6（部分）**：Statistics 页先用 Library Snapshot 在前端聚合 Top Artists / Genre / Rating（完整 `GET /statistics/snapshot` 仍待做）。
-- 阶段 7、8：WS 事件对齐与全局搜索仍待做。
+- 阶段 7（SSE 事件推送）：✅ `GET /api/v1/events`；去掉独立 WebSocket 端口与 RSA 握手。
+- 阶段 8：全局搜索仍待做。
 
 ## 1. 现状盘点
 
@@ -20,11 +21,11 @@
 
 | 维度 | 设计文档假设 | 现有代码事实 | 结论 |
 |---|---|---|---|
-| 后端语言/框架 | Rust + Axum | **C++17** 自定义 `HttpServer` + websocketpp `WebSocket`，`LocalServer/` | 不重写，在现有 C++ LocalServer 上扩展 |
+| 后端语言/框架 | Rust + Axum | **C++17** 自定义 `HttpServer`，`LocalServer/` | 不重写，在现有 C++ LocalServer 上扩展 |
 | 数据库 | SQLite 归一化表（artists/albums/genres/songs） | 已有 SQLite `medialib.db`（`medialib`/`playlists` 单表，artist/genre 为 TEXT 列），`MPlayer/MediaLibrary.cpp` | 保留现有表，新增历史/队列表做增量 |
-| 前端 | React + TypeScript + Vite + shadcn/ui + ECharts | `LocalServer/www`：Vite + React（阶段 2~4 已落地；Playlists/History/WS 仍在推进） | 按文档技术栈重建，不复活 Quasar |
+| 前端 | React + TypeScript + Vite + shadcn/ui + ECharts | `LocalServer/www`：Vite + React | 按文档技术栈重建，不复活 Quasar |
 | HTTP API | REST `/api/v1/...` + OpenAPI | 只有静态文件服务（`StaticFilesHandler` 挂在 `/`），无任何 API 路由 | 新增 REST 路由层 |
-| 实时事件 | WS `/ws/events` + 事件枚举 + `state_version` | 已有二进制 WS（RSA→AES），`TYPE_PLAYER_NOTIFICATION` 推状态；命名沿用旧事件 | 保留加密通道，对齐事件命名并加 `state_version` |
+| 实时事件 | SSE `GET /api/v1/events` + 事件枚举 + `state_version` | HTTP 长连接推送；命令走 REST | 单端口 HTTP，不保留 WebSocket |
 | 播放/队列/统计 | 服务器持 Player State、队列、统计快照 | `MPlayer` 内核已有 `g_player`、`CMediaLibrary`、`getNowPlaying`、countPlayed | 在现有内核上封装 View Model |
 
 ### 1.2 关键结论
@@ -43,11 +44,10 @@ Browser / Web App (React + Vite, 新建 src/)
 ├── Crossfilter2    →  Library Snapshot 本地筛选
 └── ECharts         →  Statistics 可视化
 └── HTMLAudioElement (Stream via HTTP Range)
-        │  REST(JSON)                     │ WS (已有加密通道)
+        │  REST(JSON)                     │ SSE GET /api/v1/events
         ▼                                 ▼
 C++ LocalServer
-├── Http/Server  ──静态文件注册已存在，新增注册 ApiHandler(/api/v1) 路由层──► /api/v1/*
-├── WebSocket/Server（保留 RSA→AES 握手；事件命名对齐文档，增加 state_version）
+├── Http/Server ── ApiHandler(/api/v1) + 静态文件 + EventStream
 └── 数据来源：MPlayer 内核 (g_player, CMediaLibrary, medialib.db)
 ```
 
@@ -61,7 +61,7 @@ P0  阶段3  Songs/Albums/Artists/Genres 页（基于 Snapshot，前端内存筛
 P0  阶段4  Streaming + AudioEngine + Mini Player + Queue + Now Playing 歌词
 P1  阶段5  Playlists / Rating / History
 P1  阶段6  Statistics Snapshot + Crossfilter + ECharts
-P1  阶段7  WebSocket Remote Control 对齐 + 事件完善
+P1  阶段7  SSE 事件推送（播放器→网页）
 P1  阶段8  全屏 Now Playing / Search / 设置
 ```
 
@@ -119,7 +119,7 @@ P1  阶段8  全屏 Now Playing / Search / 设置
 
 - `POST /api/v1/library/scan` → 触发内核扫描（`MPlayer/MediaScanner`），异步执行，不阻塞 HTTP 线程。
 - `GET /api/v1/library/scan/status` → 返回扫描状态（idle/running/finished + 版本号）。
-- Snapshot 版本号：用 `scan_state.snapshot_version` 或 `medialib` 变更计数；WS 收到 `library.updated` 后前端比对版本决定是否重拉（architecture.md §7）。
+- Snapshot 版本号：用 `scan_state.snapshot_version` 或 `medialib` 变更计数；SSE 收到 `library.updated` 后前端比对版本决定是否重拉（architecture.md §7）。
 
 ## 5. 阶段 2~4：前端脚手架 + Library + Player（含歌词）
 
@@ -143,11 +143,11 @@ P1  阶段8  全屏 Now Playing / Search / 设置
 - 新增 `GET /api/v1/statistics/snapshot`：后端聚合 overview/aggregates/rating_distribution/daily_play_counts/song_facts（统计职责仅限统计读取，交互过滤全在浏览器，statistics.md §8）。
 - 前端 Crossfilter2 + ECharts 渲染 5 张 MVP 图（Listening Activity / Top Artists / Genre Distribution / Rating Distribution / Top Songs）。
 
-## 8. 阶段 7：实时事件对齐
+## 8. 阶段 7：SSE 实时事件
 
-- WS 事件命名从现有 `TYPE_PLAYER_NOTIFICATION` 结构化对齐到文档枚举（`player.state_changed` 等），并在每个事件带 `state_version`。
-- 前端全局单一 `WebSocketManager → EventHub → Store/QueryCache`（ai-coding.md §11）。
-- 若引入 Controller/Player 区分，`/players` + 远程命令端点（api.md §10）。既有 Player Remote Ctrl 已覆盖命令侧，重点是 `player_id` 与多实例语义。
+- `GET /api/v1/events`（`text/event-stream`）推送 `player.*` / `library.*` / `rating.changed` / `playlist.updated`，每条带 `state_version`。
+- 前端全局单一 `EventSourceManager → EventHub → Store/QueryCache`（ai-coding.md §11）。
+- 删除独立 WebSocket 端口、websocketpp 服务端、RSA 握手与旧遥控消息。播放控制继续走 REST。
 
 ## 9. 数据模型增量（data-model.md 对现有 schema 的补充）
 
@@ -166,5 +166,5 @@ P1  阶段8  全屏 Now Playing / Search / 设置
 
 - **路由顺序**：`/api/v1` 处理器必须优先于 `/` 静态处理器注册（§3.1）。
 - **流式安全**：`/stream` 需按 `id` 解析到 `medialib.url` 并限制在媒体根目录，防止任意文件读取。
-- **同步**：`g_player` 状态在 HTTP 与 WS 线程并发访问，需顾现有锁（内核已有多数锁，新增 minimize）。
+- **同步**：`g_player` 状态在 HTTP 工作线程与播放器事件线程并发访问，SSE 写 socket 必须 `post` 到 `io_context`。
 - **Release NDEBUG**：新增代码不得触碰根 CMake 的 `NDEBUG`（CLAUDE.md 约定）。

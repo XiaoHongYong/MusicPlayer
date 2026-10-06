@@ -174,19 +174,19 @@ AudioEngine singleton
 
 多个 Controller 可以连接同一个 server，但同一 Player 目标只有一个真实播放实例。
 
-## 11. WebSocket 规则
+## 11. SSE 规则
 
 全局只建立一个事件连接层：
 
 ```text
-WebSocketManager
+EventSourceManager
    ↓
 EventHub
    ↓
 Store / Query Cache
 ```
 
-页面禁止各自建立独立 WebSocket。
+页面禁止各自建立独立 EventSource。
 
 ## 12. 命名
 
@@ -292,7 +292,7 @@ Backend:
 - 用 `any` 绕过 TypeScript 错误。
 - 用 `unwrap()` 处理长期运行的服务器请求路径，除非有明确不变量。
 - 在组件里直接 fetch。
-- 在组件里直接持有全局 WebSocket。
+- 在组件里直接持有全局 EventSource。
 - 为一个小需求新建一个巨大的公共 abstraction。
 - 在后端增加一个 API 只是为了支持一个前端已有数据可以完成的筛选。
 - 为统计页面创建 N 个近似的 SQL endpoint。
@@ -362,7 +362,7 @@ DB → API → store → UI → test
 10. Rating
 11. History
 12. Statistics snapshot + Crossfilter + ECharts
-13. WebSocket remote control
+13. SSE 实时事件
 14. Fullscreen Player
 ```
 

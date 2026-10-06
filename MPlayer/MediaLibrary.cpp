@@ -110,6 +110,7 @@ DROP INDEX IF EXISTS mli_music_hash;"
 #define SQL_CREATE_IDX_PLAY_HISTORY_AT "CREATE INDEX IF NOT EXISTS idx_play_history_played_at ON play_history(played_at DESC);"
 #define SQL_CREATE_IDX_PLAY_HISTORY_SONG "CREATE INDEX IF NOT EXISTS idx_play_history_song_time ON play_history(song_id, played_at DESC);"
 #define SQL_ADD_PLAY_HISTORY "INSERT INTO play_history (song_id, played_at) VALUES (?, ?);"
+#define SQL_LAST_PLAY_HISTORY "SELECT played_at FROM play_history WHERE song_id=? ORDER BY played_at DESC LIMIT 1;"
 #define SQL_QUERY_PLAY_HISTORY_SINCE "SELECT song_id, played_at FROM play_history WHERE played_at >= ? ORDER BY played_at DESC;"
 #define SQL_CLEANUP_PLAY_HISTORY "DELETE FROM play_history WHERE played_at < ?;"
 
@@ -833,37 +834,30 @@ static string isoUtcFromTime(time_t t) {
     return buf;
 }
 
-ResultCode CMediaLibrary::addPlayHistory(int songId, cstr_t playedAt) {
-    if (!isOK()) {
-        return m_nInitResult;
+static time_t timeFromIsoUtc(const string &iso) {
+    if (iso.size() < 19) {
+        return 0;
     }
-    if (songId <= 0) {
+    struct tm t = {};
+    t.tm_year = atoi(iso.c_str()) - 1900;
+    t.tm_mon = atoi(iso.c_str() + 5) - 1;
+    t.tm_mday = atoi(iso.c_str() + 8);
+    t.tm_hour = atoi(iso.c_str() + 11);
+    t.tm_min = atoi(iso.c_str() + 14);
+    t.tm_sec = atoi(iso.c_str() + 17);
+#ifdef _WIN32
+    return _mkgmtime(&t);
+#else
+    return timegm(&t);
+#endif
+}
+
+ResultCode CMediaLibrary::addPlayHistory(int songId, cstr_t playedAt) {
+    auto media = getMediaByID(songId);
+    if (!media) {
         return ERR_NOT_FOUND;
     }
-
-    string at = playedAt && playedAt[0] ? playedAt : isoUtcFromTime(time(nullptr));
-    RMutexAutolock autolock(m_mutexDataAccess);
-
-    CSqlite3Stmt stmt;
-    auto ret = stmt.prepare(&m_db, SQL_ADD_PLAY_HISTORY);
-    if (ret != ERR_OK) {
-        return ret;
-    }
-    ret = stmt.bindInt(1, songId);
-    if (ret != ERR_OK) {
-        return ret;
-    }
-    ret = stmt.bindText(2, at.c_str(), at.size());
-    if (ret != ERR_OK) {
-        return ret;
-    }
-    ret = stmt.step();
-    if (ret != ERR_OK) {
-        return ret;
-    }
-
-    cleanupPlayHistory(30);
-    return ERR_OK;
+    return applyPlayRecord(media.get(), playedAt);
 }
 
 void CMediaLibrary::cleanupPlayHistory(int keepDays) {
@@ -948,16 +942,31 @@ VecPlayHistoryDays CMediaLibrary::getRecentPlayHistory(int days) {
     return out;
 }
 
-ResultCode CMediaLibrary::markPlayFinished(Media *media) {
+ResultCode CMediaLibrary::applyPlayRecord(Media *media, cstr_t playedAt) {
     if (!isOK()) {
         return m_nInitResult;
     }
-
     if (!media || media->ID == MEDIA_ID_INVALID) {
         return ERR_OK;
     }
 
+    string at = playedAt && playedAt[0] ? playedAt : isoUtcFromTime(time(nullptr));
+
     RMutexAutolock autolock(m_mutexDataAccess);
+
+    // 同一首歌 30 秒内不重复记账（桌面 tick / 网页 POST / 播完 可能连发）。
+    {
+        CSqlite3Stmt lastStmt;
+        if (lastStmt.prepare(&m_db, SQL_LAST_PLAY_HISTORY) == ERR_OK &&
+            lastStmt.bindInt(1, media->ID) == ERR_OK &&
+            lastStmt.step() == ERR_SL_OK_ROW) {
+            string lastIso = lastStmt.columnText(0);
+            time_t lastAt = timeFromIsoUtc(lastIso);
+            if (lastAt > 0 && time(nullptr) - lastAt < 30) {
+                return ERR_OK;
+            }
+        }
+    }
 
     media->countPlayed++;
     media->timePlayed = time(nullptr);
@@ -971,7 +980,30 @@ ResultCode CMediaLibrary::markPlayFinished(Media *media) {
 
     markPlayFinishedInMem(media);
 
-    return ret;
+    CSqlite3Stmt stmt;
+    ret = stmt.prepare(&m_db, SQL_ADD_PLAY_HISTORY);
+    if (ret != ERR_OK) {
+        return ret;
+    }
+    ret = stmt.bindInt(1, media->ID);
+    if (ret != ERR_OK) {
+        return ret;
+    }
+    ret = stmt.bindText(2, at.c_str(), at.size());
+    if (ret != ERR_OK) {
+        return ret;
+    }
+    ret = stmt.step();
+    if (ret != ERR_OK) {
+        return ret;
+    }
+
+    cleanupPlayHistory(30);
+    return ERR_OK;
+}
+
+ResultCode CMediaLibrary::markPlayFinished(Media *media) {
+    return applyPlayRecord(media, nullptr);
 }
 
 int CMediaLibrary::init() {

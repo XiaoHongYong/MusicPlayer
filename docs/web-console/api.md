@@ -213,14 +213,22 @@ PUT    /api/v1/player/queue/order
 DELETE /api/v1/player/queue
 ```
 
-新增队列：
+新增 / 替换队列：
 
 ```json
 {
+  "action": "insert",
   "song_ids": [123, 456, 789],
+  "index": -1,
+  "play": false,
   "position": "next"
 }
 ```
+
+- `action`：`replace` 用 `song_ids` 整表替换当前播放列表；`insert`（缺省）插入歌曲。
+- `index`：`replace` 时为开播下标；`insert` 时为插入位置（`-1` 或省略为队尾）。
+- `position`：`insert` 可用 `"next"`（当前曲之后）或 `"end"`（队尾），与 `index` 二选一。
+- `play`：是否立即播放插入/替换后的目标曲，缺省 `false`。
 
 ## 10. Players / Remote Control
 
@@ -341,11 +349,27 @@ PUT    /api/v1/playlists/{id}/songs/order
 
 不要添加几十个 `?artist=...&genre=...&rating=...` 的统计接口。前端交互过滤全部在 snapshot 上完成。
 
-## 15. WebSocket
+## 15. SSE 事件流
 
-### `/ws/events`
+播放器 → 网页的单向推送。控制命令仍用 REST，不在此通道上行。
 
-统一实时事件通道。
+### GET `/api/v1/events`
+
+`Accept: text/event-stream`。长连接，`Content-Type: text/event-stream`，无 `Content-Length`。注释心跳（`:` 行）保持代理与浏览器不断开。
+
+每条 SSE 消息：
+
+```text
+id: 902
+event: player.state_changed
+data: {"event":"player.state_changed","state_version":902,"data":{...}}
+
+```
+
+- `event` 字段与 JSON 里的 `event` 相同，便于 `EventSource.addEventListener`。
+- `id` 使用当前 `state_version`（库事件可用 snapshot version）。
+- 连接建立后立刻推一条当前 `player.state_changed`（完整 PlayerState）作为快照。
+- 浏览器 `EventSource` 断开后会自动重连；服务端不依赖 `Last-Event-ID`。
 
 事件：
 
@@ -359,7 +383,25 @@ library.scan_finished
 library.updated
 rating.changed
 playlist.updated
+history.updated
 ```
+
+`data` 约定：
+
+| event | data |
+|---|---|
+| `player.state_changed` | 完整 PlayerState（与 `GET /player/state` 相同） |
+| `player.song_changed` | 完整 PlayerState |
+| `player.queue_changed` | `{ "items": [ QueueItem... ] }`（与 `GET /player/queue` 相同） |
+| `library.scan_started` / `scan_progress` / `scan_finished` | `{ "state", "total", "scanned", "version" }` |
+| `library.updated` | `{ "version" }`（前端比较后决定是否重拉 snapshot） |
+| `rating.changed` | `{ "song_id", "rating" }` |
+| `playlist.updated` | `{ "playlist_id" }`（`null` 表示列表集合变化，如新建/删除） |
+| `history.updated` | `{ "song_id" }`（有效播放已写入；前端重拉 History / snapshot） |
+
+连接建立后立刻推当前 `player.state_changed` 与 `player.queue_changed`。
+
+**提交与推送分离：** 网页若要上报数据，只用 REST（如浏览器播放 `POST /api/v1/history`）。SSE 只做服务器 → 网页的状态通知，不上行。桌面播放器在进程内记账后推 `history.updated`，网页不要轮询 `/player/state` 再代为 POST。
 
 事件示例：
 
@@ -369,8 +411,14 @@ playlist.updated
   "state_version": 902,
   "data": {
     "state": "paused",
+    "player_id": "player_1",
     "song_id": 123,
-    "position": 141.2
+    "position": 141.2,
+    "duration": 245.8,
+    "volume": 0.8,
+    "shuffle": false,
+    "repeat": "all",
+    "state_version": 902
   }
 }
 ```
@@ -417,5 +465,5 @@ INTERNAL_ERROR
 
 - Snapshot → TanStack Query cache + Zustand/derived store。
 - Player state → Zustand。
-- WebSocket → Event Hub → 更新对应 store/query cache。
+- SSE `EventSource` → Event Hub → 更新对应 store/query cache。
 - 所有 API TypeScript types 从 OpenAPI 生成。

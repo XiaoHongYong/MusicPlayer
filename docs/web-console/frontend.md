@@ -356,18 +356,19 @@ seekforward
 ## 15. Realtime Event Hub
 
 ```text
-WebSocket
+EventSource /api/v1/events
    ↓
 Event parser
    ↓
 Event Hub
-   ├── Player Store
+   ├── Player Store（含本地进度插值，不轮询 position）
    ├── Library Query Cache
    ├── Playlist Query Cache
+   ├── History Query Cache
    └── Toast / Notification
 ```
 
-UI 不应该直接在各页面建立 WebSocket。
+UI 不应该直接在各页面建立 EventSource。页面禁止用 `refetchInterval` / `setInterval` 拉播放器或库状态。
 
 ## 16. Loading / Empty / Error
 

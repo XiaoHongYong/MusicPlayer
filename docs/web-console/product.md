@@ -319,7 +319,7 @@ App Shell、Home、Songs、Albums、Artists、Genres、Album/Artist Detail、Str
 
 ### P1
 
-Playlists、Rating、Favorites、History、Statistics、WebSocket Remote Control、Search。
+Playlists、Rating、Favorites、History、Statistics、SSE 实时同步、Search。
 
 ### P2
 

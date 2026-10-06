@@ -12,6 +12,11 @@ import { useUiStore } from '@/stores/ui-store';
 import type { Song } from '@/api/types';
 import { RatingStars } from './RatingStars';
 import { AddToPlaylistDialog } from '@/features/playlists/components/AddToPlaylistDialog';
+import {
+  MediaContextMenu,
+  mediaMenuFromEvent,
+  type MediaMenuTarget,
+} from './MediaContextMenu';
 
 export function useLibrarySnapshot() {
   return useQuery({
@@ -42,6 +47,7 @@ export function SongsPage() {
   const [genre, setGenre] = useState('');
   const [hasLyrics, setHasLyrics] = useState('');
   const [playlistSong, setPlaylistSong] = useState<Song | null>(null);
+  const [menu, setMenu] = useState<MediaMenuTarget | null>(null);
   const songs = useFilteredSongs(data?.songs, q, genre, hasLyrics);
   const playSongs = usePlayerStore((s) => s.playSongs);
   const addToQueue = usePlayerStore((s) => s.addToQueue);
@@ -116,6 +122,7 @@ export function SongsPage() {
                 key={song.id}
                 className="absolute left-0 grid w-full grid-cols-[40px_1.4fr_1fr_1fr_72px_88px_56px_52px_52px] items-center gap-2 rounded-md px-2 hover:bg-accent"
                 style={{ height: 44, transform: `translateY(${row.start}px)` }}
+                onContextMenu={(e) => setMenu(mediaMenuFromEvent(e, [song]))}
               >
                 <button onClick={() => playSongs(songs, row.index)} className="text-muted-foreground hover:text-foreground">
                   <Play size={14} />
@@ -155,6 +162,7 @@ export function SongsPage() {
         open={playlistSong != null}
         onClose={() => setPlaylistSong(null)}
       />
+      {menu && <MediaContextMenu target={menu} onClose={() => setMenu(null)} />}
     </div>
   );
 }

@@ -26,6 +26,8 @@ public:
 
     void stopConnection(const ConnectionPtr &connection);
 
+    asio::io_context &ioContext() { return m_ioContext; }
+
 private:
     /// 打开 acceptor 并 bind/listen。失败时抛 std::system_error（由工作线程捕获）。
     void openAcceptor();

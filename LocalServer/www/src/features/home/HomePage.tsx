@@ -5,7 +5,10 @@ import { usePlayerStore } from '@/features/player/store';
 
 export function HomePage() {
   const { data: boot } = useQuery({ queryKey: ['bootstrap'], queryFn: api.bootstrap });
-  const { data: snapshot } = useQuery({ queryKey: ['library-snapshot'], queryFn: api.snapshot });
+  const { data: snapshot } = useQuery({
+    queryKey: ['library-snapshot'],
+    queryFn: api.snapshot,
+  });
   const playSongs = usePlayerStore((s) => s.playSongs);
   const recent = [...(snapshot?.songs ?? [])]
     .sort((a, b) => b.timeAdded - a.timeAdded)
@@ -17,7 +20,6 @@ export function HomePage() {
   return (
     <div className="space-y-10 p-6">
       <div>
-        <h1 className="text-3xl font-semibold">晚上好</h1>
         <p className="mt-1 text-muted-foreground">
           {boot?.library.song_count ?? '—'} 首歌曲 · {boot?.library.album_count ?? '—'} 张专辑
         </p>

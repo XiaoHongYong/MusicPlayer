@@ -4,7 +4,7 @@ Personal Music Center（`docs/web-console/`）。
 
 ```bash
 pnpm install
-pnpm dev          # http://localhost:5173 ，/api 代理到 127.0.0.1:12120
+pnpm dev          # http://localhost:5173 ，/api 代理到 127.0.0.1:12120（含 SSE /api/v1/events）
 pnpm build        # 输出 dist/，由 LocalServer 静态托管
 pnpm typecheck && pnpm test
 ```

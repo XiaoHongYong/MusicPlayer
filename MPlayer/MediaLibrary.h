@@ -149,6 +149,7 @@ public:
 
     ResultCode markPlayFinished(Media *media);
 
+    // 写入 play_history，并同步累加 songs.countPlayed（桌面播完与 Web POST /history 共用）。
     ResultCode addPlayHistory(int songId, cstr_t playedAt);
     void cleanupPlayHistory(int keepDays = 30);
     VecPlayHistoryDays getRecentPlayHistory(int days);
@@ -176,6 +177,7 @@ protected:
     void updateMediaInMem(Media *media);
     void removeMediaInMem(Media *media);
     void markPlayFinishedInMem(Media *media);
+    ResultCode applyPlayRecord(Media *media, cstr_t playedAt);
 
     int upgradeCheck();
 

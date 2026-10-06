@@ -1,8 +1,9 @@
 import { Pause, Play, SkipBack, SkipForward, ListMusic, Monitor } from 'lucide-react';
 import { CoverImage } from '@/components/CoverImage';
-import { formatDuration } from '@/lib/utils';
+import { cn, formatDuration } from '@/lib/utils';
 import { usePlayerStore } from '../store';
 import { useUiStore } from '@/stores/ui-store';
+import { PlaybackExtraControls } from './PlaybackExtraControls';
 
 export function MiniPlayer() {
   const song = usePlayerStore((s) => s.current());
@@ -15,6 +16,7 @@ export function MiniPlayer() {
   const seek = usePlayerStore((s) => s.seek);
   const setNowPlayingOpen = useUiStore((s) => s.setNowPlayingOpen);
   const setQueueOpen = useUiStore((s) => s.setQueueOpen);
+  const queueOpen = useUiStore((s) => s.queueOpen);
   const target = useUiStore((s) => s.playbackTarget);
 
   return (
@@ -59,7 +61,15 @@ export function MiniPlayer() {
           <span>{formatDuration(duration)}</span>
         </div>
       </div>
-      <button className="text-muted-foreground hover:text-foreground" onClick={() => setQueueOpen(true)}>
+      <PlaybackExtraControls compact />
+      <button
+        title="播放队列"
+        className={cn(
+          'text-muted-foreground hover:text-foreground',
+          queueOpen && 'text-primary hover:text-primary',
+        )}
+        onClick={() => setQueueOpen(!queueOpen)}
+      >
         <ListMusic size={18} />
       </button>
     </div>

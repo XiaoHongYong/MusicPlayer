@@ -8,7 +8,7 @@
 - **平台 UI**:macOS 用 Cocoa/AppKit（`MusicPlayer/`、`MPlayerUI/mac`），另外有 Win32（`*/win32`）与 GTK2（`*/gtk2`）两个旧分支。
 - **跨平台封装**：`Window/`（窗口/菜单/对话框）和 `MPlayerEngine/`（播放内核，`mac|win32|linux` 子目录各自实现）。要新增平台能力时，改对应子目录实现而非平台无关代码。
 - **皮肤系统**：`Skin/` 是基于 **TinyJS**（内嵌 JS 引擎）+ **Agg**（2D 图形渲染）的自绘皮肤引擎，UI 对象如 `JsXXX...` 直接暴露给 JS。皮肤制作方法见 `docs/skin-authoring.md`。样板皮肤 `Neon`/`Glass`/`Crystal` 的 PNG 由 `Skins-Design/skin-for-ai/*.skin.json` 经 Skin Compiler 生成（见 `docs/skin-compiler.md`）。
-- **浏览器管理后台**：`LocalServer/` = 本地 HTTP Server（静态页）+ WebSocket Server，RSA 交换 AES 做通信加密（见 `design.md`）。歌库管理主要在这个后台里做。Web 管理中心的完整设计（页面/API/事件/数据模型）与分阶段实施计划见 `docs/web-console/README.md`、`docs/web-console/plan.md`。
+- **浏览器管理后台**：`LocalServer/` = 本地 HTTP Server（静态页 + REST + SSE 事件推送，见 `design.md`）。歌库管理主要在这个后台里做。Web 管理中心的完整设计（页面/API/事件/数据模型）与分阶段实施计划见 `docs/web-console/README.md`、`docs/web-console/plan.md`。
 - **媒体内核依赖**：faad2（MP4/AAC）、flac、minimp3（MP3）、mac 还可用 CoreMedia/AVPlayer；输出用 CoreAudio。第三方库全在 `third-parties/`。
 - **标签/歌词**：`MediaTags/`（ID3/LRC/flac/ogg/m4a/aac 标签与歌词解析），`LyricsLib/`（歌词显示/当前歌词），`LyricServer/`、`MLProtocol/`（歌词云端相关）。
 - **核心调度**：`MPlayerUI/MPlayerApp.cpp` 是应用入口（`MPlayerApp::getInstance()`），`MPlayer/` 负责媒体/播放列表/媒体库扫描。

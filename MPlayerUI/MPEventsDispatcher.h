@@ -32,6 +32,7 @@ enum MLEventType {
     ET_PLAYER_EQ_SETTING_CHANGED,
     ET_PLAYER_PLAY_HALT_ERROR,
     ET_PLAYER_POS_UPDATE,
+    ET_PLAY_HISTORY_RECORDED,
 
     ET_LYRICS_RESEARCH,
     ET_LYRICS_DISPLAY_SETTINGS,
@@ -65,6 +66,10 @@ struct CEventPlayerSettingChanged : public IEvent {
 struct CEventPlaylistChanged : public IEvent {
     IMPEvent::PlaylistChangeAction action;
     int                         nIndex, nIndexOld;
+};
+
+struct CEventPlayHistoryRecorded : public IEvent {
+    int                         songId = 0;
 };
 
 struct CEventPlayerEQChanged : public IEvent {

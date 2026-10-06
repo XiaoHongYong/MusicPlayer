@@ -6,7 +6,7 @@ alwaysApply: true
 
 # MusicPlayer 项目规则
 
-自用跨平台桌面音乐播放器（macOS 主，Windows/Linux 兼容）。C++17 + CMake，皮肤用 TinyJS + Agg，浏览器管理后台用 LocalServer（HTTP+WebSocket）。
+自用跨平台桌面音乐播放器（macOS 主，Windows/Linux 兼容）。C++17 + CMake，皮肤用 TinyJS + Agg，浏览器管理后台用 LocalServer（HTTP + SSE）。
 
 ## 目录速查
 - `MPlayerUI/` — 应用入口与 UI/shell（`MPlayerApp.cpp` 入口）
@@ -17,7 +17,7 @@ alwaysApply: true
 - 无封面自动下载：`docs/album-art-download.md`（MusicBrainz，失败后网易云/iTunes 港台）
 - 皮肤 PNG：`Skins-Design/skin-for-ai/*.skin.json` + Compiler（`docs/skin-compiler.md`），不要写 `raw/*_gen_assets.py`
 - `MPlayerEngine/`、`Window/` — 播放内核与平台窗口封装（各 `mac|win32|linux` 子目录）
-- `LocalServer/` — 浏览器管理后台 HTTP+WebSocket
+- `LocalServer/` — 浏览器管理后台 HTTP + REST + SSE
 - `third-parties/` — 第三方库
 
 ## 构建

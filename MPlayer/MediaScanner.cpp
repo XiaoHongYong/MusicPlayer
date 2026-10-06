@@ -1,4 +1,4 @@
-#include "TinyJS/utils/Utils.h"
+﻿#include "TinyJS/utils/Utils.h"
 #include "Player.h"
 #include "MediaScanner.h"
 
@@ -44,6 +44,9 @@ bool MediaScanner::startLibraryRescan(const VecMediaPtrs &medias) {
     }
 
     _cv.notify_one();
+    if (_rescanListener) {
+        _rescanListener("started", 0, _rescanTotal.load(), _snapshotVersion.load());
+    }
     return true;
 }
 
@@ -90,7 +93,10 @@ void MediaScanner::threadRun() {
             }
             g_player.updateMediaInfo(media.get());
             if (fromRescan) {
-                _rescanDone.fetch_add(1);
+                int done = _rescanDone.fetch_add(1) + 1;
+                if (_rescanListener && (done == 1 || done % 20 == 0)) {
+                    _rescanListener("progress", done, _rescanTotal.load(), _snapshotVersion.load());
+                }
             }
         }
 
@@ -99,7 +105,10 @@ void MediaScanner::threadRun() {
             if (_medias.empty()) {
                 _rescanRunning.store(false);
                 _everFinished.store(true);
-                _snapshotVersion.fetch_add(1);
+                int ver = _snapshotVersion.fetch_add(1) + 1;
+                if (_rescanListener) {
+                    _rescanListener("finished", _rescanDone.load(), _rescanTotal.load(), ver);
+                }
             }
         }
 

@@ -2,7 +2,9 @@
 #define HTTP_CONNECTION_HPP
 
 #include <array>
+#include <deque>
 #include <memory>
+#include <string>
 #include <asio.hpp>
 #include "Response.hpp"
 #include "Request.hpp"
@@ -42,6 +44,11 @@ public:
     void sendResponse();
     void sendStockResponse(Response::StatusCode code);
 
+    /** SSE：发送无 Content-Length 的 200 头并保持连接. */
+    void beginSse();
+    void writeStream(const std::string &data);
+    bool isStreaming() const { return m_streaming; }
+
 private:
     void stopConnection();
 
@@ -77,6 +84,15 @@ private:
 
     RequestParser::ResultType   m_requestResult;
     State                       m_state;
+
+    bool                        m_streaming = false;
+    bool                        m_streamWriteInFlight = false;
+    std::string                 m_ssePreamble;
+    std::string                 m_streamWriteBuf;
+    std::deque<std::string>     m_streamQueue;
+
+    void flushStreamQueue();
+    void watchClientClose();
 
 };
 

@@ -1,4 +1,4 @@
-#include "../MPlayerUI/MPlayerApp.h"
+﻿#include "../MPlayerUI/MPlayerApp.h"
 #include "Player.h"
 #include "MediaScanner.h"
 #include "../MPlayerUI/PlayListFile.h"
@@ -100,11 +100,10 @@ CPlayer::~CPlayer() {
 
 void CPlayer::onEndOfPlaying() {
     if (m_isAutoPlayNext) {
-        if (m_currentMedia) {
-            m_mediaLib->markPlayFinished(m_currentMedia.get());
-        }
+        recordPlayHistory(true);
 
         if (m_loopMode == MP_LOOP_TRACK) {
+            m_playHistoryRecorded = false;
             play();
             return;
         }
@@ -316,6 +315,36 @@ uint32_t CPlayer::getMediaLength() {
 
 uint32_t CPlayer::getPlayPos() {
     return m_playerCore->getPos();
+}
+
+void CPlayer::recordPlayHistory(bool forceEnough) {
+    if (m_playHistoryRecorded || !m_mediaLib || !m_currentMedia) {
+        return;
+    }
+    if (m_currentMedia->ID == MEDIA_ID_INVALID) {
+        return;
+    }
+    if (!forceEnough) {
+        uint32_t pos = getPlayPos();
+        uint32_t dur = m_mediaLength;
+        if (pos < 10000 && (dur == 0 || pos * 5 < dur)) {
+            return;
+        }
+    }
+    m_playHistoryRecorded = true;
+    m_mediaLib->addPlayHistory(m_currentMedia->ID, nullptr);
+
+    CEventPlayHistoryRecorded *evt = new CEventPlayHistoryRecorded();
+    evt->eventType = ET_PLAY_HISTORY_RECORDED;
+    evt->songId = m_currentMedia->ID;
+    MPlayerApp::getEventsDispatcher()->dispatchUnsyncEvent(evt);
+}
+
+void CPlayer::maybeRecordPlayHistory() {
+    if (m_state != PS_PLAYING) {
+        return;
+    }
+    recordPlayHistory(false);
 }
 
 void CPlayer::setToNextLoopMode() {
@@ -874,15 +903,14 @@ void CPlayer::notifyPlaylistChanged(Playlist *playlist, IMPEvent::PlaylistChange
             }
         }
 
-        // get new index of current media.
+        // 插入/删除只是挪了下标时，当前曲没变，不要 stop/reload（否则会冲掉紧接着的 playMedia）。
         int nNewCurrentIndex;
         if (m_currentPlaylist->getItemIndex(m_currentMedia, nNewCurrentIndex) == ERR_OK) {
             m_idxCurrentMedia = nNewCurrentIndex;
+            return;
         }
 
-        // unlock before currentMediaChanged
         autolock.unlock();
-
         currentMediaChanged();
     }
 }
@@ -954,6 +982,12 @@ void CPlayer::setCurrentMedia(MediaPtr &media) {
     {
         RMutexAutolock autolock(m_mutexDataAccess);
 
+        int oldId = m_currentMedia ? m_currentMedia->ID : MEDIA_ID_INVALID;
+        int newId = media ? media->ID : MEDIA_ID_INVALID;
+        if (oldId != newId) {
+            m_playHistoryRecorded = false;
+        }
+
         m_currentMedia = media;
         if (m_currentMedia) {
             Media newInfo = *m_currentMedia.get();
@@ -992,7 +1026,7 @@ void CPlayer::currentMediaChanged() {
 
         if (m_currentMedia) {
             if (m_isAutoPlayNext && m_isCurMediaPlayed) {
-                m_mediaLib->markPlayFinished(m_currentMedia.get());
+                recordPlayHistory(false);
             }
 
             m_currentMedia = nullptr;
