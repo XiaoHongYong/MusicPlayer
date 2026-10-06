@@ -327,7 +327,7 @@ bool CMPCommonCmdHandler::onCommand(uint32_t nID) {
                     vol = MP_VOLUME_MAX;
                 }
                 g_player.setVolume(vol);
-                MPlayerApp::getInstance()->dispatchInfoText(stringPrintf("%s %d%%", _TLT("set Volume"), vol).c_str());
+                MPlayerApp::getInstance()->dispatchInfoText(stringPrintf("%s %d%%", _TLT("Set volume"), vol).c_str());
             }
         }
         break;
@@ -341,7 +341,7 @@ bool CMPCommonCmdHandler::onCommand(uint32_t nID) {
                     vol = 0;
                 }
                 g_player.setVolume(vol);
-                MPlayerApp::getInstance()->dispatchInfoText(stringPrintf("%s %d%%", _TLT("set Volume"), vol).c_str());
+                MPlayerApp::getInstance()->dispatchInfoText(stringPrintf("%s %d%%", _TLT("Set volume"), vol).c_str());
             }
         }
         break;
@@ -642,7 +642,7 @@ bool CMPCommonCmdHandler::onCommand(uint32_t nID) {
         //
         // Edit lyrics with external editor.
         if (g_currentLyrics.getLyricsSourceType() != LST_FILE) {
-            m_pSkinWnd->messageOut(_TLT("Embedded lyrics can not be edited with external editors."));
+            m_pSkinWnd->messageOut(_TLT("Embedded lyrics cannot be edited with external editors."));
             break;
         }
 
@@ -762,7 +762,7 @@ bool CMPCommonCmdHandler::onCommandCharEncoding(int nCmdId) {
     if (g_currentLyrics.isContentModified()) {
         string str;
 
-        str += _TLT("Change character encoding must reload lyrics, and your modification will be lost.");
+        str += _TLT("Changing the character encoding will reload the lyrics, and your modifications will be lost.");
         str += "\r\n";
         str += _TLT("Do you want to continue?");
         if (m_pSkinWnd->messageOut(str.c_str(), MB_ICONINFORMATION | MB_YESNO) != IDYES) {
@@ -854,7 +854,7 @@ bool CMPCommonCmdHandler::saveCurrentLyrics(CSkinWnd *pSkinWnd, bool bDispatchOn
                 g_autoProcessEmbeddedLyrics.saveEmbeddedLyrics(g_currentLyrics.getMediaSource(),
                     g_currentLyrics.toString(true), vLyrNames);
             }
-            pSkinWnd->messageOut(stringPrintf("%s\n%s", ERROR2STR_LOCAL(nRet), _TLT("Failed to save embedded lyrics, $Product$ will auto try again later.")).c_str());
+            pSkinWnd->messageOut(stringPrintf("%s\n%s", ERROR2STR_LOCAL(nRet), _TLT("Failed to save embedded lyrics. $Product$ will try again later.")).c_str());
         }
     }
 

@@ -3,8 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/api/client';
 import { cn } from '@/lib/utils';
 import { currentLyricsLineIndex } from '../utils';
+import { useT } from '@/i18n';
 
 export function LyricsPanel({ songId, position, compact = false }: { songId: number | null; position: number; compact?: boolean }) {
+  const t = useT();
   const { data, isLoading } = useQuery({
     queryKey: ['lyrics', songId],
     queryFn: () => api.lyrics(songId!),
@@ -19,13 +21,13 @@ export function LyricsPanel({ songId, position, compact = false }: { songId: num
   }, [active]);
 
   if (!songId) {
-    return <Empty text="未在播放" />;
+    return <Empty text={t('Nothing playing')} />;
   }
   if (isLoading) {
-    return <Empty text="加载歌词…" />;
+    return <Empty text={t('Loading lyrics…')} />;
   }
   if (!data?.has_lyrics) {
-    return <Empty text="暂无歌词" />;
+    return <Empty text={t('No lyrics')} />;
   }
 
   return (

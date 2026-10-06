@@ -18,10 +18,17 @@ alwaysApply: true
 - 皮肤 PNG：`Skins-Design/skin-for-ai/*.skin.json` + Compiler（`docs/skin-compiler.md`），不要写 `raw/*_gen_assets.py`
 - `MPlayerEngine/`、`Window/` — 播放内核与平台窗口封装（各 `mac|win32|linux` 子目录）
 - `LocalServer/` — 浏览器管理后台 HTTP + REST + SSE
+- `i18n/locales/` — 共用译文（英文 key）；C++ 生成 `i18n/lang/*.ini`，Web 生成 `messages.generated.ts`
 - `third-parties/` — 第三方库
 
+## i18n
+- 英文源字符串是共用 key：C++ `_TL`/`_TLT`/`_TLM("...")`、Web 字面量 `t('...')`、皮肤 `menu.json` 与 XML `Text`/`ToolTip`/`PlaceHolder` 必须同一 key。皮肤不要写死中文。
+- 手改 `i18n/locales/<locale>.json`；`python3 tools/i18n_extract.py` 生成 `i18n/lang/*.ini` 与 Web 消息表。不要手改生成文件。
+- Web 禁止 `t(variable)`（提取不到）。翻译流程见 `.cursor/skills/i18n-translate/SKILL.md`。
+- 构建脚本会生成语言包并装入 `MusicPlayer.app/Contents/Resources/lang/`。未手动选择时桌面端按系统语言自动匹配（macOS `zh-Hans*` → `zh-CN.ini`）。
+
 ## 构建
-- `./build.sh [Release|Debug] [-g][-b][-p]`（生成 Xcode 工程 → 编译 → 打 dmg）
+- `./build.sh [Release|Debug] [-g][-b][-p]`（i18n 提取 → 生成 Xcode 工程 → 编译 → 装入 lang/www → 打 dmg）
 - 单元测试：CMake `-DUT=ON`，应用启动时 `runAllUnittest()` 跑 gtest `TEST(...)` + `ASSERT_*`（例：`MediaTags/LrcParser.cpp` 底部）
 - 快速语法检查：`clang++ -std=c++17 -fsyntax-only -D_MAC_OS -I. -I./TinyJS MediaTags/<file>.cpp`
 

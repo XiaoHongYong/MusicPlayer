@@ -13,7 +13,7 @@
 int saveEmbeddedLyrics(const string &mediaUrl, const string &lyrics, const VecStrings &lyrUrls, CSkinWnd *parent) {
     int ret = g_autoProcessEmbeddedLyrics.saveEmbeddedLyrics(mediaUrl.c_str(), lyrics, lyrUrls);
     if (ret != ERR_OK) {
-        string strMsg = _TLT("Failed to save embedded lyrics, MusicPlayer will auto try again later.");
+        string strMsg = _TLT("Failed to save embedded lyrics. $Product$ will try again later.");
         strMsg += "\n\n";
         strMsg += ERROR2STR_LOCAL(ret);
         parent->messageOut(strMsg.c_str());
@@ -79,7 +79,7 @@ void showSaveEmbeddedLyricsDialog(CSkinWnd *parent) {
     // Get current media and lyrics information
     string mediaUrl = g_player.getSrcMedia();
     if (mediaUrl.empty() || !isFileExist(mediaUrl.c_str())) {
-        parent->messageOut(_TL("Can't locate the song file path."));
+        parent->messageOut(_TL("Can't locate the song file."));
         return;
     }
 

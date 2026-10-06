@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import type { Song } from '@/api/types';
+import { useT } from '@/i18n';
 
 export function AddToPlaylistDialog({
   songs,
@@ -15,6 +16,7 @@ export function AddToPlaylistDialog({
   open: boolean;
   onClose: () => void;
 }) {
+  const t = useT();
   const qc = useQueryClient();
   const [name, setName] = useState('');
   const { data: playlists = [] } = useQuery({
@@ -50,24 +52,24 @@ export function AddToPlaylistDialog({
   });
 
   return (
-    <Dialog open={open} title="加入歌单" onClose={onClose}>
+    <Dialog open={open} title={t('Add to playlist')} onClose={onClose}>
       <div className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          将 {songs.length} 首歌曲加入已有歌单，或新建一个。
+          {t('Add {n} songs to an existing playlist, or create a new one.', { n: songs.length })}
         </p>
         <div className="flex gap-2">
           <Input
             className="min-w-0 flex-1"
-            placeholder="新歌单名称"
+            placeholder={t('New playlist name')}
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
           <Button disabled={!name.trim() || create.isPending} onClick={() => create.mutate()}>
-            新建
+            {t('New')}
           </Button>
         </div>
         <div className="max-h-64 space-y-1 overflow-auto">
-          {playlists.length === 0 && <p className="text-sm text-muted-foreground">还没有歌单</p>}
+          {playlists.length === 0 && <p className="text-sm text-muted-foreground">{t('No playlists yet')}</p>}
           {playlists.map((p) => (
             <button
               key={p.id}
@@ -75,7 +77,7 @@ export function AddToPlaylistDialog({
               onClick={() => add.mutate(p.id)}
             >
               <span className="text-sm">{p.name}</span>
-              <span className="text-xs text-muted-foreground">{p.count} 首</span>
+              <span className="text-xs text-muted-foreground">{t('{n} tracks', { n: p.count })}</span>
             </button>
           ))}
         </div>

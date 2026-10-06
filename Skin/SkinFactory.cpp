@@ -652,7 +652,7 @@ string CSkinFactory::getTooltip(int nUID) {
     for (auto p : m_setUIDDefinition) {
         if (p->nId == nUID) {
             if (p->szToolTip) {
-                return p->szToolTip;
+                return _TL(p->szToolTip);
             } else {
                 break;
             }

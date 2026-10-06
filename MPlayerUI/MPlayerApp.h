@@ -149,3 +149,7 @@ protected:
 #endif
 
 };
+
+#ifdef _MAC_OS
+void reloadMacApplicationMenu();
+#endif

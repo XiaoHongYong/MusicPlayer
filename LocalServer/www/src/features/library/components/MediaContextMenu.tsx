@@ -7,6 +7,7 @@ import type { Song } from '@/api/types';
 import { usePlayerStore } from '@/features/player/store';
 import { useToastStore } from '@/stores/toast-store';
 import { useUiStore } from '@/stores/ui-store';
+import { useT } from '@/i18n';
 
 export interface MediaMenuTarget {
   x: number;
@@ -32,6 +33,7 @@ export function MediaContextMenu({
   target: MediaMenuTarget;
   onClose: () => void;
 }) {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   const playImmediately = useUiStore((s) => s.playImmediately);
   const addToQueueFront = useUiStore((s) => s.addToQueueFront);
@@ -74,8 +76,8 @@ export function MediaContextMenu({
       playNow: ui.playImmediately,
       addToFront: ui.addToQueueFront,
     });
-    const verb = result.kind === 'replace' ? '已替换' : '已添加';
-    useToastStore.getState().show(`${verb} ${result.count} 首歌曲`);
+    const verb = result.kind === 'replace' ? t('Replaced') : t('Added');
+    useToastStore.getState().show(t('{verb} {n} songs', { verb, n: result.count }));
     onClose();
   };
 
@@ -85,7 +87,7 @@ export function MediaContextMenu({
     await api.addPlaylistSongs(playlistId, ids);
     void qc.invalidateQueries({ queryKey: ['playlists'] });
     void qc.invalidateQueries({ queryKey: ['playlist', playlistId] });
-    useToastStore.getState().show(`已将 ${ids.length} 首添加到「${name}」`);
+    useToastStore.getState().show(t('Added {n} songs to "{name}"', { n: ids.length, name }));
     onClose();
   };
 
@@ -95,7 +97,7 @@ export function MediaContextMenu({
     const pl = await api.createPlaylist(name);
     await api.addPlaylistSongs(pl.id, ids);
     void qc.invalidateQueries({ queryKey: ['playlists'] });
-    useToastStore.getState().show(`已创建「${name}」并添加 ${ids.length} 首`);
+    useToastStore.getState().show(t('Created "{name}" and added {n} songs', { name, n: ids.length }));
     onClose();
   };
 
@@ -115,20 +117,20 @@ export function MediaContextMenu({
       onContextMenu={(e) => e.preventDefault()}
     >
       <button className={itemClass} onClick={() => run('addThis')}>
-        添加此歌曲到播放列表
+        {t('Add this song to queue')}
       </button>
       <button className={itemClass} onClick={() => run('addAll')}>
-        添加所有歌曲到播放列表
+        {t('Add all songs to queue')}
       </button>
       <button
         className={itemClass}
         onClick={() => {
           usePlayerStore.getState().playNext(songs);
-          useToastStore.getState().show(`已将 ${songs.length} 首设为下一首`);
+          useToastStore.getState().show(t('Play next: {n} songs', { n: songs.length }));
           onClose();
         }}
       >
-        下一首播放
+        {t('Play next')}
       </button>
       <div
         className="relative"
@@ -138,7 +140,7 @@ export function MediaContextMenu({
         }}
       >
         <button type="button" className={`${itemClass} flex items-center justify-between`}>
-          添加到播放列表
+          {t('Add to playlist')}
           <ChevronRight size={14} className="text-muted-foreground" />
         </button>
         {showSub && (
@@ -157,14 +159,14 @@ export function MediaContextMenu({
                   onSubmit={(e) => {
                     e.preventDefault();
                     void createAndAdd().catch(() =>
-                      useToastStore.getState().show('创建播放列表失败'),
+                      useToastStore.getState().show(t('Failed to create playlist')),
                     );
                   }}
                 >
                   <input
                     autoFocus
                     className="h-8 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-sm"
-                    placeholder="新播放列表名称"
+                    placeholder={t('New playlist name')}
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                   />
@@ -173,12 +175,12 @@ export function MediaContextMenu({
                     className="shrink-0 text-sm text-primary disabled:opacity-50"
                     disabled={!newName.trim()}
                   >
-                    创建
+                    {t('Create')}
                   </button>
                 </form>
               ) : (
                 <button className={itemClass} onClick={() => setCreating(true)}>
-                  创建播放列表
+                  {t('Create playlist')}
                 </button>
               )}
               {recent.length > 0 && <div className="my-1 border-t border-border" />}
@@ -188,7 +190,7 @@ export function MediaContextMenu({
                   className={`${itemClass} flex items-center justify-between gap-2`}
                   onClick={() =>
                     void addToSaved(p.id, p.name).catch(() =>
-                      useToastStore.getState().show('添加到播放列表失败'),
+                      useToastStore.getState().show(t('Failed to add to playlist')),
                     )
                   }
                 >
@@ -197,7 +199,7 @@ export function MediaContextMenu({
                 </button>
               ))}
               {recent.length === 0 && !creating && (
-                <p className="px-3 py-2 text-xs text-muted-foreground">还没有播放列表</p>
+                <p className="px-3 py-2 text-xs text-muted-foreground">{t('No playlists yet')}</p>
               )}
             </div>
           </div>
@@ -210,7 +212,7 @@ export function MediaContextMenu({
           checked={playImmediately}
           onChange={(e) => setPlayImmediately(e.target.checked)}
         />
-        立即播放
+        {t('Play immediately')}
       </label>
       <label className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm">
         <input
@@ -218,7 +220,7 @@ export function MediaContextMenu({
           checked={addToQueueFront}
           onChange={(e) => setAddToQueueFront(e.target.checked)}
         />
-        添加到队首
+        {t('Add to front of queue')}
       </label>
     </div>,
     document.body,

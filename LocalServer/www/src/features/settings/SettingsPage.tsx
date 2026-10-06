@@ -3,16 +3,26 @@ import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { useUiStore, type ThemeAccent } from '@/stores/ui-store';
 import { cn } from '@/lib/utils';
+import { LOCALES, useI18nStore, useT, type LabelFn } from '@/i18n';
 
-const ACCENTS: { id: ThemeAccent; label: string; swatch: string }[] = [
-  { id: 'violet', label: '紫罗兰', swatch: 'bg-violet-500' },
-  { id: 'blue', label: '蓝', swatch: 'bg-blue-500' },
-  { id: 'green', label: '绿', swatch: 'bg-emerald-500' },
-  { id: 'orange', label: '橙', swatch: 'bg-orange-500' },
-  { id: 'rose', label: '玫红', swatch: 'bg-rose-500' },
+const ACCENTS: { id: ThemeAccent; label: LabelFn; swatch: string }[] = [
+  { id: 'violet', label: (t) => t('Violet'), swatch: 'bg-violet-500' },
+  { id: 'blue', label: (t) => t('Blue'), swatch: 'bg-blue-500' },
+  { id: 'green', label: (t) => t('Green'), swatch: 'bg-emerald-500' },
+  { id: 'orange', label: (t) => t('Orange'), swatch: 'bg-orange-500' },
+  { id: 'rose', label: (t) => t('Rose'), swatch: 'bg-rose-500' },
+];
+
+const THEME_MODES: { id: 'light' | 'dark' | 'system'; label: LabelFn }[] = [
+  { id: 'light', label: (t) => t('Light') },
+  { id: 'dark', label: (t) => t('Dark') },
+  { id: 'system', label: (t) => t('System') },
 ];
 
 export function SettingsPage() {
+  const t = useT();
+  const locale = useI18nStore((s) => s.locale);
+  const setLocale = useI18nStore((s) => s.setLocale);
   const mode = useUiStore((s) => s.themeMode);
   const setMode = useUiStore((s) => s.setThemeMode);
   const accent = useUiStore((s) => s.themeAccent);
@@ -22,17 +32,31 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-8 p-6">
-      <h1 className="text-2xl font-semibold">Settings</h1>
+      <h1 className="text-2xl font-semibold">{t('Settings')}</h1>
       <section>
-        <h2 className="mb-3 text-sm font-medium">Appearance</h2>
+        <h2 className="mb-3 text-sm font-medium">{t('Language')}</h2>
         <div className="flex gap-2">
-          {(['light', 'dark', 'system'] as const).map((m) => (
-            <Button key={m} variant={mode === m ? 'default' : 'outline'} onClick={() => setMode(m)}>
-              {m}
+          {LOCALES.map((item) => (
+            <Button
+              key={item.id}
+              variant={locale === item.id ? 'default' : 'outline'}
+              onClick={() => setLocale(item.id)}
+            >
+              {item.label(t)}
             </Button>
           ))}
         </div>
-        <p className="mb-2 mt-4 text-sm text-muted-foreground">主题色</p>
+      </section>
+      <section>
+        <h2 className="mb-3 text-sm font-medium">{t('Appearance')}</h2>
+        <div className="flex gap-2">
+          {THEME_MODES.map((m) => (
+            <Button key={m.id} variant={mode === m.id ? 'default' : 'outline'} onClick={() => setMode(m.id)}>
+              {m.label(t)}
+            </Button>
+          ))}
+        </div>
+        <p className="mb-2 mt-4 text-sm text-muted-foreground">{t('Accent color')}</p>
         <div className="flex flex-wrap gap-2">
           {ACCENTS.map((c) => (
             <button
@@ -45,23 +69,23 @@ export function SettingsPage() {
               )}
             >
               <span className={cn('h-3 w-3 rounded-full', c.swatch)} />
-              {c.label}
+              {c.label(t)}
             </button>
           ))}
         </div>
       </section>
       <section>
-        <h2 className="mb-3 text-sm font-medium">Library</h2>
+        <h2 className="mb-3 text-sm font-medium">{t('Library')}</h2>
         <p className="mb-3 text-sm text-muted-foreground">
-          扫描状态：{data?.state ?? 'idle'}
-          {data?.state === 'running' ? `（${data.scanned}/${data.total}）` : ''}
+          {t('Scan status: {state}', { state: data?.state ?? 'idle' })}
+          {data?.state === 'running' ? t(' ({scanned}/{total})', { scanned: data.scanned, total: data.total }) : ''}
         </p>
         <Button
           onClick={() => {
             void api.startScan().then((s) => qc.setQueryData(['scan-status'], s));
           }}
         >
-          Scan now
+          {t('Scan now')}
         </Button>
       </section>
     </div>

@@ -2,8 +2,10 @@ import { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/api/client';
+import { useT } from '@/i18n';
 
 export function StatisticsPage() {
+  const t = useT();
   const { data, isLoading } = useQuery({ queryKey: ['library-snapshot'], queryFn: api.snapshot });
 
   const charts = useMemo(() => {
@@ -22,19 +24,21 @@ export function StatisticsPage() {
     return { topArtists, genres, ratingBuckets, total: songs.length };
   }, [data]);
 
-  if (isLoading) return <p className="p-8 text-muted-foreground">加载统计…</p>;
+  if (isLoading) return <p className="p-8 text-muted-foreground">{t('Loading statistics…')}</p>;
 
   const axis = { axisLabel: { color: 'hsl(var(--muted-foreground))' } };
 
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-semibold">Statistics</h1>
-        <p className="text-sm text-muted-foreground">基于 Library Snapshot 的前端聚合（阶段 6 完整 snapshot API 将替换此处）。共 {charts.total} 首。</p>
+        <h1 className="text-2xl font-semibold">{t('Statistics')}</h1>
+        <p className="text-sm text-muted-foreground">
+          {t('Aggregated from the library snapshot. {n} songs.', { n: charts.total })}
+        </p>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-xl bg-card p-4">
-          <h2 className="mb-2 text-sm font-medium">Top Artists</h2>
+          <h2 className="mb-2 text-sm font-medium">{t('Top Artists')}</h2>
           <ReactECharts
             style={{ height: 280 }}
             option={{
@@ -46,7 +50,7 @@ export function StatisticsPage() {
           />
         </div>
         <div className="rounded-xl bg-card p-4">
-          <h2 className="mb-2 text-sm font-medium">Genre Distribution</h2>
+          <h2 className="mb-2 text-sm font-medium">{t('Genre Distribution')}</h2>
           <ReactECharts
             style={{ height: 280 }}
             option={{
@@ -62,7 +66,7 @@ export function StatisticsPage() {
           />
         </div>
         <div className="rounded-xl bg-card p-4 lg:col-span-2">
-          <h2 className="mb-2 text-sm font-medium">Rating Distribution</h2>
+          <h2 className="mb-2 text-sm font-medium">{t('Rating Distribution')}</h2>
           <ReactECharts
             style={{ height: 240 }}
             option={{

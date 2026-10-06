@@ -696,6 +696,7 @@ bool CUIObject::setProperty(cstr_t szProperty, cstr_t szValue) {
             m_id = m_pSkin->getSkinFactory()->getIDByNameEx(szValue, m_strTooltip);
             if (!m_strTooltip.empty()) {
                 m_bTempTooltip = true;
+                m_strTooltipEnglish = m_strTooltip;
             }
         } else {
             m_id = m_pSkin->getSkinFactory()->getIDByName(szValue);
@@ -713,6 +714,7 @@ bool CUIObject::setProperty(cstr_t szProperty, cstr_t szValue) {
     } else if (strcasecmp(szProperty, "TranslucencyWithSkin") == 0) {
         m_translucencyWithSkin = isTRUE(szValue);
     } else if (strcasecmp(szProperty, SZ_PN_TOOLTIP) == 0) {
+        m_strTooltipEnglish = szValue;
         string str = _TL(szValue);
         if (strcmp(m_strTooltip.c_str(), str.c_str()) != 0) {
             m_strTooltip = str.c_str();
@@ -1022,7 +1024,9 @@ void CUIObject::onLanguageChanged() {
         m_strText = _TL(m_strTextEnglish.c_str());
     }
 
-    if (m_strTooltip.size()) {
+    if (m_strTooltipEnglish.size()) {
+        m_strTooltip = _TL(m_strTooltipEnglish.c_str());
+    } else if (m_strTooltip.size()) {
         m_strTooltip = m_pSkin->getSkinFactory()->getTooltip(m_id);
     }
 }

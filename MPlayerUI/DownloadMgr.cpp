@@ -110,7 +110,7 @@ bool CDownloadMgr::searchInCacheResult(bool bShowInfoText) {
         nFailedCount++;
         if (bShowInfoText && nFailedCount > 2) {
             string str;
-            str = _TLT("Failed to get searching lyrics results.");
+            str = _TLT("Failed to get lyrics search results.");
             str += " ";
             str += _TLT("Please contact us to report this issue.");
             MPlayerApp::getInstance()->dispatchLongErrorText(str.c_str(), ID_EMAIL);
@@ -121,7 +121,7 @@ bool CDownloadMgr::searchInCacheResult(bool bShowInfoText) {
     if (vLrcSearchResult.size() == 0) {
         if (bShowInfoText) {
             string str;
-            str = _TLT("search returned no results.");
+            str = _TLT("Search returned no results.");
             int cmds[] = { ID_NO_SUITTABLE_LYRICS, ID_INSTRUMENTAL_MUSIC, ID_SEARCH_LYR_SUGGESTIONS };
             string strCmd = "cmd://";
             for (int i = 0; i < CountOf(cmds); i++) {
@@ -151,7 +151,7 @@ bool CDownloadMgr::searchInCacheResult(bool bShowInfoText) {
             // Do not download .txt lyrics
             if (fileIsExtSame(result.strUrl.c_str(), ".txt")
                 && g_profile.getInt(SZ_SECT_LYR_DL, "OnlyDlSyncLyr", false)) {
-                MPlayerApp::getInstance()->dispatchLongErrorText(_TLT("None of the lyrics are .lrc extension lyrics, so they are not downloaded."));
+                MPlayerApp::getInstance()->dispatchLongErrorText(_TLT("None of these lyrics are .lrc files, so they were not downloaded."));
                 return true;
             }
 
@@ -185,7 +185,7 @@ bool CDownloadMgr::searchInCacheResult(bool bShowInfoText) {
         // if all lyrics is txt, return directly.
         if (g_profile.getInt(SZ_SECT_LYR_DL, "OnlyDlSyncLyr", false)
             && vLrcSearchResult.isAllTxtLyrics()) {
-            MPlayerApp::getInstance()->dispatchLongErrorText(_TLT("None of the lyrics are .lrc extension lyrics, so they are not downloaded."));
+            MPlayerApp::getInstance()->dispatchLongErrorText(_TLT("None of these lyrics are .lrc files, so they were not downloaded."));
             return true;
         }
 
@@ -199,7 +199,7 @@ bool CDownloadMgr::searchInCacheResult(bool bShowInfoText) {
     } else {
         if (bShowInfoText) {
             MPlayerApp::getInstance()->dispatchLongErrorText(
-                _TLT("Found some similar lyrics, please choose them in 'search Lyrics' window."), ID_OPEN_LRC);
+                _TLT("Found similar lyrics. Please choose them in the Search Lyrics window."), ID_OPEN_LRC);
         }
     }
 
@@ -373,7 +373,7 @@ void CDownloadMgr::onEndDownload(CDownloadTask *pTask) {
                 // show rate link
                 if (!g_profile.getBool(SZ_SECT_UI, "HideRateLink", false)) {
                     if (g_currentLyrics.properties().id.size()) {
-                        MPlayerApp::getInstance()->dispatchLongErrorText(_TLT("Are these lyrics correct to the song? rate them!"), ID_RATE_LYR);
+                        MPlayerApp::getInstance()->dispatchLongErrorText(_TLT("Do these lyrics match the song? Rate them!"), ID_RATE_LYR);
                     }
                 }
             }
@@ -526,7 +526,7 @@ int CDownloadMgr::runHttpTask(CDownloadTask *pTask) {
             //
             // wait for 10 sec to try again
             if (pTask->taskType == DTT_LYRICS) {
-                MPlayerApp::getInstance()->dispatchLongErrorText(_TLT("wait 10 seconds and retry."));
+                MPlayerApp::getInstance()->dispatchLongErrorText(_TLT("Wait 10 seconds and retry."));
             }
 
             if (m_eventShutDown.acquire(10 * 1000)) {

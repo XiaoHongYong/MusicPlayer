@@ -150,7 +150,7 @@ MediaPtr newMedia() {
 }
 
 cstr_t mediaCategoryTypeToString(MediaCategory::Type type) {
-    static cstr_t NAMES[] = { _TLM("All Musics"), _TLM("Playlist"), _TLM("Folder"), _TLM("Artist"), _TLM("Album"), _TLM("Genre"), _TLM("Rating") };
+    static cstr_t NAMES[] = { _TLM("All Music"), _TLM("Playlist"), _TLM("Folder"), _TLM("Artist"), _TLM("Album"), _TLM("Genre"), _TLM("Rating") };
     assert(CountOf(NAMES) == MediaCategory::_COUNT);
     assert(type >= 0 && type <= MediaCategory::_COUNT);
 

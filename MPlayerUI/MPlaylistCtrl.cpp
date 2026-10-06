@@ -754,7 +754,7 @@ void CMPlaylistCtrl::doSearch(cstr_t keyword) {
     //
     for (auto &category : allCategories) {
         string title = g_LangTool.toLocalString(mediaCategoryTypeToString(category.type));
-        title += ": " + (category.name.empty() ? _TL("Unkown") : category.name);
+        title += ": " + (category.name.empty() ? _TL("Unknown") : category.name);
 
         auto matchValue = searchWithKeyword(keyword, title.c_str(), vItemClrs);
         if (matchValue <= 0) {

@@ -33,6 +33,7 @@ void CallMenuCommand(int cmd);
 
 #import "../MPlayerUI/MPlayerApp.h"
 #import "../MPlayerUI/MPSkinMenu.h"
+#import "../Utils/LocalizeTool.h"
 // #import "../Window/WindowLib.h"
 
 
@@ -77,35 +78,123 @@ NSMenuItem *duplicateMenuItem(NSMenuItem *org) {
     return item;
 }
 
+static const NSInteger kSkinMenuItemTag = 0x4D504D4E;
+
+static NSString *nsUtf8(cstr_t text) {
+    if (!text) {
+        return @"";
+    }
+    return [NSString stringWithUTF8String:text];
+}
+
+static void localizeAppleMenu(NSMenu *mainMenu) {
+    if ([mainMenu numberOfItems] < 1) {
+        return;
+    }
+
+    NSMenu *appMenu = [[mainMenu itemAtIndex:0] submenu];
+    for (NSMenuItem *item in [appMenu itemArray]) {
+        if ([item isSeparatorItem]) {
+            continue;
+        }
+        SEL act = [item action];
+        if (act == @selector(aboutWindow:) || act == @selector(orderFrontStandardAboutPanel:)) {
+            [item setTitle:nsUtf8(_TL("about $Product$"))];
+        } else if (act == @selector(preferencesWindow:)) {
+            [item setTitle:nsUtf8(_TL("Preferences"))];
+        } else if (act == @selector(hide:)) {
+            [item setTitle:nsUtf8(_TL("Hide $Product$"))];
+        } else if (act == @selector(hideOtherApplications:)) {
+            [item setTitle:nsUtf8(_TL("Hide Others"))];
+        } else if (act == @selector(unhideAllApplications:)) {
+            [item setTitle:nsUtf8(_TL("Show All"))];
+        } else if (act == @selector(terminate:)) {
+            [item setTitle:nsUtf8(_TL("Quit $Product$"))];
+        }
+    }
+}
+
+static void stripXibStubMenus(NSMenu *mainMenu) {
+    NSSet *stubs = [NSSet setWithObjects:
+        @"File", @"文件",
+        @"Format", @"格式",
+        @"View", @"显示", @"视图",
+        @"Help", @"帮助",
+        nil];
+
+    for (NSInteger i = [mainMenu numberOfItems] - 1; i >= 0; i--) {
+        NSMenuItem *item = [mainMenu itemAtIndex:i];
+        if ([item tag] == kSkinMenuItemTag || [stubs containsObject:[item title]]) {
+            [mainMenu removeItemAtIndex:i];
+        }
+    }
+}
+
+static void installMacApplicationMenu() {
+    MPlayerApp *pApp = MPlayerApp::getInstance();
+    NSMenu *mainMenu = [NSApp mainMenu];
+    if (!mainMenu) {
+        return;
+    }
+
+    stripXibStubMenus(mainMenu);
+    localizeAppleMenu(mainMenu);
+
+    for (NSMenuItem *item in [mainMenu itemArray]) {
+        NSString *title = [item title];
+        if ([title isEqualToString:@"Window"] || [title isEqualToString:@"窗口"]) {
+            [item setTitle:nsUtf8(_TL("Window"))];
+            [[item submenu] setTitle:[item title]];
+            for (NSMenuItem *sub in [[item submenu] itemArray]) {
+                if ([sub isSeparatorItem]) {
+                    continue;
+                }
+                SEL act = [sub action];
+                if (act == @selector(performMiniaturize:)) {
+                    [sub setTitle:nsUtf8(_TL("Minimize"))];
+                } else if (act == @selector(performZoom:)) {
+                    [sub setTitle:nsUtf8(_TL("Zoom"))];
+                } else if (act == @selector(arrangeInFront:)) {
+                    [sub setTitle:nsUtf8(_TL("Bring All to Front"))];
+                }
+            }
+        }
+    }
+
+    const char *szMenu = "MainWndMenu";
+    _menu = pApp->getSkinFactory()->loadMenu(pApp->getMainWnd(), szMenu);
+    if (!_menu) {
+        return;
+    }
+
+    _menu->updateMenuStatus(pApp->getMainWnd());
+    NSMenu *menu = (NSMenu *)_menu->getHandle(pApp->getMainWnd());
+    for (int i = 0; i < [menu numberOfItems]; i++) {
+        NSMenuItem *item = duplicateMenuItem([menu itemAtIndex:i]);
+        [item setTag:kSkinMenuItemTag];
+        if ([item hasSubmenu]) {
+            [item submenu].delegate = (id<NSMenuDelegate>)[NSApp delegate];
+        }
+        [mainMenu addItem:item];
+        [item release];
+    }
+
+    _menu->attachHandle(mainMenu);
+}
+
+void reloadMacApplicationMenu() {
+    installMacApplicationMenu();
+}
+
 - (void)menuWillOpen:(NSMenu *)menu {
     _menu->updateMenuStatus(MPlayerApp::getInstance()->getMainWnd());
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
-    // Insert code here to initialize your application
     MPlayerApp *pApp = MPlayerApp::getInstance();
     pApp->init();
-
-    const char *szMenu = "MainWndMenu";
-    _menu = pApp->getSkinFactory()->loadMenu(pApp->getMainWnd(), szMenu);
-    if (_menu) {
-        _menu->updateMenuStatus(pApp->getMainWnd());
-
-        NSMenu *mainMenu = [NSApp mainMenu];
-        NSMenu *menu = (NSMenu*)_menu->getHandle(pApp->getMainWnd());
-
-        for (int i = 0; i < [menu numberOfItems]; i++) {
-            NSMenuItem *item = duplicateMenuItem([menu itemAtIndex:i]);
-            if ([item hasSubmenu]) {
-                [item submenu].delegate = self;
-            }
-            [mainMenu addItem:item];
-            [item release];
-        }
-
-        _menu->attachHandle(mainMenu);
-    }
+    installMacApplicationMenu();
 }
 
 /**

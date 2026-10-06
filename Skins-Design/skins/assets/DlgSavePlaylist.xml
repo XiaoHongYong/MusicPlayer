@@ -4,7 +4,7 @@
     <NormalRadioBt ID="CID_R_CREATE_NEW" Rect="10,16,200," Text="Create New:"/>
     <NormalEdit ID="CID_E_NAME" Rect="200+10,20,w-20-200," PlaceHolder="Playlist Name" SubmitCmd="true"/>
 
-    <NormalRadioBt ID="CID_R_OVERWRITE" Rect="10,56,200," Text="Over write existing:"/>
+    <NormalRadioBt ID="CID_R_OVERWRITE" Rect="10,56,200," Text="Overwrite existing:"/>
     <NormalComboBox ID="CID_PLAYLIST_CTRL" Rect="200+10,60,w-20-200,"/>
 
     <NormalTextBt ID="ID_OK" Text="OK" Rect="w-120*2,h-40,100,"/>

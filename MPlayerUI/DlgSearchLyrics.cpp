@@ -139,7 +139,7 @@ public:
 
         CID_PREV_PAGE = CID_NEXT_PAGE = CID_GOOGLE = CID_MORE = CID_E_ARTIST = 0;
         CID_E_TITLE = CID_SEARCH = CID_OPEN = CID_L_LYRICS = 0;
-        m_strTitle = _TLM("search Lyrics");
+        m_strTitle = _TLM("Search lyrics");
     }
 
     ~CPageSearchLyrics() {
@@ -468,7 +468,7 @@ public:
                 }
 
                 static const char *SZ_SUPPORTED_FILE_TYPE = "All supported files (*.lrc; *.txt; *.srt)\0*.lrc;*.txt;*.srt\0Lyrics File (*.lrc)\0*.LRC\0Text File (*.txt)\0*.txt\0Vob Subtitle File(*.srt)\0*.srt\0\0";
-                CFileOpenDlg dlg(_TLT("open Lyrics file"), strFile.c_str(), SZ_SUPPORTED_FILE_TYPE, 1);
+                CFileOpenDlg dlg(_TLT("Open lyrics file"), strFile.c_str(), SZ_SUPPORTED_FILE_TYPE, 1);
 
                 if (dlg.doModal(m_pSkin) == IDOK) {
                     strFile = dlg.getOpenFile();
@@ -498,9 +498,9 @@ public:
             } else if (nId == ID_SHOW_ERR_RESULT) {
                 if (m_nErrResultToShow == ERR_NOT_FOUND) {
                     string strMsg;
-                    strMsg = _TLT("Sorry, no result returned. Please make sure you enter the correct artist name and title.");
+                    strMsg = _TLT("Sorry, no results were returned. Please make sure the artist and title are correct.");
                     strMsg += "\r\n";
-                    strMsg += _TLT("If you have the lyrics, please upload it to our server to share it with others.");
+                    strMsg += _TLT("If you have the lyrics, please upload them to our server to share with others.");
                     m_pSkin->messageOut(strMsg.c_str());
                 } else if (m_nErrResultToShow != ERR_OK) {
                     showInetErrorDlg(m_pSkin, m_nErrResultToShow);
@@ -683,7 +683,7 @@ protected:
         assert(pPageWait);
         if (pPageWait) {
             pPageWait->startWork(_TLT("Searching lyrics"),
-                _TLT("$Product$ is searching lyrics now, it may take a few seconds."),
+                _TLT("$Product$ is searching for lyrics. It may take a few seconds."),
                 m_pSearchObj);
         }
     }

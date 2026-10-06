@@ -23,7 +23,7 @@
 #define SZ_DISABLED        _TLT("Disabled")
 #define SZ_EDIT            _TLT("Edit...")
 #define SZ_BROWSE        _TLT("Browse...")
-#define SZ_RESET        _TLT("reset Selected Settings")
+#define SZ_RESET        _TLT("Reset selected settings")
 
 #define MENUID_START        3000
 
@@ -162,7 +162,7 @@ public:
 class CPfItemTitleFilter : public CPreferItem {
 public:
     CPfItemTitleFilter(Window *pWnd) : CPreferItem(connectToLocalStr(_TLM("Lyrics Download"),
-        _TLM("filter radio station names in media artist and title")).c_str()) {
+        _TLM("Filter radio station names from artist and title")).c_str()) {
         m_pWnd = pWnd;
     }
 
@@ -217,14 +217,14 @@ public:
     }
 
     virtual void getOptions(VecStrings &vString, int &nRadio) {
-        vString.push_back(_TLT("add &Folder..."));
+        vString.push_back(_TLT("Add &Folder..."));
 
         if (g_LyricSearch.getSearchFolerCount() > 0) {
             vString.push_back("");
         }
 
         for (int i = 0; i < g_LyricSearch.getSearchFolerCount(); i++) {
-            vString.push_back(string(_TLT("remove folder:")) + " " + g_LyricSearch.getFolder(i));
+            vString.push_back(string(_TLT("Remove folder:")) + " " + g_LyricSearch.getFolder(i));
         }
     }
 
@@ -598,7 +598,7 @@ void showShortcutKeyDialog(CSkinWnd *parent, uint32_t cmd, bool isGlobal) {
 class CPfItemBoolEnableGlobalHotkey : public CPfItemBool {
 public:
     CPfItemBoolEnableGlobalHotkey()
-    : CPfItemBool(removePrefixOfAcckey(connectToLocalStr(_TLM("Shortcut"), _TLM("&enable Global Hotkeys")).c_str()).c_str(),
+    : CPfItemBool(removePrefixOfAcckey(connectToLocalStr(_TLM("Shortcut"), _TLM("&Enable Global Hotkeys")).c_str()).c_str(),
         ET_NULL, SZ_APP_NAME, "enableGlobalHotkey", false) {
     }
 
@@ -663,8 +663,8 @@ public:
     }
 
     virtual void getOptions(VecStrings &vString, int &nRadio) {
-        vString.push_back(_TLT("add Shortcut Key..."));
-        vString.push_back(_TLT("add Global Hotkey..."));
+        vString.push_back(_TLT("Add shortcut key..."));
+        vString.push_back(_TLT("Add global hotkey..."));
 
         VecHotkeys vHotkeys;
 
@@ -759,7 +759,7 @@ void CPagePfAdvanced::onInitialUpdate() {
     m_vPreferItems.push_back(new CPfItemBool(connectToLocalStr(_TLM("UI"), _TLM("Auto adjust window height with lyrics")).c_str(), ET_NULL, SZ_SECT_UI, "AutoAdjustWndHeight", true));
     m_vPreferItems.push_back(new CPfItemRestoreLyrChgSavePrompt(m_pSkin));
     // m_vPreferItems.push_back(new CPfItemBool("Hide the link of rating lyrics", ET_NULL, SZ_SECT_UI, "HideRateLink", true));
-    m_vPreferItems.push_back(new CPfItemBool(connectToLocalStr(_TLM("Lyrics Display"), _TLM("Allow to adjust the vertical position of lyrics")).c_str(),
+    m_vPreferItems.push_back(new CPfItemBool(connectToLocalStr(_TLM("Lyrics Display"), _TLM("Allow adjusting the vertical position of lyrics")).c_str(),
         ET_LYRICS_DISPLAY_SETTINGS, SZ_SECT_LYR_DISPLAY,
         "enableAdjustVertAlign", false));
     m_vPreferItems.push_back(new CPfItemLyrLineSpacing());
@@ -770,9 +770,9 @@ void CPagePfAdvanced::onInitialUpdate() {
     // m_vPreferItems.push_back(new CPfItemBool("", ));
     m_vPreferItems.push_back(new CPfItemBoolEnableAutoDlLyr());
     m_vPreferItems.push_back(new CPfItemBool(connectToLocalStr(_TLM("Lyrics Download"), _TLM("Only download synchronized lyrics with .lrc extension")).c_str(), ET_NULL, SZ_SECT_LYR_DL, "OnlyDlSyncLyr", false));
-    m_vPreferItems.push_back(new CPfItemBool(connectToLocalStr(_TLM("Lyrics Download"), _TLM("Try to download synchronized lyrics (.lrc) even if having local unsynchronized (.txt) lyrics")).c_str(), ET_NULL, SZ_SECT_LYR_DL, "DownLrcEvenIfHasTxt", true));
-    m_vPreferItems.push_back(new CPfItemBool(connectToLocalStr(_TLM("Lyrics Download"), _TLM("pop up lyrics searching dialog when lyrics are found")).c_str(), ET_NULL, SZ_SECT_LYR_DL, "DownLrcUserSelect", false));
-    m_vPreferItems.push_back(new CPfItemBool(connectToLocalStr(_TLM("Lyrics Download"), _TLM("save downloaded lyrics in the a, b, c... folder of downloaded folder")).c_str(), ET_NULL, SZ_SECT_LYR_DL, "DownSaveByABC", false));
+    m_vPreferItems.push_back(new CPfItemBool(connectToLocalStr(_TLM("Lyrics Download"), _TLM("Try to download synchronized lyrics (.lrc) even if local unsynchronized (.txt) lyrics exist")).c_str(), ET_NULL, SZ_SECT_LYR_DL, "DownLrcEvenIfHasTxt", true));
+    m_vPreferItems.push_back(new CPfItemBool(connectToLocalStr(_TLM("Lyrics Download"), _TLM("Pop up lyrics search dialog when lyrics are found")).c_str(), ET_NULL, SZ_SECT_LYR_DL, "DownLrcUserSelect", false));
+    m_vPreferItems.push_back(new CPfItemBool(connectToLocalStr(_TLM("Lyrics Download"), _TLM("Save downloaded lyrics in lettered subfolders")).c_str(), ET_NULL, SZ_SECT_LYR_DL, "DownSaveByABC", false));
     m_vPreferItems.push_back(new CPfItemTitleFilter(m_pSkin));
     m_vPreferItems.push_back(new CPfItemLyrSearchFolder(m_pSkin));
     m_vPreferItems.push_back(new CPfItemLyrExternalEditor(m_pSkin));

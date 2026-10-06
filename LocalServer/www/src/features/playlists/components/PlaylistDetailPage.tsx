@@ -10,8 +10,10 @@ import { usePlayerStore } from '@/features/player/store';
 import { useLibrarySnapshot } from '@/features/library/components/SongsPage';
 import { Dialog } from '@/components/ui/dialog';
 import type { Song } from '@/api/types';
+import { useT } from '@/i18n';
 
 export function PlaylistDetailPage() {
+  const t = useT();
   const { id } = useParams();
   const playlistId = Number(id);
   const nav = useNavigate();
@@ -70,8 +72,8 @@ export function PlaylistDetailPage() {
     });
   }, [snapshot, data, q]);
 
-  if (isLoading) return <p className="p-8 text-muted-foreground">加载歌单…</p>;
-  if (error || !data) return <p className="p-8 text-red-500">歌单不存在</p>;
+  if (isLoading) return <p className="p-8 text-muted-foreground">{t('Loading playlists…')}</p>;
+  if (error || !data) return <p className="p-8 text-red-500">{t('Playlist not found')}</p>;
 
   const move = (index: number, dir: -1 | 1) => {
     const next = [...data.songs];
@@ -87,7 +89,7 @@ export function PlaylistDetailPage() {
     <div className="flex h-full flex-col gap-4 p-6">
       <div className="text-sm text-muted-foreground">
         <Link to="/playlists" className="hover:text-foreground">
-          Playlists
+          {t('Playlists')}
         </Link>
         <span className="mx-2">/</span>
         <span>{data.name}</span>
@@ -96,20 +98,20 @@ export function PlaylistDetailPage() {
         <div>
           <h1 className="text-2xl font-semibold">{data.name}</h1>
           <p className="text-sm text-muted-foreground">
-            {data.count} 首 · {formatDuration(data.duration)}
+            {t('{n} tracks · {duration}', { n: data.count, duration: formatDuration(data.duration) })}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => playSongs(data.songs, 0)} disabled={!data.songs.length}>
             <Play size={14} className="mr-1" />
-            播放
+            {t('Play')}
           </Button>
           <Button variant="outline" onClick={() => setAddOpen(true)}>
-            添加歌曲
+            {t('Add songs')}
           </Button>
           <Button variant="ghost" onClick={() => remove.mutate()}>
             <Trash2 size={14} className="mr-1" />
-            删除
+            {t('Delete')}
           </Button>
         </div>
       </div>
@@ -122,17 +124,17 @@ export function PlaylistDetailPage() {
       >
         <Input
           className="min-w-0 flex-1"
-          placeholder="重命名…"
+          placeholder={t('Rename…')}
           value={rename}
           onChange={(e) => setRename(e.target.value)}
         />
         <Button type="submit" variant="outline" disabled={!rename.trim()}>
-          保存
+          {t('Save')}
         </Button>
       </form>
       <div className="min-h-0 flex-1 overflow-auto">
         {data.songs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">空歌单。点「添加歌曲」从媒体库挑曲子。</p>
+          <p className="text-sm text-muted-foreground">{t('Empty playlist. Tap Add songs to pick tracks from the library.')}</p>
         ) : (
           data.songs.map((song, i) => (
             <SongRow
@@ -148,8 +150,8 @@ export function PlaylistDetailPage() {
           ))
         )}
       </div>
-      <Dialog open={addOpen} title="添加歌曲" onClose={() => setAddOpen(false)} className="max-w-2xl">
-        <Input placeholder="搜索…" value={q} onChange={(e) => setQ(e.target.value)} className="mb-3" />
+      <Dialog open={addOpen} title={t('Add songs')} onClose={() => setAddOpen(false)} className="max-w-2xl">
+        <Input placeholder={t('Search…')} value={q} onChange={(e) => setQ(e.target.value)} className="mb-3" />
         <div className="max-h-[50vh] space-y-1 overflow-auto">
           {candidates.slice(0, 80).map((s) => (
             <button

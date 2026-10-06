@@ -11,8 +11,10 @@ import {
 import { FilterSelect } from './FilterSelect';
 import { cn } from '@/lib/utils';
 import { albumPath, artistPath, genrePath, groupAlbums, groupArtists, groupGenres } from '../groups';
+import { useT } from '@/i18n';
 
 export function AlbumsPage() {
+  const t = useT();
   const { data } = useLibrarySnapshot();
   const [menu, setMenu] = useState<MediaMenuTarget | null>(null);
   const [artist, setArtist] = useState('');
@@ -55,12 +57,12 @@ export function AlbumsPage() {
   return (
     <div className="p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">Albums</h1>
+        <h1 className="text-2xl font-semibold">{t('Albums')}</h1>
         <div className="flex rounded-md border border-border p-0.5">
           <button
             type="button"
             className={cn('rounded p-1.5', view === 'grid' && 'bg-accent')}
-            aria-label="网格"
+            aria-label={t('Grid')}
             onClick={() => setView('grid')}
           >
             <LayoutGrid size={16} />
@@ -68,7 +70,7 @@ export function AlbumsPage() {
           <button
             type="button"
             className={cn('rounded p-1.5', view === 'list' && 'bg-accent')}
-            aria-label="列表"
+            aria-label={t('List')}
             onClick={() => setView('list')}
           >
             <List size={16} />
@@ -76,35 +78,35 @@ export function AlbumsPage() {
         </div>
       </div>
       <div className="mb-4 flex flex-wrap gap-2">
-        <FilterSelect aria-label="艺人" value={artist} onChange={setArtist}>
-          <option value="">全部艺人</option>
+        <FilterSelect aria-label={t('Artist')} value={artist} onChange={setArtist}>
+          <option value="">{t('All artists')}</option>
           {artists.map((a) => (
             <option key={a} value={a}>
               {a}
             </option>
           ))}
         </FilterSelect>
-        <FilterSelect aria-label="类型" value={genre} onChange={setGenre}>
-          <option value="">全部类型</option>
+        <FilterSelect aria-label={t('Genre')} value={genre} onChange={setGenre}>
+          <option value="">{t('All genres')}</option>
           {genres.map((g) => (
             <option key={g} value={g}>
               {g}
             </option>
           ))}
         </FilterSelect>
-        <FilterSelect aria-label="年份" value={year} onChange={setYear}>
-          <option value="">全部年份</option>
+        <FilterSelect aria-label={t('Year')} value={year} onChange={setYear}>
+          <option value="">{t('All years')}</option>
           {years.map((y) => (
             <option key={y} value={String(y)}>
               {y}
             </option>
           ))}
         </FilterSelect>
-        <FilterSelect aria-label="排序" value={sort} onChange={setSort}>
-          <option value="name">按名称</option>
-          <option value="year">按年份</option>
-          <option value="count">按曲目数</option>
-          <option value="plays">按播放量</option>
+        <FilterSelect aria-label={t('Sort')} value={sort} onChange={setSort}>
+          <option value="name">{t('Sort by name')}</option>
+          <option value="year">{t('Sort by year')}</option>
+          <option value="count">{t('Sort by track count')}</option>
+          <option value="plays">{t('Sort by plays')}</option>
         </FilterSelect>
       </div>
       {view === 'grid' ? (
@@ -121,7 +123,7 @@ export function AlbumsPage() {
                 <CoverImage songId={a.coverId} className="aspect-square w-full rounded-lg" />
                 <div className="mt-2 truncate text-sm font-medium">{a.name}</div>
                 <div className="truncate text-xs text-muted-foreground">
-                  {a.artist} · {a.count} 首
+                  {a.artist} · {t('{n} tracks', { n: a.count })}
                 </div>
               </Link>
             );
@@ -144,7 +146,7 @@ export function AlbumsPage() {
                   <div className="truncate text-xs text-muted-foreground">{a.artist}</div>
                 </div>
                 <span className="text-xs text-muted-foreground">{a.year || '—'}</span>
-                <span className="w-12 text-right text-xs text-muted-foreground">{a.count} 首</span>
+                <span className="w-12 text-right text-xs text-muted-foreground">{t('{n} tracks', { n: a.count })}</span>
               </Link>
             );
           })}
@@ -156,6 +158,7 @@ export function AlbumsPage() {
 }
 
 export function ArtistsPage() {
+  const t = useT();
   const { data } = useLibrarySnapshot();
   const [menu, setMenu] = useState<MediaMenuTarget | null>(null);
   const [sort, setSort] = useState('name');
@@ -173,12 +176,12 @@ export function ArtistsPage() {
   return (
     <div className="p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">Artists</h1>
-        <FilterSelect aria-label="排序" value={sort} onChange={setSort}>
-          <option value="name">按名称</option>
-          <option value="albums">按专辑数</option>
-          <option value="count">按曲目数</option>
-          <option value="plays">按播放量</option>
+        <h1 className="text-2xl font-semibold">{t('Artists')}</h1>
+        <FilterSelect aria-label={t('Sort')} value={sort} onChange={setSort}>
+          <option value="name">{t('Sort by name')}</option>
+          <option value="albums">{t('Sort by album count')}</option>
+          <option value="count">{t('Sort by track count')}</option>
+          <option value="plays">{t('Sort by plays')}</option>
         </FilterSelect>
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
@@ -194,7 +197,7 @@ export function ArtistsPage() {
               <CoverImage songId={a.coverId} kind="artist" className="aspect-square w-full rounded-lg" />
               <div className="mt-3 truncate text-center text-sm font-medium">{a.name}</div>
               <div className="text-center text-xs text-muted-foreground">
-                {a.albums} 张专辑 · {a.count} 首
+                {t('{albums} albums · {n} tracks', { albums: a.albums, n: a.count })}
               </div>
             </Link>
           );
@@ -206,6 +209,7 @@ export function ArtistsPage() {
 }
 
 export function GenresPage() {
+  const t = useT();
   const { data } = useLibrarySnapshot();
   const [menu, setMenu] = useState<MediaMenuTarget | null>(null);
   const [sort, setSort] = useState('count');
@@ -222,11 +226,11 @@ export function GenresPage() {
   return (
     <div className="p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">Genres</h1>
-        <FilterSelect aria-label="排序" value={sort} onChange={setSort}>
-          <option value="count">按曲目数</option>
-          <option value="plays">按播放量</option>
-          <option value="name">按名称</option>
+        <h1 className="text-2xl font-semibold">{t('Genres')}</h1>
+        <FilterSelect aria-label={t('Sort')} value={sort} onChange={setSort}>
+          <option value="count">{t('Sort by track count')}</option>
+          <option value="plays">{t('Sort by plays')}</option>
+          <option value="name">{t('Sort by name')}</option>
         </FilterSelect>
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -241,10 +245,10 @@ export function GenresPage() {
             >
               <div className="text-lg font-semibold">{g.name}</div>
               <div className="mt-1 text-sm text-muted-foreground">
-                {g.count} 首 · 播放 {g.plays} 次
+                {t('{n} tracks · {plays} plays', { n: g.count, plays: g.plays })}
               </div>
               {g.topArtist && (
-                <div className="mt-1 truncate text-xs text-muted-foreground">代表：{g.topArtist}</div>
+                <div className="mt-1 truncate text-xs text-muted-foreground">{t('Top: {name}', { name: g.topArtist })}</div>
               )}
             </Link>
           );

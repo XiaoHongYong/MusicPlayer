@@ -17,6 +17,7 @@ import {
   mediaMenuFromEvent,
   type MediaMenuTarget,
 } from './MediaContextMenu';
+import { useT } from '@/i18n';
 
 export function useLibrarySnapshot() {
   return useQuery({
@@ -59,6 +60,7 @@ function useFilteredSongs(
 }
 
 export function SongsPage() {
+  const t = useT();
   const { data, isLoading, error, refetch } = useLibrarySnapshot();
   const qc = useQueryClient();
   const [q, setQ] = useState('');
@@ -90,23 +92,23 @@ export function SongsPage() {
     overscan: 12,
   });
 
-  if (isLoading) return <p className="p-8 text-muted-foreground">加载媒体库…</p>;
-  if (error) return <p className="p-8 text-red-500">无法加载媒体库</p>;
+  if (isLoading) return <p className="p-8 text-muted-foreground">{t('Loading library…')}</p>;
+  if (error) return <p className="p-8 text-red-500">{t('Failed to load library')}</p>;
 
   return (
     <div className="flex h-full flex-col gap-4 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Songs</h1>
-        <Button onClick={startScan}>Scan</Button>
+        <h1 className="text-2xl font-semibold">{t('Songs')}</h1>
+        <Button onClick={startScan}>{t('Scan')}</Button>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Input placeholder="搜索歌曲…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
+        <Input placeholder={t('Search songs…')} value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
         <select
           className="h-9 rounded-md border border-border bg-background px-2 text-sm"
           value={genre}
           onChange={(e) => setGenre(e.target.value)}
         >
-          <option value="">全部类型</option>
+          <option value="">{t('All genres')}</option>
           {(data?.genres ?? []).map((g) => (
             <option key={g} value={g}>
               {g}
@@ -118,7 +120,7 @@ export function SongsPage() {
           value={artist}
           onChange={(e) => setArtist(e.target.value)}
         >
-          <option value="">全部艺人</option>
+          <option value="">{t('All artists')}</option>
           {(data?.artists ?? []).map((a) => (
             <option key={a} value={a}>
               {a}
@@ -130,41 +132,41 @@ export function SongsPage() {
           value={rating}
           onChange={(e) => setRating(e.target.value)}
         >
-          <option value="">全部评分</option>
-          <option value="5">5 星</option>
-          <option value="4">4 星及以上</option>
-          <option value="3">3 星及以上</option>
-          <option value="1">已评分</option>
+          <option value="">{t('All ratings')}</option>
+          <option value="5">{t('5 stars')}</option>
+          <option value="4">{t('4 stars and up')}</option>
+          <option value="3">{t('3 stars and up')}</option>
+          <option value="1">{t('Rated')}</option>
         </select>
         <select
           className="h-9 rounded-md border border-border bg-background px-2 text-sm"
           value={sort}
           onChange={(e) => setSort(e.target.value)}
         >
-          <option value="title">按标题</option>
-          <option value="artist">按艺人</option>
-          <option value="album">按专辑</option>
-          <option value="rating">按评分</option>
-          <option value="plays">按播放量</option>
+          <option value="title">{t('Sort by title')}</option>
+          <option value="artist">{t('Sort by artist')}</option>
+          <option value="album">{t('Sort by album')}</option>
+          <option value="rating">{t('Sort by rating')}</option>
+          <option value="plays">{t('Sort by plays')}</option>
         </select>
         <select
           className="h-9 rounded-md border border-border bg-background px-2 text-sm"
           value={hasLyrics}
           onChange={(e) => setHasLyrics(e.target.value)}
         >
-          <option value="">歌词：全部</option>
-          <option value="yes">有歌词</option>
-          <option value="no">无歌词</option>
+          <option value="">{t('Lyrics: all')}</option>
+          <option value="yes">{t('Has lyrics')}</option>
+          <option value="no">{t('No lyrics')}</option>
         </select>
       </div>
       <div className="grid grid-cols-[40px_1.4fr_1fr_1fr_72px_88px_56px_52px_52px] gap-2 px-2 text-xs uppercase text-muted-foreground">
         <span />
-        <span>Title</span>
-        <span>Artist</span>
-        <span>Album</span>
-        <span>时长</span>
-        <span>评分</span>
-        <span>歌词</span>
+        <span>{t('Title')}</span>
+        <span>{t('Artist')}</span>
+        <span>{t('Album')}</span>
+        <span>{t('Duration')}</span>
+        <span>{t('Rating')}</span>
+        <span>{t('Lyrics')}</span>
         <span />
         <span />
       </div>
@@ -194,17 +196,17 @@ export function SongsPage() {
                     <button onClick={() => openLyrics(song.id)}>
                       <Badge className="bg-primary/15 text-primary">
                         <Mic2 size={12} className="mr-1" />
-                        有
+                        {t('Yes')}
                       </Badge>
                     </button>
                   ) : (
-                    <span className="text-xs text-muted-foreground">无</span>
+                    <span className="text-xs text-muted-foreground">{t('No')}</span>
                   )}
                 </span>
                 <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => addToQueue([song])}>
-                  队列
+                  {t('Queue')}
                 </Button>
-                <Button variant="ghost" className="h-7 px-1" onClick={() => setPlaylistSong(song)} title="加入歌单">
+                <Button variant="ghost" className="h-7 px-1" onClick={() => setPlaylistSong(song)} title={t('Add to playlist')}>
                   <ListPlus size={14} />
                 </Button>
               </div>

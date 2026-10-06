@@ -293,6 +293,10 @@ void MPlayerApp::onLanguageChanged() {
     if (g_wndFloatingLyr.isValid()) {
         g_wndFloatingLyr.onLanguageChanged();
     }
+
+#ifdef _MAC_OS
+    reloadMacApplicationMenu();
+#endif
 }
 
 void MPlayerApp::onOnlineSearchEnd() {

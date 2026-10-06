@@ -7,8 +7,10 @@ import { CoverImage } from '@/components/CoverImage';
 import { useLibrarySnapshot } from '@/features/library/components/SongsPage';
 import { usePlayerStore } from '@/features/player/store';
 import { formatDuration } from '@/lib/utils';
+import { useT } from '@/i18n';
 
 export function HomePage() {
+  const t = useT();
   const { data: boot } = useQuery({ queryKey: ['bootstrap'], queryFn: api.bootstrap });
   const { data: snapshot } = useLibrarySnapshot();
   const { data: history } = useQuery({
@@ -45,15 +47,18 @@ export function HomePage() {
   return (
     <div className="space-y-10 p-6">
       <p className="text-muted-foreground">
-        {boot?.library.song_count ?? '—'} 首歌曲 · {boot?.library.album_count ?? '—'} 张专辑
+        {t('{songs} songs · {albums} albums', {
+          songs: boot?.library.song_count ?? '—',
+          albums: boot?.library.album_count ?? '—',
+        })}
       </p>
 
       {recentPlayed.length > 0 && (
         <section>
           <div className="mb-4 flex items-end justify-between">
-            <h2 className="text-lg font-medium">最近播放</h2>
+            <h2 className="text-lg font-medium">{t('Recently played')}</h2>
             <Link to="/history" className="text-sm text-muted-foreground hover:text-foreground">
-              查看全部
+              {t('See all')}
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -69,7 +74,7 @@ export function HomePage() {
       )}
 
       <section>
-        <h2 className="mb-4 text-lg font-medium">最近添加</h2>
+        <h2 className="mb-4 text-lg font-medium">{t('Recently added')}</h2>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {recentAdded.map((s) => (
             <button key={s.id} className="text-left" onClick={() => playSongs(recentAdded, recentAdded.indexOf(s))}>
@@ -82,9 +87,9 @@ export function HomePage() {
       </section>
 
       <section>
-        <h2 className="mb-4 text-lg font-medium">高评分</h2>
+        <h2 className="mb-4 text-lg font-medium">{t('Top rated')}</h2>
         {topRated.length === 0 ? (
-          <p className="text-sm text-muted-foreground">还没有 4 星及以上的歌曲。</p>
+          <p className="text-sm text-muted-foreground">{t('No songs rated 4 stars or higher yet.')}</p>
         ) : (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {topRated.map((s, i) => (
@@ -92,7 +97,7 @@ export function HomePage() {
                 <CoverImage songId={s.id} className="aspect-square w-full rounded-lg" />
                 <div className="mt-2 truncate text-sm">{s.title}</div>
                 <div className="truncate text-xs text-muted-foreground">
-                  {s.artist} · {s.rating} 星
+                  {t('{artist} · {rating} stars', { artist: s.artist, rating: s.rating })}
                 </div>
               </button>
             ))}
@@ -101,7 +106,7 @@ export function HomePage() {
       </section>
 
       <section>
-        <h2 className="mb-4 text-lg font-medium">常听</h2>
+        <h2 className="mb-4 text-lg font-medium">{t('Most played')}</h2>
         <div className="space-y-1">
           {mostPlayed.map((s, i) => (
             <button
@@ -115,7 +120,7 @@ export function HomePage() {
                 <div className="truncate text-sm">{s.title}</div>
                 <div className="truncate text-xs text-muted-foreground">{s.artist}</div>
               </div>
-              <span className="text-xs text-muted-foreground">{s.play_count} 次</span>
+              <span className="text-xs text-muted-foreground">{t('{n} plays', { n: s.play_count })}</span>
             </button>
           ))}
         </div>
@@ -124,9 +129,9 @@ export function HomePage() {
       {recentPlaylists.length > 0 && (
         <section>
           <div className="mb-4 flex items-end justify-between">
-            <h2 className="text-lg font-medium">歌单</h2>
+            <h2 className="text-lg font-medium">{t('Playlists')}</h2>
             <Link to="/playlists" className="text-sm text-muted-foreground hover:text-foreground">
-              查看全部
+              {t('See all')}
             </Link>
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -142,7 +147,7 @@ export function HomePage() {
                 <div className="min-w-0">
                   <div className="truncate font-medium">{p.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {p.count} 首 · {formatDuration(p.duration)}
+                    {t('{n} tracks · {duration}', { n: p.count, duration: formatDuration(p.duration) })}
                   </div>
                 </div>
               </Link>

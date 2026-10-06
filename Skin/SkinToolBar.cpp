@@ -127,11 +127,13 @@ void CSkinToolbar::Button::fromXML(CSkinToolbar *pToolbar, SXNode *pNode) {
                 nID = pToolbar->m_pSkin->getSkinFactory()->getIDByNameEx(szValue, strTooltip);
                 if (!strTooltip.empty()) {
                     bTempToolTip = true;
+                    strTooltipEnglish = strTooltip;
                 }
             } else {
                 nID = pToolbar->m_pSkin->getSkinFactory()->getIDByName(szValue);
             }
         } else if (strcasecmp(szProperty, "ToolTip") == 0) {
+            strTooltipEnglish = szValue;
             string str = _TL(szValue);
             if (strcmp(strTooltip.c_str(), str.c_str()) != 0) {
                 strTooltip = str.c_str();
@@ -375,7 +377,9 @@ bool CSkinToolbar::onMouseMove(CPoint point) {
 void CSkinToolbar::onLanguageChanged() {
     for (int i = 0; i < (int)m_vButtons.size(); i++) {
         m_vButtons[i].strText = _TL(m_vButtons[i].strTextEnglish.c_str());
-        if (m_vButtons[i].strTooltip.size()) {
+        if (m_vButtons[i].strTooltipEnglish.size()) {
+            m_vButtons[i].strTooltip = _TL(m_vButtons[i].strTooltipEnglish.c_str());
+        } else if (m_vButtons[i].strTooltip.size()) {
             m_vButtons[i].strTooltip = m_pSkin->getSkinFactory()->getTooltip(m_vButtons[i].nID);
         }
     }

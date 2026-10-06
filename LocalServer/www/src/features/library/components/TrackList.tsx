@@ -3,6 +3,7 @@ import type { Song } from '@/api/types';
 import { formatDuration } from '@/lib/utils';
 import { usePlayerStore } from '@/features/player/store';
 import { mediaMenuFromEvent, type MediaMenuTarget } from './MediaContextMenu';
+import { useT } from '@/i18n';
 
 export function TrackList({
   songs,
@@ -11,6 +12,7 @@ export function TrackList({
   songs: Song[];
   onMenu: (t: MediaMenuTarget) => void;
 }) {
+  const t = useT();
   const playSongs = usePlayerStore((s) => s.playSongs);
   return (
     <div className="space-y-1">
@@ -30,7 +32,7 @@ export function TrackList({
           <span className="shrink-0 text-xs text-muted-foreground">{formatDuration(song.duration)}</span>
         </button>
       ))}
-      {songs.length === 0 && <p className="px-2 text-sm text-muted-foreground">没有歌曲</p>}
+      {songs.length === 0 && <p className="px-2 text-sm text-muted-foreground">{t('No songs')}</p>}
     </div>
   );
 }

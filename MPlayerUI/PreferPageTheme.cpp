@@ -450,7 +450,7 @@ protected:
 
         nSel = m_pThemeList->getNextSelectedItem(-1);
         if (nSel == -1) {
-            m_pSkin->messageOut(_TLT("Please select the theme from list."));
+            m_pSkin->messageOut(_TLT("Please select a theme from the list."));
             return;
         }
 
@@ -488,7 +488,7 @@ protected:
 
         nSel = m_pThemeList->getNextSelectedItem(-1);
         if (nSel == -1) {
-            m_pSkin->messageOut(_TLT("Please select the theme from list."));
+            m_pSkin->messageOut(_TLT("Please select a theme from the list."));
             return;
         }
 

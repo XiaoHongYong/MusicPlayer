@@ -23,7 +23,7 @@
     <Container ID="CID_C_UPLOAD_OK" Name="Upload OK" Rect="0,20,w,h-20" Visible="true">
       <TitleText Rect="20,10,w-40,25" Text="You have uploaded lyrics successfully."/>
       <Image Rect="w/2-24,45,," Image="success.png"/>
-      <NormalLink Rect="20,120,w-40,50" Text="You could manage the uploaded lyrics on website."
+      <NormalLink Rect="20,120,w-40,50" Text="You can manage uploaded lyrics on the website."
                   AlignText="AT_CENTER" Link="http://www.viewlyrics.com/user/MyUploadedLyrics.aspx"/>
       <NormalTextBt ID="ID_OK" Text="OK" Rect="w/2-100/2,h-40,100,"/>
     </Container>

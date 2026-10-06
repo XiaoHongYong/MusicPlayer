@@ -16,12 +16,12 @@
       <NormalCheckBox ID="CID_C_ID3V2_USLT" Text="Embedded lyrics for iPod, iTunes (ID3v2 unsynchronized lyrics)" Rect="45,160,w-70,"/>
       <NormalCheckBox ID="CID_C_ID3V2_SYLT" Text="Embedded lyrics for Windows Media Player (ID3v2 synchronized lyrics)" Rect="45,190,w-70,"/>
       <NormalCheckBox ID="CID_C_LYR3V2" Text="Embedded lyrics (Lyrics3v2 synchronized lyrics)" Rect="45,220,w-70,"/>
-      <NormalFrame Rect="10,260,w-20,90" Text="Rename the downloaded lyrics file name"/>
+      <NormalFrame Rect="10,260,w-20,90" Text="Rename downloaded lyrics files"/>
       <NormalRadioBt ID="CID_C_KEEP_FILENAME" Text="Keep the file name" Rect="25,290,w-50,"/>
-      <NormalRadioBt ID="CID_C_AS_SONG_NAME" Text="As the same name as the song" Rect="25,320,w-50,"/>
+      <NormalRadioBt ID="CID_C_AS_SONG_NAME" Text="Same name as the song" Rect="25,320,w-50,"/>
     </PreferPage.LyrDownload>
     <PreferPage.LyrSaveOptions ID="CID_C_LYR_SAVE_OPT" Visible="false" Name="Lyrics Saving Options" Rect="0,30,w,h-30-10">
-      <NormalCheckBox ID="CID_C_REMOVE_EXTRA_BLANK_LINES" Text="&amp;Remove extra blank lines in lyrics." Rect="10,15,w-50,"/>
+      <NormalCheckBox ID="CID_C_REMOVE_EXTRA_BLANK_LINES" Text="&amp;Remove extra blank lines in lyrics" Rect="10,15,w-50,"/>
     </PreferPage.LyrSaveOptions>
   </Container>
 </PreferPage.LyricsRoot>

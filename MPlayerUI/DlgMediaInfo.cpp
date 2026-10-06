@@ -309,7 +309,7 @@ public:
                 assert(nPos < _parent->_pictures.size());
                 assert(_picListCtrl->getItemCount() == _parent->_pictures.size());
 
-                CFileSaveDlg    dlg(_TLT("save picture as..."),
+                CFileSaveDlg    dlg(_TLT("Save picture as..."),
                     "", "All picture files (*.jpg; *.gif; *.png; *.bmp)\0*.jpg;*.gif;*.png;*.bmp\0\0", 1);
 
                 if (dlg.doModal(m_pSkin) != IDOK) {

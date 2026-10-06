@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+// 读取系统语言。strLang / strLangFull 与语言包 [Info] 的 LanguageCode / LanguageCodeFull 对齐。
+// macOS 用 preferredLanguages（zh-Hans* → Simplified Chinese），Windows 用 LANGID。
 bool getUserDefaultLang(string &strLang, string &strLangFull);
 
 class CLanguageFile {

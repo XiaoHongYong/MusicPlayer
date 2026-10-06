@@ -9,7 +9,7 @@
     <PreferPage.UI Visible="false" Name="UI" Rect="0,30,w,h-30-10">
       <NormalFrame Rect="10,10,w-20,70" Text="Skin window settings"/>
       <NormalCheckBox ID="CID_C_ON_TOP" Text="Always on top" Rect="25,30,w-50,"/>
-      <NormalCheckBox ID="CID_C_CLICK_THROUGH" Text="Mouse &amp;click through" Rect="25,55,w-50,"/>
+      <NormalCheckBox ID="CID_C_CLICK_THROUGH" Text="Mouse &amp;Click Through" Rect="25,55,w-50,"/>
       <NormalFrame Rect="10,90,w-20,h-90-10" Text="Installed language packs"/>
       <NormalTextBt ID="CID_SEL_LANGUAGE" Text="Select Language" Rect="20,115,w-40,"/>
       <NormalText Text="Current language pack information:"

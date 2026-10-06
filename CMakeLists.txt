@@ -204,6 +204,26 @@ else(LINUX)
     set_property(TARGET ${PROJECT_NAME} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:${CMAKE_BUILD_TYPE}>:${CMAKE_BUILD_TYPE}>")
 endif(LINUX)
 
+# 语言包由 tools/i18n_extract.py 生成到 i18n/lang/（gitignore，cmake GLOB 时可能还不存在）。
+# 不要把 *.ini 加进 Xcode Resources / MACOSX_PACKAGE_LOCATION：源路径含 /lang/、目标又是
+# Resources/lang 时，Copy 会去找项目根 lang/zh-CN.ini 并失败。
+if(APPLE)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources/lang"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${PROJECT_SOURCE_DIR}/i18n/lang"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources/lang"
+        COMMENT "Copy language packs into app bundle Resources/lang")
+elseif(WIN32)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/lang"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${PROJECT_SOURCE_DIR}/i18n/lang"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/lang"
+        COMMENT "Copy language packs next to the executable")
+endif()
+
 # 发布版禁用 assert（NDEBUG），避免代码中的数据校验断言在用户机器上直接 Abort 闪退。
 # 使用 per-config 的 COMPILE_DEFINITIONS_RELEASE，对单配置和 Xcode 多配置都生效。
 set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS_RELEASE "NDEBUG")

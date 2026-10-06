@@ -52,3 +52,6 @@ LocalServer/www/public/apple-touch-icon.png
 LocalServer/www/public/app-icon.png
 Skins-Design/raw/app-icon-512.png
 Skins-Design/raw/app-icon-source-512.png
+i18n/catalog.json
+i18n/lang/*.ini
+LocalServer/www/src/i18n/messages.generated.ts

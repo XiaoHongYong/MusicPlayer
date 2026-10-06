@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Container.Login ID="CID_C_LOGIN" Name="Login" Rect="0,20,w,h-20" Visible="false">
   <TitleText Rect="20,10,w-40,25" Text="Thank you for uploading lyrics."/>
-  <NormalText Rect="20,45,w-40," Text="Please login, so you could manage the uploaded lyrics." AlignText="AT_CENTER"/>
+  <NormalText Rect="20,45,w-40," Text="Please sign in to manage uploaded lyrics." AlignText="AT_CENTER"/>
 
   <NormalTextRight Rect="20,90,120," Text="Login Name:"/>
   <NormalEdit ID="CID_E_NAME" Rect="140+10,90,w-140-30,"/>
@@ -11,7 +11,7 @@
 
   <NormalCheckBox ID="CID_REMEMBER_PWD" Text="Remember password" Rect="140+10,150,w-140-30,"/>
 
-  <NormalLink ID="CID_SIGNUP" Text="Sign up Free, if you don't have an account."
+  <NormalLink ID="CID_SIGNUP" Text="Sign up for free if you don't have an account."
               Rect="20,h-60,w-40," AlignText="AT_CENTER"/>
 
   <NormalTextBt ID="ID_OK" Text="OK" Rect="w/2-100-10,h-30,100,"/>

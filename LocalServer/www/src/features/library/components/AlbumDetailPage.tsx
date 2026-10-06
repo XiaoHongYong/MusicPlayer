@@ -9,8 +9,10 @@ import { MediaContextMenu, type MediaMenuTarget } from './MediaContextMenu';
 import { TrackList } from './TrackList';
 import { useLibrarySnapshot } from './SongsPage';
 import { artistPath, shuffleSongs } from '../groups';
+import { useT } from '@/i18n';
 
 export function AlbumDetailPage() {
+  const t = useT();
   const { artist = '', album = '' } = useParams();
   const artistName = decodeURIComponent(artist);
   const albumName = decodeURIComponent(album);
@@ -27,12 +29,12 @@ export function AlbumDetailPage() {
   const year = songs.find((s) => s.year > 0)?.year;
   const total = songs.reduce((n, s) => n + (s.duration > 0 ? s.duration : 0), 0);
 
-  if (isLoading) return <p className="p-8 text-muted-foreground">加载专辑…</p>;
+  if (isLoading) return <p className="p-8 text-muted-foreground">{t('Loading album…')}</p>;
 
   return (
     <div className="space-y-6 p-6">
       <Link to="/library/albums" className="text-sm text-muted-foreground hover:text-foreground">
-        ← Albums
+        ← {t('Albums')}
       </Link>
       <div className="flex flex-col gap-6 sm:flex-row">
         <CoverImage songId={songs[0]?.id} className="h-48 w-48 shrink-0 rounded-xl" />
@@ -42,16 +44,16 @@ export function AlbumDetailPage() {
             <Link className="hover:text-foreground" to={artistPath(artistName)}>
               {artistName}
             </Link>
-            {year ? ` · ${year}` : ''} · {songs.length} 首 · {formatDuration(total)}
+            {year ? ` · ${year}` : ''} · {t('{n} tracks · {duration}', { n: songs.length, duration: formatDuration(total) })}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button onClick={() => playSongs(songs, 0)} disabled={!songs.length}>
               <Play size={14} className="mr-1" />
-              播放
+              {t('Play')}
             </Button>
             <Button variant="outline" onClick={() => playSongs(shuffleSongs(songs), 0)} disabled={!songs.length}>
               <Shuffle size={14} className="mr-1" />
-              随机播放
+              {t('Shuffle')}
             </Button>
           </div>
         </div>

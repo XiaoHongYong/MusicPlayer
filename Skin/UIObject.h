@@ -450,7 +450,7 @@ public:
 protected:
     static cstr_t               ms_szClassName;
 
-    string                      m_strTooltip;
+    string                      m_strTooltip, m_strTooltipEnglish;
     bool                        m_bTempTooltip;
 
     AnimateType                 m_animateType;

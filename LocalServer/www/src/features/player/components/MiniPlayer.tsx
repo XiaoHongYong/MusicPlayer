@@ -4,8 +4,10 @@ import { cn, formatDuration } from '@/lib/utils';
 import { usePlayerStore } from '../store';
 import { useUiStore } from '@/stores/ui-store';
 import { PlaybackExtraControls } from './PlaybackExtraControls';
+import { useT } from '@/i18n';
 
 export function MiniPlayer() {
+  const t = useT();
   const song = usePlayerStore((s) => s.current());
   const playing = usePlayerStore((s) => s.playing);
   const position = usePlayerStore((s) => s.position);
@@ -24,11 +26,11 @@ export function MiniPlayer() {
       <button className="flex min-w-0 items-center gap-3" onClick={() => setNowPlayingOpen(true)}>
         <CoverImage songId={song?.id} className="h-12 w-12 rounded-md" />
         <div className="min-w-0 text-left">
-          <div className="truncate text-sm font-medium">{song?.title ?? '未播放'}</div>
+          <div className="truncate text-sm font-medium">{song?.title ?? t('Not playing')}</div>
           <div className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
             {target === 'desktop' && <Monitor size={11} className="shrink-0" />}
             <span className="truncate">{song?.artist ?? '—'}</span>
-            {target === 'desktop' && <span className="shrink-0 text-[10px]">· 播放器</span>}
+            {target === 'desktop' && <span className="shrink-0 text-[10px]">· {t('Player')}</span>}
           </div>
         </div>
       </button>
@@ -63,7 +65,7 @@ export function MiniPlayer() {
       </div>
       <PlaybackExtraControls compact />
       <button
-        title="播放队列"
+        title={t('Play queue')}
         className={cn(
           'text-muted-foreground hover:text-foreground',
           queueOpen && 'text-primary hover:text-primary',

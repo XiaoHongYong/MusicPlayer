@@ -1,8 +1,10 @@
 import { Repeat, Repeat1, Shuffle, Volume2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePlayerStore } from '../store';
+import { useT } from '@/i18n';
 
 export function PlaybackExtraControls({ compact = false }: { compact?: boolean }) {
+  const t = useT();
   const shuffle = usePlayerStore((s) => s.shuffle);
   const repeat = usePlayerStore((s) => s.repeat);
   const volume = usePlayerStore((s) => s.volume);
@@ -14,7 +16,7 @@ export function PlaybackExtraControls({ compact = false }: { compact?: boolean }
   return (
     <div className={cn('flex items-center', compact ? 'gap-2' : 'gap-4')}>
       <button
-        title="随机播放"
+        title={t('Shuffle')}
         className={cn(
           'text-muted-foreground hover:text-foreground',
           shuffle && 'text-primary hover:text-primary',
@@ -24,7 +26,7 @@ export function PlaybackExtraControls({ compact = false }: { compact?: boolean }
         <Shuffle size={icon} />
       </button>
       <button
-        title={repeat === 'one' ? '单曲循环' : repeat === 'all' ? '列表循环' : '不循环'}
+        title={repeat === 'one' ? t('Repeat one') : repeat === 'all' ? t('Repeat all') : t('Repeat off')}
         className={cn(
           'text-muted-foreground hover:text-foreground',
           repeat !== 'off' && 'text-primary hover:text-primary',
@@ -41,7 +43,7 @@ export function PlaybackExtraControls({ compact = false }: { compact?: boolean }
           max={1}
           step={0.01}
           value={volume}
-          aria-label="音量"
+          aria-label={t('Volume')}
           onChange={(e) => setVolume(Number(e.target.value))}
           className={cn('h-1 accent-[hsl(var(--primary))]', compact ? 'w-16' : 'w-28')}
         />

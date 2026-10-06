@@ -62,6 +62,6 @@
         <TitleText Extends="Text" Height="25" FontName="Verdana" FontHeight="20" TextColor="#FFFFFF" AlignText="AT_CENTER"/>
         <ErrorText Extends="Text" Height="22" FontName="Verdana" FontHeight="13" TextColor="#FF8080"/>
         <NormalLink Extends="TxtLink" Height="22" FontName="Verdana" FontHeight="13" TextColor="#FFFF00"/>
-        <WndFrameCaption Extends="Text" ID="ID_CAPTION" Rect="30,4,w-60,20" Text="About DH Player" FontHeight="16" FontBold="false" TextColor="#FFFFFF" TextOutlinedColor="#000000" TextOutlined="true" LeftMargin="0" AlignText="AT_CENTER | AT_VCENTER"/>
+        <WndFrameCaption Extends="Text" ID="ID_CAPTION" Rect="30,4,w-60,20" Text="About MusicPlayer" FontHeight="16" FontBold="false" TextColor="#FFFFFF" TextOutlinedColor="#000000" TextOutlined="true" LeftMargin="0" AlignText="AT_CENTER | AT_VCENTER"/>
     </style>
 </styles>

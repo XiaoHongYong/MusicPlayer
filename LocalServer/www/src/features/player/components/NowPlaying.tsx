@@ -6,8 +6,10 @@ import { usePlayerStore } from '../store';
 import { LyricsPanel } from './LyricsPanel';
 import { Button } from '@/components/ui/button';
 import { PlaybackExtraControls } from './PlaybackExtraControls';
+import { useT } from '@/i18n';
 
 export function NowPlaying() {
+  const t = useT();
   const open = useUiStore((s) => s.nowPlayingOpen);
   const setOpen = useUiStore((s) => s.setNowPlayingOpen);
   const song = usePlayerStore((s) => s.current());
@@ -26,7 +28,7 @@ export function NowPlaying() {
       <div className="flex items-center justify-between px-6 py-4">
         <Button variant="ghost" onClick={() => setOpen(false)}>
           <ChevronDown className="mr-2" size={18} />
-          返回
+          {t('Back')}
         </Button>
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-8 px-8 pb-10 lg:grid-cols-2">
@@ -36,7 +38,7 @@ export function NowPlaying() {
             className="aspect-square w-full max-w-md rounded-2xl shadow-2xl"
           />
           <div className="w-full max-w-md text-center">
-            <h1 className="text-2xl font-semibold">{song?.title ?? '未播放'}</h1>
+            <h1 className="text-2xl font-semibold">{song?.title ?? t('Not playing')}</h1>
             <p className="mt-1 text-muted-foreground">{song?.artist}</p>
           </div>
           <div className="flex w-full max-w-md items-center gap-3 text-xs text-muted-foreground">

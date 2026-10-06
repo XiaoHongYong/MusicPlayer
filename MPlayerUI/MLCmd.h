@@ -37,7 +37,7 @@ DEFINE_CMD_ID_TIP(ID_BACKWARD_CUR_LINE, _TLM("Backward the timestamp of this lin
 DEFINE_CMD_ID_TIP(ID_AUTO_FILL_LYR_INFO, _TLM("Auto fill artist, album and title info"))  \
 DEFINE_CMD_ID_TIP(ID_LYR_EDITOR, _TLM("Lyrics Editor"))                                   \
 DEFINE_CMD_ID_TIP(ID_EXTERNAL_LYR_EDIT, _TLM("Edit with external lyrics editor"))         \
-DEFINE_CMD_ID_TIP(ID_SAVE_LYR_IN_SONG_FILE, _TLM("save lyrics in song file"))             \
+DEFINE_CMD_ID_TIP(ID_SAVE_LYR_IN_SONG_FILE, _TLM("Save lyrics in song file"))             \
 \
 DEFINE_CMD_ID_TIP(ID_EDIT_FIND,         _TLM("Find"))               \
 DEFINE_CMD_ID_TIP(ID_EDIT_FINDNEXT,     _TLM("Find next"))          \
@@ -88,10 +88,10 @@ DEFINE_CMD_ID_TIP(ID_PL_UP,             _TLM("Move up"))            \
 DEFINE_CMD_ID_TIP(ID_PL_DOWN,           _TLM("Move down"))          \
 DEFINE_CMD_ID_TIP(ID_PL_ADD_FILE,       _TLM("Add file"))           \
 DEFINE_CMD_ID_TIP(ID_PL_ADD_DIR,        _TLM("Add folder"))         \
-DEFINE_CMD_ID_TIP(ID_PL_ADD_URL,        _TLM("Add url"))            \
+DEFINE_CMD_ID_TIP(ID_PL_ADD_URL,        _TLM("Add URL"))            \
 DEFINE_CMD_ID_TIP(ID_PL_OPEN_FILE,      _TLM("Open file"))          \
 DEFINE_CMD_ID_TIP(ID_PL_OPEN_DIR,       _TLM("Open folder"))        \
-DEFINE_CMD_ID_TIP(ID_PL_OPEN_URL,       _TLM("Open url"))           \
+DEFINE_CMD_ID_TIP(ID_PL_OPEN_URL,       _TLM("Open URL"))           \
 DEFINE_CMD_ID_TIP(ID_PL_DEL,            _TLM("Delete"))             \
 DEFINE_CMD_ID_TIP(ID_PL_PROPERTY,       _TLM("Property"))           \
 DEFINE_CMD_ID_TIP(ID_PL_NEW,            _TLM("New playlist"))       \
@@ -134,7 +134,7 @@ DEFINE_CMD_ID(ID_LDS_STATIC_TXT)                                    \
 DEFINE_CMD_ID(ID_LDS_TWO_LINE)                                      \
 DEFINE_CMD_ID(ID_LDS_SINGLE_LINE)                                   \
 DEFINE_CMD_ID(ID_LDS_VOBSUB)                                        \
-DEFINE_CMD_ID_TIP(ID_NO_SUITTABLE_LYRICS, _TLM("&No suitable lyrics for the Song")) \
+DEFINE_CMD_ID_TIP(ID_NO_SUITTABLE_LYRICS, _TLM("&No Suitable Lyrics for the Song File")) \
 DEFINE_CMD_ID_TIP(ID_INSTRUMENTAL_MUSIC, _TLM("Instrumental music, no lyrics")) \
 DEFINE_CMD_ID_TIP(ID_SEARCH_LYR_SUGGESTIONS, _TLM("Lyrics search suggestions")) \
 DEFINE_CMD_ID(ID_REMOVE_FROM_LIBRARY)                               \

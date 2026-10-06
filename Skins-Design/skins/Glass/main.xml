@@ -51,7 +51,7 @@
 					<Container Name="SearchBar" Rect="12,10,w-24,26">
 						<Property Name="BgImage" Image="search-bg.png" HorzExtendPos="16,48" VertExtendPos="13,14" BlendPixMode="alpha_blend"/>
 						<Image Name="Search" Rect="8,3,20,20" Image="search.png"/>
-						<NormalEdit ID="CID_E_SEARCH_MUSIC" Text="" PlaceHolder="搜索音乐" Rect="34,3,w-34-10,20" EnableBorder="false"/>
+						<NormalEdit ID="CID_E_SEARCH_MUSIC" Text="" PlaceHolder="Search music" Rect="34,3,w-34-10,20" EnableBorder="false"/>
 					</Container>
 
 					<GlassPlaylist Rect="8,42,w-20,h-50" EnableHeader="false" EnableBorder="false" KeywordEdit="CID_E_SEARCH_MUSIC"/>

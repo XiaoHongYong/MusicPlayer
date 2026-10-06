@@ -158,7 +158,7 @@ class CPageLogin : public CSkinContainer {
     UIOBJECT_CLASS_NAME_DECLARE(CSkinContainer)
 public:
     CPageLogin()
-        { CID_E_PASSWORD = CID_REMEMBER_PWD = CID_E_NAME = 0; m_strText = _TLM("log in"); }
+        { CID_E_PASSWORD = CID_REMEMBER_PWD = CID_E_NAME = 0; m_strText = _TLM("Log in"); }
 
     void onInitialUpdate() override {
         CSkinContainer::onInitialUpdate();
@@ -208,8 +208,8 @@ public:
         assert(pPageWait);
         if (pPageWait) {
             pPageWait->setLoginWork(true);
-            pPageWait->startWork(_TLT("log in"),
-                _TLT("Processing login, It may take a few seconds."),
+            pPageWait->startWork(_TLT("Log in"),
+                _TLT("Signing in. It may take a few seconds."),
                 &m_loginWorkObj);
         }
 
@@ -236,7 +236,7 @@ class CPageUploadNotice : public CSkinContainer {
 public:
     CPageUploadNotice() {
         m_pUploadObj = nullptr;
-        m_strText = _TLM("upload Lyrics");
+        m_strText = _TLM("Upload lyrics");
     }
 
     void onCreate() override {
@@ -253,7 +253,7 @@ public:
 
         assert(g_sessionUpload.isLogined());
         setUIObjectText("CID_ACCOUNT_NOTICE",
-            stringPrintf(_TLT("Your lyrics will be uploaded under account: %s"), g_sessionUpload.getLoginName()).c_str(), false);
+            stringPrintf(_TLT("Your lyrics will be uploaded under the account: %s"), g_sessionUpload.getLoginName()).c_str(), false);
     }
 
     bool onOK() override {
@@ -261,8 +261,8 @@ public:
         assert(pPageWait);
         if (pPageWait) {
             pPageWait->setLoginWork(false);
-            pPageWait->startWork(_TLT("upload Lyrics"),
-                _TLT("MusicPlayer is uploading lyrics, It may take a few seconds."),
+            pPageWait->startWork(_TLT("Upload lyrics"),
+                _TLT("$Product$ is uploading lyrics. It may take a few seconds."),
                 m_pUploadObj);
         }
 
@@ -327,8 +327,8 @@ public:
             assert(pPageWait);
             if (pPageWait) {
                 pPageWait->setLoginWork(false);
-                pPageWait->startWork(_TLT("upload Lyrics"),
-                    _TLT("MusicPlayer is uploading lyrics, It may take a few seconds."),
+                pPageWait->startWork(_TLT("Upload lyrics"),
+                    _TLT("$Product$ is uploading lyrics. It may take a few seconds."),
                     ((CSkinWndUploadLyr *)m_pSkin)->getUploadWorkObj());
             }
         } else {

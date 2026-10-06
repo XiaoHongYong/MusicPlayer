@@ -75,7 +75,7 @@
 			</Container>
 
 			<Button Rect="w-24-10,35,24,24" ID="CID_HIDE_PLAYLIST" Image="playlist.png" ImageSize="24,24" ToolTip="Switch between playlist and lyrics"/>
-			<Button Rect="w-24-10,85,24,24" ID="CID_HIDE_BOTTOM" Image="bottom.png" ImageSize="24,24" ToolTip="Hide/show body"/>
+			<Button Rect="w-24-10,85,24,24" ID="CID_HIDE_BOTTOM" Image="bottom.png" ImageSize="24,24" ToolTip="Hide/show window body"/>
 
 		</Container>
 

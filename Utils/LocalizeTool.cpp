@@ -2,6 +2,13 @@
 #include "LocalizeTool.h"
 #include "App.h"
 
+#ifdef _MAC_OS
+#include <CoreFoundation/CoreFoundation.h>
+#endif
+#ifndef _WIN32
+#include <cstdlib>
+#endif
+
 
 CLanguageTool g_LangTool;
 
@@ -9,6 +16,104 @@ CLanguageTool g_LangTool;
 
 string getLangPackDir() {
     return getAppResourceFile(SZ_LANG_DIR);
+}
+
+static bool startsWithI(cstr_t text, cstr_t prefix) {
+    return strncasecmp(text, prefix, strlen(prefix)) == 0;
+}
+
+// zh-Hans-CN / zh_CN.UTF-8 / zh-CN → zh-CN；英语返回空（用内置英文）
+static string localeIdFromLangTag(string tag) {
+    for (char &ch : tag) {
+        if (ch >= 'A' && ch <= 'Z') {
+            ch = (char)(ch + ('a' - 'A'));
+        } else if (ch == '_') {
+            ch = '-';
+        }
+    }
+    size_t cut = tag.find_first_of(".@");
+    if (cut != string::npos) {
+        tag.resize(cut);
+    }
+    if (tag.empty() || tag == "c" || tag == "posix") {
+        return "";
+    }
+    if (startsWithI(tag.c_str(), "en")) {
+        return "";
+    }
+    if (startsWithI(tag.c_str(), "zh-hans") || startsWithI(tag.c_str(), "zh-cn") || tag == "zh") {
+        return "zh-CN";
+    }
+    if (startsWithI(tag.c_str(), "zh-hant") || startsWithI(tag.c_str(), "zh-tw")
+        || startsWithI(tag.c_str(), "zh-hk") || startsWithI(tag.c_str(), "zh-mo")) {
+        return "zh-TW";
+    }
+    return "";
+}
+
+#ifndef _WIN32
+static bool readSystemLangTag(string &tag) {
+#ifdef _MAC_OS
+    CFArrayRef langs = CFLocaleCopyPreferredLanguages();
+    if (!langs) {
+        return false;
+    }
+    bool ok = false;
+    if (CFArrayGetCount(langs) > 0) {
+        CFStringRef code = (CFStringRef)CFArrayGetValueAtIndex(langs, 0);
+        char buf[128] = {0};
+        if (code && CFStringGetCString(code, buf, sizeof(buf), kCFStringEncodingUTF8) && buf[0]) {
+            tag = buf;
+            ok = true;
+        }
+    }
+    CFRelease(langs);
+    return ok;
+#else
+    const char *env = getenv("LC_ALL");
+    if (!env || !env[0] || strcmp(env, "C") == 0) {
+        env = getenv("LC_MESSAGES");
+    }
+    if (!env || !env[0] || strcmp(env, "C") == 0) {
+        env = getenv("LANG");
+    }
+    if (!env || !env[0]) {
+        return false;
+    }
+    tag = env;
+    return true;
+#endif
+}
+#endif
+
+static string detectSystemLocaleId() {
+#ifdef _WIN32
+    string lang, full;
+    if (!getUserDefaultLang(lang, full)) {
+        return "";
+    }
+    if (strcasecmp(lang.c_str(), "English") == 0) {
+        return "";
+    }
+    if (strcasecmp(lang.c_str(), "Simplified Chinese") == 0
+        || startsWithI(full.c_str(), "Chinese (PRC)")
+        || startsWithI(full.c_str(), "Chinese (Singapore)")) {
+        return "zh-CN";
+    }
+    if (strcasecmp(lang.c_str(), "Traditional Chinese") == 0
+        || startsWithI(full.c_str(), "Chinese (Taiwan)")
+        || startsWithI(full.c_str(), "Chinese (Hong Kong")
+        || startsWithI(full.c_str(), "Chinese (Macau")) {
+        return "zh-TW";
+    }
+    return "";
+#else
+    string tag;
+    if (!readSystemLangTag(tag)) {
+        return "";
+    }
+    return localeIdFromLangTag(tag);
+#endif
 }
 
 
@@ -71,14 +176,19 @@ static bool getLanguagePackInfo(cstr_t szFile, string &strLanguage, string &strL
         return false;
     }
 
-    if (fread(buff, 1, sizeof(buff), fp) != sizeof(buff)) {
+    memset(buff, 0, sizeof(buff));
+    size_t nRead = fread(buff, 1, sizeof(buff) - 1, fp);
+    if (nRead < 8) {
         goto R_FAILED;
     }
 
     int bomSize;
-    encoding = detectFileEncoding(buff, sizeof(buff), bomSize);
+    encoding = detectFileEncoding(buff, nRead, bomSize);
     assert(encoding == ED_UTF8 || encoding == ED_SYSDEF);
-    strBuff.assign(buff + bomSize, CountOf(buff) - bomSize);
+    if (bomSize < 0 || (size_t)bomSize >= nRead) {
+        goto R_FAILED;
+    }
+    strBuff.assign(buff + bomSize, nRead - (size_t)bomSize);
 
     // [Info]
     if (strncasecmp(strBuff.c_str(), SZ_INFO, strlen(SZ_INFO)) != 0) {
@@ -271,6 +381,29 @@ bool getUserDefaultLang(string &strLang, string &strLangFull) {
     }
 #endif
 
+#ifndef _WIN32
+    string tag;
+    if (!readSystemLangTag(tag)) {
+        return false;
+    }
+    string localeId = localeIdFromLangTag(tag);
+    if (localeId.empty()) {
+        strLang = "English";
+        strLangFull = "English";
+        return true;
+    }
+    if (localeId == "zh-CN") {
+        strLang = "Simplified Chinese";
+        strLangFull = "Chinese (PRC)";
+        return true;
+    }
+    if (localeId == "zh-TW") {
+        strLang = "Traditional Chinese";
+        strLangFull = "Chinese (Taiwan)";
+        return true;
+    }
+#endif
+
     return false;
 }
 
@@ -418,10 +551,7 @@ bool CLanguageTool::getCurrentLanguageFile(string &strLanguageFile) {
     string langFileName = g_profile.getString("Language", "");
     if (langFileName.empty()) {
         string strLang, strLangFull;
-
-        if (!getUserDefaultLang(strLang, strLangFull)) {
-            return false;
-        }
+        getUserDefaultLang(strLang, strLangFull);
 
         if (strcasecmp(strLang.c_str(), "English") == 0) {
             return false;
@@ -429,17 +559,23 @@ bool CLanguageTool::getCurrentLanguageFile(string &strLanguageFile) {
 
         V_TRANSFILEINFO vTransFiles;
         string strFileName, strFileNameBest;
+        string localeId = detectSystemLocaleId();
 
         listTransFiles(getLangPackDir().c_str(), vTransFiles);
 
-        // search for full match
         for (int i = 0; i < (int)vTransFiles.size(); i++) {
             TransFileInfo &item = vTransFiles[i];
-            if (strcmp(item.strLanguageCodeFull.c_str(), strLangFull.c_str()) == 0) {
+            string packId = fileGetTitle(item.strFileName.c_str());
+            if (!localeId.empty() && strcasecmp(packId.c_str(), localeId.c_str()) == 0) {
                 strFileNameBest = item.strFileName;
                 break;
             }
-            if (strFileName.empty() && strcmp(item.strLanguageCode.c_str(), strLang.c_str()) == 0) {
+            if (!strLangFull.empty() && strcmp(item.strLanguageCodeFull.c_str(), strLangFull.c_str()) == 0) {
+                strFileNameBest = item.strFileName;
+                break;
+            }
+            if (strFileName.empty() && !strLang.empty()
+                && strcmp(item.strLanguageCode.c_str(), strLang.c_str()) == 0) {
                 strFileName = item.strFileName;
             }
         }
@@ -449,14 +585,10 @@ bool CLanguageTool::getCurrentLanguageFile(string &strLanguageFile) {
         } else if (strFileName.size()) {
             langFileName = strFileName;
         }
-
-        // save auto detected translation file
-        if (!langFileName.empty()) {
-            g_profile.writeString("Language", langFileName.c_str());
-        }
+        // 未手动选择时不写入配置，下次启动仍跟随系统语言
     }
 
-    strLanguageFile += langFileName;
+    strLanguageFile = dirStringJoin(getLangPackDir().c_str(), langFileName.c_str());
     return (!langFileName.empty() && isFileExist(strLanguageFile.c_str()));
 }
 

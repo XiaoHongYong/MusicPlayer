@@ -13,11 +13,13 @@ import {
 } from '@/features/library/components/MediaContextMenu';
 import { usePlayerStore } from '@/features/player/store';
 import { normalizeQuery, songMatchesQuery, textMatches } from './match';
+import { useT } from '@/i18n';
 
 const SONG_LIMIT = 80;
 const GROUP_LIMIT = 16;
 
 export function SearchPage() {
+  const t = useT();
   const [params] = useSearchParams();
   const q = params.get('q') ?? '';
   const nq = normalizeQuery(q);
@@ -62,8 +64,8 @@ export function SearchPage() {
     return playlists.filter((p) => textMatches(nq, p.name)).slice(0, GROUP_LIMIT);
   }, [playlists, nq]);
 
-  if (isLoading) return <p className="p-8 text-muted-foreground">加载媒体库…</p>;
-  if (error) return <p className="p-8 text-red-500">无法加载媒体库</p>;
+  if (isLoading) return <p className="p-8 text-muted-foreground">{t('Loading library…')}</p>;
+  if (error) return <p className="p-8 text-red-500">{t('Failed to load library')}</p>;
 
   const empty = !nq;
   const noHits =
@@ -76,18 +78,20 @@ export function SearchPage() {
   return (
     <div className="space-y-8 p-6">
       <div>
-        <h1 className="text-2xl font-semibold">搜索</h1>
+        <h1 className="text-2xl font-semibold">{t('Search')}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {empty ? '在顶部输入歌曲、艺人、专辑或歌单名称' : `“${q.trim()}” 的结果`}
+          {empty
+            ? t('Type a song, artist, album, or playlist name in the top bar')
+            : t('Results for "{q}"', { q: q.trim() })}
         </p>
       </div>
 
-      {empty && <p className="text-sm text-muted-foreground">开始输入以搜索整个媒体库。</p>}
-      {noHits && <p className="text-sm text-muted-foreground">没有找到匹配项。</p>}
+      {empty && <p className="text-sm text-muted-foreground">{t('Start typing to search the whole library.')}</p>}
+      {noHits && <p className="text-sm text-muted-foreground">{t('No matches found.')}</p>}
 
       {songHits.length > 0 && (
         <section>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">歌曲</h2>
+          <h2 className="mb-3 text-sm font-medium text-muted-foreground">{t('Songs')}</h2>
           <div className="space-y-1">
             {songHits.map((s, i) => (
               <button
@@ -112,7 +116,7 @@ export function SearchPage() {
 
       {albumHits.length > 0 && (
         <section>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">专辑</h2>
+          <h2 className="mb-3 text-sm font-medium text-muted-foreground">{t('Albums')}</h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             {albumHits.map((a) => {
               const albumSongs = songs.filter((s) => s.album === a.name && s.artist === a.artist);
@@ -126,7 +130,7 @@ export function SearchPage() {
                   <CoverImage songId={a.coverId} className="aspect-square w-full rounded-lg" />
                   <div className="mt-2 truncate text-sm font-medium">{a.name}</div>
                   <div className="truncate text-xs text-muted-foreground">
-                    {a.artist} · {a.count} 首
+                    {a.artist} · {t('{n} tracks', { n: a.count })}
                   </div>
                 </button>
               );
@@ -137,7 +141,7 @@ export function SearchPage() {
 
       {artistHits.length > 0 && (
         <section>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">艺人</h2>
+          <h2 className="mb-3 text-sm font-medium text-muted-foreground">{t('Artists')}</h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             {artistHits.map((a) => {
               const artistSongs = songs.filter((s) => s.artist === a.name);
@@ -150,7 +154,7 @@ export function SearchPage() {
                 >
                   <CoverImage songId={a.coverId} kind="artist" className="aspect-square w-full rounded-lg" />
                   <div className="mt-3 truncate text-center text-sm font-medium">{a.name}</div>
-                  <div className="text-center text-xs text-muted-foreground">{a.count} 首</div>
+                  <div className="text-center text-xs text-muted-foreground">{t('{n} tracks', { n: a.count })}</div>
                 </button>
               );
             })}
@@ -160,7 +164,7 @@ export function SearchPage() {
 
       {playlistHits.length > 0 && (
         <section>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">歌单</h2>
+          <h2 className="mb-3 text-sm font-medium text-muted-foreground">{t('Playlists')}</h2>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {playlistHits.map((p) => (
               <Link
@@ -174,7 +178,7 @@ export function SearchPage() {
                 <div className="min-w-0">
                   <div className="truncate font-medium">{p.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {p.count} 首 · {formatDuration(p.duration)}
+                    {t('{n} tracks · {duration}', { n: p.count, duration: formatDuration(p.duration) })}
                   </div>
                 </div>
               </Link>

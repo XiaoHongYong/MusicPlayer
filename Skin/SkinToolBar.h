@@ -33,7 +33,7 @@ public:
         bool                        bEnabled;
         int                         nLeftOfDiabled;     // Image position of disabled
 
-        string                      strTooltip;
+        string                      strTooltip, strTooltipEnglish;
         bool                        bTempToolTip;
         bool                        bContinuousCmd;     // Will the cmd be triggered continuous?
 

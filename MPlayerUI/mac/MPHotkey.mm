@@ -204,7 +204,7 @@ cstr_t keyCodeToText(uint32_t key) {
         { 0, nullptr },
     };
 
-    return idToString(KEY_NAMES, key, "Unkown");
+    return idToString(KEY_NAMES, key, "Unknown");
 }
 
 string formatHotkeyText(uint32_t key, uint32_t modifiers) {

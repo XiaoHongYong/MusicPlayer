@@ -131,11 +131,11 @@
           "ID_UPLOAD_LYR"
         ],
         [
-          "Sign in Via &Web Browser...",
+          "Sign in via &Web Browser...",
           "ID_LOGIN_VIA_IE"
         ],
         [
-          "&Sign up Free...",
+          "&Sign Up Free...",
           "ID_APPLY_ACCOUNT"
         ],
         [
@@ -251,7 +251,7 @@
               "ID_ENC_UNICODE"
             ],
             [
-              "Utf-&8",
+              "UTF-&8",
               "ID_ENC_UTF8"
             ],
             [
@@ -610,7 +610,7 @@
               "ID_ENC_UNICODE"
             ],
             [
-              "Utf-&8",
+              "UTF-&8",
               "ID_ENC_UTF8"
             ],
             [
@@ -704,7 +704,7 @@
   ],
   "PlaylistMenu": [
     [
-      "Show in Fin&der",
+      "Show in &Finder",
       "ID_SHOW_IN_FINDER"
     ],
     [
@@ -950,11 +950,11 @@
               "ID_UPLOAD_LYR"
             ],
             [
-              "Sign in Via &Web Browser...",
+              "Sign in via &Web Browser...",
               "ID_LOGIN_VIA_IE"
             ],
             [
-              "&Sign up Free...",
+              "&Sign Up Free...",
               "ID_APPLY_ACCOUNT"
             ]
           ]
@@ -1090,7 +1090,7 @@
               "ID_ENC_UNICODE"
             ],
             [
-              "Utf-&8",
+              "UTF-&8",
               "ID_ENC_UTF8"
             ],
             [
@@ -1210,11 +1210,11 @@
               "ID_UPLOAD_LYR"
             ],
             [
-              "Sign in Via &Web Browser...",
+              "Sign in via &Web Browser...",
               "ID_LOGIN_VIA_IE"
             ],
             [
-              "&Sign up Free...",
+              "&Sign Up Free...",
               "ID_APPLY_ACCOUNT"
             ]
           ]
@@ -1361,7 +1361,7 @@
               "ID_ENC_UNICODE"
             ],
             [
-              "Utf-&8",
+              "UTF-&8",
               "ID_ENC_UTF8"
             ],
             [
@@ -1617,11 +1617,11 @@
   ],
   "PlaylistSearchCtx": [
     [
-      "Show in Fin&der",
+      "Show in &Finder",
       "ID_SHOW_IN_FINDER"
     ],
     [
-      "Play Selected &file",
+      "Play Selected &File",
       "ID_PLAY_SELECTED_FILE"
     ],
     [

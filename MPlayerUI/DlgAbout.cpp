@@ -47,7 +47,7 @@ public:
                     if (nRet == ERR_OK) {
                         if (isNewVersion(versionInfo.verNew.c_str())) {
                             // new version
-                            string strNewVersion = _TLT("new version of $Product$ is available.");
+                            string strNewVersion = _TLT("A new version of $Product$ is available.");
                             strNewVersion += " ";
                             strNewVersion += versionInfo.verNew;
 

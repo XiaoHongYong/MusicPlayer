@@ -6,16 +6,18 @@ import { cn } from '@/lib/utils';
 import { useRealtimeStatus } from '@/features/realtime/useRealtimeStatus';
 import { usePlayerStore } from '@/features/player/store';
 import { useUiStore, type PlaybackTarget } from '@/stores/ui-store';
+import { useT } from '@/i18n';
 
 function ConnectionStatusIcon() {
+  const t = useT();
   const { status, reconnect } = useRealtimeStatus();
   const offline = status !== 'connected';
   const label =
     status === 'connected'
-      ? '已连接播放器'
+      ? t('Connected to player')
       : status === 'connecting'
-        ? '正在连接播放器…点击重试'
-        : '已断开，点击重新连接';
+        ? t('Connecting to player… tap to retry')
+        : t('Disconnected, tap to reconnect');
 
   return (
     <button
@@ -41,13 +43,14 @@ function ConnectionStatusIcon() {
       />
       <Radio size={14} className={status === 'connected' ? 'text-emerald-500' : 'text-muted-foreground'} />
       <span className="hidden sm:inline">
-        {status === 'connected' ? '已连接' : status === 'connecting' ? '连接中' : '已断开'}
+        {status === 'connected' ? t('Connected') : status === 'connecting' ? t('Connecting') : t('Disconnected')}
       </span>
     </button>
   );
 }
 
 function PlaybackTargetSwitch() {
+  const t = useT();
   const target = useUiStore((s) => s.playbackTarget);
   const setTarget = useUiStore((s) => s.setPlaybackTarget);
   const onTargetChanged = usePlayerStore((s) => s.onTargetChanged);
@@ -61,7 +64,7 @@ function PlaybackTargetSwitch() {
   return (
     <div
       className="flex items-center gap-1 rounded-lg border border-border bg-muted/40 p-0.5 text-xs"
-      title="选择在哪里播放：浏览器本页，或桌面 MusicPlayer"
+      title={t('Choose where to play: this browser tab, or the desktop MusicPlayer')}
     >
       <button
         type="button"
@@ -73,7 +76,7 @@ function PlaybackTargetSwitch() {
             : 'text-muted-foreground hover:text-foreground',
         )}
       >
-        浏览器
+        {t('Browser')}
       </button>
       <button
         type="button"
@@ -86,13 +89,14 @@ function PlaybackTargetSwitch() {
         )}
       >
         <Monitor size={12} />
-        播放器
+        {t('Player')}
       </button>
     </div>
   );
 }
 
 export function TopBar() {
+  const t = useT();
   const location = useLocation();
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -126,13 +130,13 @@ export function TopBar() {
       >
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="搜索歌曲、艺人、专辑、歌单"
+          placeholder={t('Search songs, artists, albums, playlists')}
           className="pl-9"
           type="search"
           autoComplete="off"
           value={q}
           onChange={(e) => goSearch(e.target.value)}
-          aria-label="搜索媒体库"
+          aria-label={t('Search library')}
         />
       </form>
       <div className="ml-auto flex items-center gap-2">

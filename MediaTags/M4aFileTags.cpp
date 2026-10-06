@@ -663,12 +663,12 @@ void M4aTag::parseSTSD(M4aBox *box) {
                 _extInfo.channels = stream.readUInt16BE();
                 _extInfo.bitsPerSample = stream.readUInt16BE();
 
-                stream.readUInt16BE(); // Unkown
-                stream.readUInt16BE(); // Unkown
+                stream.readUInt16BE(); // Unknown
+                stream.readUInt16BE(); // Unknown
 
                 _extInfo.sampleRate = stream.readUInt16BE();
 
-                stream.readUInt16BE(); // Unkown
+                stream.readUInt16BE(); // Unknown
 
                 readAtomHeader(stream, type);
                 if (memcmp(type, "esds", 4) == 0) {

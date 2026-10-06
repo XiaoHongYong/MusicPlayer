@@ -31,6 +31,35 @@ LocalWWW=${CUR_DIR}/LocalServer/www/dist" > ${file_ini}
     fi
 }
 
+# 从 i18n/locales 生成 C++ i18n/lang/*.ini 与 Web messages.generated.ts
+function generate_i18n() {
+    echo "Generate i18n language packs..."
+    python3 "${CUR_DIR}/tools/i18n_extract.py"
+    exit_if_err "Failed to generate i18n (tools/i18n_extract.py)."
+}
+
+# 把语言包装入 App Bundle：Contents/Resources/lang/*.ini
+function install_lang_packs() {
+    local app_resources="${CUR_DIR}/build/${BUILD_TYPE}/MusicPlayer.app/Contents/Resources"
+    local dest_dir="${app_resources}/lang"
+
+    if [ ! -d "${app_resources}" ] ; then
+        echo "Skip installing language packs: app Resources not found at ${app_resources}"
+        return 0
+    fi
+
+    echo "Install language packs → ${dest_dir}"
+    rm -rf "${dest_dir}"
+    mkdir -p "${dest_dir}"
+    if ls "${CUR_DIR}/i18n/lang/"*.ini >/dev/null 2>&1 ; then
+        cp -R "${CUR_DIR}/i18n/lang/"*.ini "${dest_dir}/"
+        exit_if_err "Failed to copy language packs to app bundle."
+    else
+        echo "WARNING: no i18n/lang/*.ini generated; desktop UI will stay English."
+    fi
+    echo "OK"
+}
+
 # 编译媒体中心前端，并把 dist 拷进 App Bundle 的 Resources/local-server/
 function build_and_install_media_center() {
     local www_dir="${CUR_DIR}/LocalServer/www"
@@ -142,6 +171,10 @@ python3 TinyJS/build-script/build.py
 VERSION="$(python3 build.py update_version_header_file)"
 RELEASE_DIR="../Release/$VERSION"
 
+if [[ $ACTION_GENERATE ]] || [[ $ACTION_BUILD ]] || [[ $ACTION_PACK ]] ; then
+    generate_i18n
+fi
+
 if [ $ACTION_GENERATE ] ; then
     echo "Generate XCode project MusicPlayer..."
 
@@ -175,6 +208,9 @@ if [ $ACTION_BUILD ] ; then
     xcodebuild -project build/MusicPlayer.xcodeproj -scheme MusicPlayer -configuration $BUILD_TYPE $XCODE_ATTRS
     exit_if_err
 
+    # 语言包 + 媒体中心：编译后装入 Bundle（CMake Copy Resources 可能把目录拍平，这里覆盖为 lang/）
+    install_lang_packs
+
     # 媒体中心网页：编译并装入 Bundle，供 LocalServer 静态托管（默认 127.0.0.1:12120）
     build_and_install_media_center
 
@@ -190,8 +226,9 @@ if [ $ACTION_PACK ] ; then
     if [ "$BUILD_TYPE" != "Release" ] ; then
         echo "Skip packaging: only supported for Release (got $BUILD_TYPE)."
     else
-        # 仅 -p 时也确保媒体中心已装入 Bundle（避免漏跑 -b 的安装步骤）
+        # 仅 -p 时也确保语言包与媒体中心已装入 Bundle
         if [[ ! $ACTION_BUILD ]] ; then
+            install_lang_packs
             build_and_install_media_center
         fi
 

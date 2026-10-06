@@ -14,11 +14,28 @@
 - **核心调度**：`MPlayerUI/MPlayerApp.cpp` 是应用入口（`MPlayerApp::getInstance()`），`MPlayer/` 负责媒体/播放列表/媒体库扫描。
 - **专辑封面自动下载**：无封面时后台先搜 MusicBrainz，失败再走网易云/iTunes 港台，见 `docs/album-art-download.md`。
 
+## i18n（C++ 与 Web 共用）
+
+英文源字符串是**共用 key**：C++ 的 `_TL` / `_TLT` / `_TLM("Play")` 与 Web 的 `t('Play')` 必须同一 key，才能共用译文。皮肤 `menu.json` 菜单标题、以及 XML 的 `Text` / `ToolTip` / `PlaceHolder` 也会提取。不要在皮肤里写死中文。
+
+| 路径 | 作用 |
+|---|---|
+| `i18n/locales/<locale>.json` | 译文源（手改这里） |
+| `i18n/catalog.json` | 提取结果（生成，已 gitignore） |
+| `i18n/lang/<locale>.ini` | C++ 语言包（生成，已 gitignore） |
+| `LocalServer/www/src/i18n/messages.generated.ts` | Web 消息表（生成） |
+
+流程：改文案 → 包进 `_TL/_TLT/_TLM` 或字面量 `t('...')` → `python3 tools/i18n_extract.py` → 只补 `i18n/locales/*.json` 的空 key → 再跑提取。Web 不要写 `t(variable)`，提取器认不到。详细规则见 `.cursor/skills/i18n-translate/SKILL.md`。
+
+运行时：桌面从 `Resources/lang/*.ini` 加载；未手动选语言时按系统语言匹配（如 `zh-Hans*` → `zh-CN.ini`），偏好设置里可选语言。Web 用 `t()` / `useT()`，设置页可切换，未保存时跟浏览器语言。
+
+`./build.sh` 会在编译前生成语言包，并拷进 `MusicPlayer.app/Contents/Resources/lang/`。
+
 ## 构建与测试
 
 - 一键构建脚本：`./build.sh [Release|Debug] [-g] [-b] [-p]`
-  - `-g`：`cmake -G Xcode` 生成 Xcode 工程到 `build/`
-  - `-b`：`xcodebuild -project build/MusicPlayer.xcodeproj -scheme MusicPlayer -configuration <type>` 编译
+  - `-g`：`cmake -G Xcode` 生成 Xcode 工程到 `build/`（会先跑 i18n 提取）
+  - `-b`：`xcodebuild ...` 编译，再把 `i18n/lang/` 与媒体中心 `dist` 装入 App Bundle
   - `-p`：打 dmg 包到 `../Release/<version>`
 - 单元测试：CMake 配 `-DUT=ON`（定义 `UNIT_TEST`，链入 googletest）。测试在应用启动时由 `runAllUnittest()`（`TinyJS/utils/unittest.cpp`）执行 `RUN_ALL_TESTS()`。
   - 用 gtest 的 `TEST(...)` + `ASSERT_*` 宏（例：`MediaTags/LrcParser.cpp` 底部、`TinyJS/unittest/`）。

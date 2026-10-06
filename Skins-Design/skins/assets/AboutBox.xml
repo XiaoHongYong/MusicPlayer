@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<skinwnd Extends="WindowFrame" Name="AboutBox.xml" Caption="About $Product$"
+<skinwnd Extends="WindowFrame" Name="AboutBox.xml" Caption="About MusicPlayer"
          FixedWidth="true" FixedHeight="true" Width="500" Height="340" RememberSizePos="false"
          DefaultPage="Container.About" ExPool.EnterCode.Close="false">
   <Container.About Visible="false" Name="About" Rect="0,0,w,h">
     <Image Rect="w-120,25,," Image="logo.png"/>
-    <NormalText ID="CID_BRANDING" Text="DH Player" Rect="20,20,w-40,35" FontHeight="30" AlignText="AT_LEFT"/>
+    <NormalText ID="CID_BRANDING" Text="MusicPlayer" Rect="20,20,w-40,35" FontHeight="30" AlignText="AT_LEFT"/>
     <NormalText ID="CID_VERSION" Name="Version" Rect="20,55,w-40,15" AlignText="AT_LEFT"/>
     <NormalLink ID="CID_NEW_VERSION" Visible="false" Text="" Rect="20,75,w-20-130,15" AlignText="AT_LEFT"/>
     <NormalText ID="CID_CHECK_VERSION" Text="Checking for updates..." Rect="20,75,w-20-130,15"/>

@@ -716,6 +716,13 @@ void CSkinEditCtrl::sortSelectPos(int &nBegSelRow, int &nBegSelCol, int &nEndSel
     }
 }
 
+void CSkinEditCtrl::onLanguageChanged() {
+    CSkinScrollFrameCtrlBase::onLanguageChanged();
+    if (!m_placeHolderEnglish.empty()) {
+        m_placeHolder = _TL(m_placeHolderEnglish.c_str());
+    }
+}
+
 void CSkinEditCtrl::onCreate() {
     if (isFlagSet(m_nEditorStyles, S_MULTILINE)) {
         m_bHorzScrollBar = m_bVertScrollBar = true;
@@ -2763,7 +2770,8 @@ bool CSkinEditCtrl::setProperty(cstr_t szProperty, cstr_t szValue) {
     } else if (isPropertyName(szProperty, "Style")) {
         m_nEditorStyles = getCombinationValue(__EditStyleText, szValue);
     } else if (isPropertyName(szProperty, "PlaceHolder")) {
-        m_placeHolder = szValue;
+        m_placeHolderEnglish = szValue;
+        m_placeHolder = _TL(szValue);
     } else if (isPropertyName(szProperty, "PlaceHolderColor")) {
         m_clrPlaceHolder = parseColorString(szValue);
     } else if (isPropertyName(szProperty, "SubmitCmd")) {

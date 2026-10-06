@@ -5,8 +5,10 @@ import { usePlayerStore } from '../store';
 import { formatDuration } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { songMatchesQuery } from '@/features/search/match';
+import { useT } from '@/i18n';
 
 export function QueueDrawer() {
+  const t = useT();
   const open = useUiStore((s) => s.queueOpen);
   const setOpen = useUiStore((s) => s.setQueueOpen);
   const queue = usePlayerStore((s) => s.queue);
@@ -36,10 +38,10 @@ export function QueueDrawer() {
       <div className="border-b border-border p-4">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h2 className="text-sm font-semibold">播放队列</h2>
+            <h2 className="text-sm font-semibold">{t('Play queue')}</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              {queue.length} 首 · {formatDuration(totalDuration)}
-              {filtering ? ` · 显示 ${filtered.length} 首` : ''}
+              {t('{n} tracks · {duration}', { n: queue.length, duration: formatDuration(totalDuration) })}
+              {filtering ? t(' · showing {n}', { n: filtered.length }) : ''}
             </p>
           </div>
           <div className="flex items-center gap-1">
@@ -47,15 +49,15 @@ export function QueueDrawer() {
               className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40"
               disabled={!queue.length}
               onClick={() => clearQueue()}
-              aria-label="清空队列"
-              title="清空队列"
+              aria-label={t('Clear queue')}
+              title={t('Clear queue')}
             >
               <Trash2 size={16} />
             </button>
             <button
               className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
               onClick={() => setOpen(false)}
-              aria-label="关闭播放队列"
+              aria-label={t('Close queue')}
             >
               <X size={16} />
             </button>
@@ -66,7 +68,7 @@ export function QueueDrawer() {
           <Input
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="搜索队列中的歌曲…"
+            placeholder={t('Search queue')}
             className="pl-9"
             type="search"
             autoComplete="off"
@@ -93,7 +95,7 @@ export function QueueDrawer() {
                   className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
                   disabled={originalIndex === 0}
                   onClick={() => moveInQueue(originalIndex, originalIndex - 1)}
-                  aria-label="上移"
+                  aria-label={t('Move up')}
                 >
                   <ChevronUp size={14} />
                 </button>
@@ -101,14 +103,14 @@ export function QueueDrawer() {
                   className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
                   disabled={originalIndex === queue.length - 1}
                   onClick={() => moveInQueue(originalIndex, originalIndex + 1)}
-                  aria-label="下移"
+                  aria-label={t('Move down')}
                 >
                   <ChevronDown size={14} />
                 </button>
                 <button
                   className="p-1 text-muted-foreground hover:text-foreground"
                   onClick={() => removeFromQueue(originalIndex)}
-                  aria-label="从队列移除"
+                  aria-label={t('Remove from queue')}
                 >
                   <Trash2 size={14} />
                 </button>
@@ -117,9 +119,9 @@ export function QueueDrawer() {
             <span className="mr-1 shrink-0 text-xs text-muted-foreground">{formatDuration(song.duration)}</span>
           </div>
         ))}
-        {queue.length === 0 && <p className="text-sm text-muted-foreground">队列为空</p>}
+        {queue.length === 0 && <p className="text-sm text-muted-foreground">{t('Queue is empty')}</p>}
         {queue.length > 0 && filtered.length === 0 && (
-          <p className="text-sm text-muted-foreground">没有匹配的歌曲</p>
+          <p className="text-sm text-muted-foreground">{t('No matching songs')}</p>
         )}
       </div>
     </aside>

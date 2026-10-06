@@ -396,6 +396,7 @@ public:
     virtual void onTimer(int nId) override;
 
     virtual void onAdjustHue(float hue, float saturation, float luminance) override;
+    void onLanguageChanged() override;
 
     virtual void onVScroll(uint32_t nSBCode, int nPos, IScrollBar *pScrollBar) override;
     virtual void onHScroll(uint32_t nSBCode, int nPos, IScrollBar *pScrollBar) override;
@@ -445,7 +446,7 @@ public:
 protected:
     uint32_t                    m_nEditorStyles;
 
-    string                      m_placeHolder;
+    string                      m_placeHolder, m_placeHolderEnglish;
     CColor                      m_clrPlaceHolder;
 
     CVLines                     m_vLines;

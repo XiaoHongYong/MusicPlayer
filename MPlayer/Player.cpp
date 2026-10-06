@@ -28,7 +28,7 @@ string getMediaFormat(cstr_t url) {
         return toLower(ext);
     }
 
-    return "Unkown";
+    return "Unknown";
 }
 
 void getArtistTitleFromFileName(string &artist, string &title, cstr_t fileName) {

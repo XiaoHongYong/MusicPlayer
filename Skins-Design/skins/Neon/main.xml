@@ -23,15 +23,13 @@
 			<!-- 右栏: 圆角面板(播放列表 / 歌词共用区域) -->
 			<Container Name="RightPanel" Rect="h-77-10-5+10,5,w-(h-77-10-5+10),h-10">
 				<Container ID="CID_PLAYLIST" Name="PlaylistArea" Rect="0,0,w,h">
-					<Text Name="PlHeader" Rect="16,12,150,22" Text="播放列表" FontName="Verdana" FontHeight="15" FontBold="TRUE" TextColor="#FFFFFF" AlignText="AT_LEFT | AT_VCENTER"/>
-
-					<Container Name="SearchBar" Rect="16,38,w-32,26">
+					<Container Name="SearchBar" Rect="16,12,w-32,26">
 						<Property Name="BgImage" Image="search-bg.png" HorzExtendPos="16,48" VertExtendPos="13,14" BlendPixMode="alpha_blend"/>
 						<Image Name="Search" Rect="8,3,20,20" Image="search.png"/>
-						<NormalEdit ID="CID_E_SEARCH_MUSIC" Text="" PlaceHolder="搜索音乐" Rect="34,3,w-34-10,20" EnableBorder="false"/>
+						<NormalEdit ID="CID_E_SEARCH_MUSIC" Text="" PlaceHolder="Search music" Rect="34,3,w-34-10,20" EnableBorder="false"/>
 					</Container>
 
-					<NeonPlaylist Rect="10,68,w-26,h-78" EnableHeader="false" EnableBorder="false" KeywordEdit="CID_E_SEARCH_MUSIC"/>
+					<NeonPlaylist Rect="10,42,w-26,h-78" EnableHeader="false" EnableBorder="false" KeywordEdit="CID_E_SEARCH_MUSIC"/>
 				</Container>
 
 				<DecorativeContainer ID="CID_LYRICS" Name="LyricsArea" Rect="0,0,w,h" Visible="false">
