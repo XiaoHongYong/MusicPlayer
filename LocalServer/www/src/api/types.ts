@@ -108,3 +108,52 @@ export interface HistoryDayItem {
 export interface HistoryRecent {
   days: { date: string; items: HistoryDayItem[] }[];
 }
+
+export interface SongFact {
+  id: number;
+  title: string;
+  artist: string;
+  album: string;
+  genre: string;
+  year: number;
+  duration: number;
+  rating: number;
+  play_count: number;
+}
+
+export interface NamedAggregate {
+  name: string;
+  artist?: string;
+  song_count: number;
+  play_count: number;
+}
+
+export interface RecentPlay {
+  date: string;
+  song_id: number;
+  count: number;
+}
+
+export interface DailyPlayCount {
+  date: string;
+  count: number;
+}
+
+export interface StatisticsSnapshot {
+  version: number;
+  generated_at: string;
+  overview?: {
+    song_count: number;
+    album_count: number;
+    artist_count: number;
+    total_duration_ms: number;
+    total_play_count: number;
+  };
+  song_facts: SongFact[];
+  artist_aggregates?: NamedAggregate[];
+  album_aggregates?: NamedAggregate[];
+  genre_aggregates?: NamedAggregate[];
+  rating_distribution?: { rating: number; count: number }[];
+  daily_play_counts?: DailyPlayCount[];
+  recent_plays: RecentPlay[];
+}

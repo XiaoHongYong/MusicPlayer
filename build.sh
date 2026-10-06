@@ -107,13 +107,19 @@ function create_music_player_update_json() {
 }
 
 function print_help() {
-    echo "build.sh [Release|Debug] [-g|--generate] [-b|--build] [-p|--pack] [-s|--symbols] [-h|--help]"
+    echo "build.sh [Release|Debug] [-g|--generate] [-b|--build] [-l|--lang] [-m|--media] [-p|--pack] [-s|--symbols] [-h|--help]"
     echo "    -h|--help                 显示帮助消息"
     echo "    Release|Debug             使用 Release 或者 Debug 配置，缺省为 Release"
     echo "    -g|--generate             生成项目工程文件"
     echo "    -b|--build                执行编译"
+    echo "    -l|--lang                 装入语言包（i18n -> Resources/lang）"
+    echo "    -m|--media                编译并装入媒体中心（LocalServer -> Resources/local-server）"
     echo "    -p|--pack                 进行打包（仅支持 Release）"
     echo "    -s|--symbols              构建时保留符号并生成 dSYM（主要用于 Release 性能分析）"
+    echo ""
+    echo "参数缺省行为："
+    echo "    无任何参数            ：Release 编译 + install_lang_packs + build_and_install_media_center + pack"
+    echo "    仅传 Debug 或 Release ：只编译对应配置"
     exit
 }
 
@@ -121,9 +127,17 @@ BUILD_TYPE=Release
 ACTION_BUILD=
 ACTION_PACK=
 ACTION_GENERATE=
+ACTION_LANG=
+ACTION_MEDIA=
 ACTION_SYMBOLS=
 
+# TOTAL_ARGS：本次传入的参数个数；CONFIG_ARGS：其中 Release/Debug 配置参数的个数。
+# 用于区分“无参数默认完整流水线”与“仅传 Debug/Release 只编译”。
+TOTAL_ARGS=0
+CONFIG_ARGS=0
+
 while (($# > 0)); do
+    TOTAL_ARGS=$((TOTAL_ARGS + 1))
     case "$1" in
         "-h"|"--help")
             print_help
@@ -131,10 +145,12 @@ while (($# > 0)); do
 
         "Release")
             BUILD_TYPE=Release
+            CONFIG_ARGS=$((CONFIG_ARGS + 1))
         ;;
 
         "Debug")
             BUILD_TYPE=Debug
+            CONFIG_ARGS=$((CONFIG_ARGS + 1))
         ;;
 
         "-g"|"--generate")
@@ -143,6 +159,14 @@ while (($# > 0)); do
 
         "-b"|"--build")
             ACTION_BUILD=1
+        ;;
+
+        "-l"|"--lang")
+            ACTION_LANG=1
+        ;;
+
+        "-m"|"--media")
+            ACTION_MEDIA=1
         ;;
 
         "-p"|"--pack")
@@ -161,17 +185,30 @@ while (($# > 0)); do
     shift
 done
 
-if [[ ! $ACTION_BUILD ]] && [[ ! $ACTION_PACK ]] && [[ ! $ACTION_GENERATE ]] ; then
-    ACTION_BUILD=1
-    ACTION_PACK=1
-    ACTION_GENERATE=1
+if [[ ! $ACTION_BUILD ]] && [[ ! $ACTION_PACK ]] && [[ ! $ACTION_GENERATE ]] \
+   && [[ ! $ACTION_LANG ]] && [[ ! $ACTION_MEDIA ]] ; then
+    # 未指定任何主操作
+    if [[ $TOTAL_ARGS == 0 ]] ; then
+        # 无参数：默认完整 Release 流水线
+        ACTION_BUILD=1
+        ACTION_LANG=1
+        ACTION_MEDIA=1
+        ACTION_PACK=1
+        ACTION_GENERATE=1
+    elif [[ $TOTAL_ARGS == $CONFIG_ARGS ]] ; then
+        # 仅传 Debug/Release：只编译对应配置
+        ACTION_BUILD=1
+    else
+        # 其它情形（如仅 -s）：回退为只编译
+        ACTION_BUILD=1
+    fi
 fi
 
 python3 TinyJS/build-script/build.py
-VERSION="$(python3 build.py update_version_header_file)"
+VERSION="$(python3 tools/build.py update_version_header_file)"
 RELEASE_DIR="../Release/$VERSION"
 
-if [[ $ACTION_GENERATE ]] || [[ $ACTION_BUILD ]] || [[ $ACTION_PACK ]] ; then
+if [[ $ACTION_GENERATE ]] || [[ $ACTION_BUILD ]] || [[ $ACTION_PACK ]] || [[ $ACTION_LANG ]] ; then
     generate_i18n
 fi
 
@@ -208,12 +245,6 @@ if [ $ACTION_BUILD ] ; then
     xcodebuild -project build/MusicPlayer.xcodeproj -scheme MusicPlayer -configuration $BUILD_TYPE $XCODE_ATTRS
     exit_if_err
 
-    # 语言包 + 媒体中心：编译后装入 Bundle（CMake Copy Resources 可能把目录拍平，这里覆盖为 lang/）
-    install_lang_packs
-
-    # 媒体中心网页：编译并装入 Bundle，供 LocalServer 静态托管（默认 127.0.0.1:12120）
-    build_and_install_media_center
-
     # 带符号构建：显式生成 dSYM，便于 atos/Instruments 做行级符号化。
     APP_BIN="build/${BUILD_TYPE}/MusicPlayer.app/Contents/MacOS/MusicPlayer"
     if [ $ACTION_SYMBOLS ] && [ -f "${APP_BIN}" ] ; then
@@ -222,16 +253,22 @@ if [ $ACTION_BUILD ] ; then
     fi
 fi
 
+# 语言包：编译后装入 Bundle（CMake Copy Resources 可能把目录拍平，这里覆盖为 lang/）。
+# 独立参数 -l/--lang 控制；无 Bundle 时函数内自动跳过。
+if [ $ACTION_LANG ] ; then
+    install_lang_packs
+fi
+
+# 媒体中心网页：编译并装入 Bundle，供 LocalServer 静态托管（默认 127.0.0.1:12120）。
+# 独立参数 -m/--media 控制；无 Bundle 时函数内自动跳过。
+if [ $ACTION_MEDIA ] ; then
+    build_and_install_media_center
+fi
+
 if [ $ACTION_PACK ] ; then
     if [ "$BUILD_TYPE" != "Release" ] ; then
         echo "Skip packaging: only supported for Release (got $BUILD_TYPE)."
     else
-        # 仅 -p 时也确保语言包与媒体中心已装入 Bundle
-        if [[ ! $ACTION_BUILD ]] ; then
-            install_lang_packs
-            build_and_install_media_center
-        fi
-
         echo "Make package: MusicPlayer.dmg ..."
 
         rm -f build/MusicPlayer.dmg

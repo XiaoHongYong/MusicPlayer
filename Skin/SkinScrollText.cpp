@@ -92,11 +92,14 @@ void CSkinScrollText::draw(CRawGraph *canvas) {
     // 仅当串/字体/颜色/描边开关/scale 变化（换歌、切显示项等）才重建缓存。
     CRawGraph *pCache = getOrBuildTextCache(canvas);
     if (pCache) {
+        // 整串缓存里文本像素 i 对应屏幕上 rc.left + i。rc.left 上面已 -= nLeftClip，
+        // 所以这里源 x 必须是 0（不能再跳过 nLeftClip，否则偏移会被算两遍，滚到最右端
+        // 时文字被拖出裁切区左边界、右边永远看不到）；复制的宽度固定为可视宽 nVisibleWidth。
         RawImageData *s = pCache->getRawBuff();
         int nScale = (int)canvas->getScaleFactor();
         canvas->bltImage(canvas->mapAndScaleX(rc.left), canvas->mapAndScaleY(rc.top),
-            rc.width() * nScale, s->height,
-            s, nLeftClip * nScale, 0, BPM_BLEND);
+            nVisibleWidth * nScale, s->height,
+            s, 0, 0, BPM_BLEND);
         return;
     }
     // 缓存不可用（空文本/离屏构建失败）：回退原动态路径，逐帧重绘字形。
@@ -223,10 +226,14 @@ void CSkinScrollText::onTimer(int nId) {
             m_nPosScroll = 0;
         }
     } else {
+        // maxOffset = m_nWidthText - nVisibleWidth，nVisibleWidth = m_rcObj.width() - m_nLeftMargin。
+        // 注意是 +m_nLeftMargin：若误写成 -，最大偏移会少 2*m_nLeftMargin，
+        // 左margin 较大（≥ WIDTH_TXT_STILL/2）时根本滚不到最右端，最后一个词永远显示不完整。
+        int nMaxScroll = m_nWidthText - (m_rcObj.width() - m_nLeftMargin);
         m_nPosScroll++;
-        if (m_nPosScroll >= (m_nWidthText - m_rcObj.width() - m_nLeftMargin) + WIDTH_TXT_STILL) {
+        if (m_nPosScroll >= nMaxScroll + WIDTH_TXT_STILL) {
             m_bToLeft = true;
-            m_nPosScroll = (m_nWidthText - m_rcObj.width() - m_nLeftMargin);
+            m_nPosScroll = nMaxScroll;
         }
     }
 

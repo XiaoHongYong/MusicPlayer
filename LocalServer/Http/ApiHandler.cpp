@@ -24,6 +24,9 @@
 #include "LyricsLib/CurrentLyrics.h"
 #include "MediaTags/MediaTags.h"
 #include <cmath>
+#include <algorithm>
+#include <unordered_map>
+#include <unordered_set>
 
 // loopModeToString / loopModeFromString 定义于 PlayerEventSender.cpp.
 cstr_t loopModeToString(int loop);
@@ -36,6 +39,9 @@ namespace {
 
 using std::string;
 using std::vector;
+using std::pair;
+using std::unordered_map;
+using std::unordered_set;
 using rapidjson::Value;
 using rapidjson::Document;
 
@@ -73,6 +79,12 @@ string isoNow() {
     return buf;
 }
 
+// 媒体库存毫秒；Web API 按文档输出秒。
+int mediaDurationSeconds(int durationMs) {
+    if (durationMs <= 0) return 0;
+    return (durationMs + 500) / 1000;
+}
+
 bool eqNoCase(const string &a, const string &b) {
     if (a.size() != b.size()) return false;
     for (size_t i = 0; i < a.size(); ++i) {
@@ -102,7 +114,7 @@ void writeMediaJson(RapidjsonWriter &w, Media *media) {
     w.Key("year"); w.Int(media->year);
     w.Key("genre"); w.String(media->genre.c_str());
     w.Key("url"); w.String(media->url.c_str());
-    w.Key("duration"); w.Int(media->duration);                       // 秒
+    w.Key("duration"); w.Int(mediaDurationSeconds(media->duration));
     w.Key("fileSize"); w.Int64(media->fileSize);
     w.Key("timeAdded"); w.Int64(media->timeAdded);
     w.Key("timePlayed"); w.Int64(media->timePlayed);
@@ -184,6 +196,150 @@ void writeLibrarySnapshotJson(RapidjsonWriter &w) {
     for (int i = 0; i < count; ++i) {
         auto media = all->getItem(i);
         if (media) writeMediaJson(w, media.get());
+    }
+    w.EndArray();
+}
+
+struct StatsAgg {
+    int songs = 0;
+    int plays = 0;
+};
+
+void writeStatsAggArray(RapidjsonWriter &w, const char *key, const unordered_map<string, StatsAgg> &src, bool splitAlbum) {
+    vector<pair<string, StatsAgg>> rows;
+    rows.reserve(src.size());
+    for (auto &kv : src) rows.push_back(kv);
+    std::sort(rows.begin(), rows.end(), [](const pair<string, StatsAgg> &a, const pair<string, StatsAgg> &b) {
+        if (a.second.plays != b.second.plays) return a.second.plays > b.second.plays;
+        return a.first < b.first;
+    });
+
+    w.Key(key);
+    w.StartArray();
+    for (auto &row : rows) {
+        w.StartObject();
+        if (splitAlbum) {
+            auto pos = row.first.find("::");
+            string artist = pos == string::npos ? "" : row.first.substr(0, pos);
+            string name = pos == string::npos ? row.first : row.first.substr(pos + 2);
+            w.Key("name"); w.String(name.c_str());
+            w.Key("artist"); w.String(artist.c_str());
+        } else {
+            w.Key("name"); w.String(row.first.c_str());
+        }
+        w.Key("song_count"); w.Int(row.second.songs);
+        w.Key("play_count"); w.Int(row.second.plays);
+        w.EndObject();
+    }
+    w.EndArray();
+}
+
+void writeStatisticsSnapshotJson(RapidjsonWriter &w) {
+    auto lib = g_player.getMediaLibrary();
+    auto all = lib ? lib->getAll() : PlaylistPtr();
+    int count = all ? (int)all->getCount() : 0;
+
+    unordered_map<string, StatsAgg> byArtist;
+    unordered_map<string, StatsAgg> byAlbum;
+    unordered_map<string, StatsAgg> byGenre;
+    unordered_set<string> artists;
+    unordered_set<string> albums;
+    int ratingBuckets[6] = {0, 0, 0, 0, 0, 0};
+    int64_t totalDurationSec = 0;
+    int64_t totalPlays = 0;
+
+    w.Key("version"); w.Int(g_mediaScanner.snapshotVersion());
+    w.Key("generated_at"); w.String(isoNow().c_str());
+
+    w.Key("song_facts");
+    w.StartArray();
+    for (int i = 0; i < count; ++i) {
+        auto media = all->getItem(i);
+        if (!media) continue;
+        string artist = media->artist.empty() ? "Unknown" : media->artist;
+        string album = media->album.empty() ? "Unknown" : media->album;
+        string genre = media->genre.empty() ? "Unknown" : media->genre;
+        int bucket = (int)lround(media->rating / 100.0);
+        if (bucket < 0) bucket = 0;
+        if (bucket > 5) bucket = 5;
+        ratingBuckets[bucket] += 1;
+        totalDurationSec += mediaDurationSeconds(media->duration);
+        totalPlays += media->countPlayed;
+        artists.insert(artist);
+        albums.insert(artist + "::" + album);
+        byArtist[artist].songs += 1;
+        byArtist[artist].plays += media->countPlayed;
+        byAlbum[artist + "::" + album].songs += 1;
+        byAlbum[artist + "::" + album].plays += media->countPlayed;
+        byGenre[genre].songs += 1;
+        byGenre[genre].plays += media->countPlayed;
+
+        w.StartObject();
+        w.Key("id"); w.Int(media->ID);
+        w.Key("title"); w.String(media->title.c_str());
+        w.Key("artist"); w.String(artist.c_str());
+        w.Key("album"); w.String(album.c_str());
+        w.Key("genre"); w.String(genre.c_str());
+        w.Key("year"); w.Int(media->year);
+        w.Key("duration"); w.Int(mediaDurationSeconds(media->duration));
+        w.Key("rating"); w.Double(media->rating / 100.0);
+        w.Key("play_count"); w.Int(media->countPlayed);
+        w.EndObject();
+    }
+    w.EndArray();
+
+    w.Key("overview");
+    w.StartObject();
+    w.Key("song_count"); w.Int(count);
+    w.Key("album_count"); w.Int((int)albums.size());
+    w.Key("artist_count"); w.Int((int)artists.size());
+    w.Key("total_duration_ms"); w.Int64(totalDurationSec * 1000);
+    w.Key("total_play_count"); w.Int64(totalPlays);
+    w.EndObject();
+
+    writeStatsAggArray(w, "artist_aggregates", byArtist, false);
+    writeStatsAggArray(w, "album_aggregates", byAlbum, true);
+    writeStatsAggArray(w, "genre_aggregates", byGenre, false);
+
+    w.Key("rating_distribution");
+    w.StartArray();
+    for (int r = 0; r <= 5; ++r) {
+        w.StartObject();
+        w.Key("rating"); w.Int(r);
+        w.Key("count"); w.Int(ratingBuckets[r]);
+        w.EndObject();
+    }
+    w.EndArray();
+
+    auto daysData = lib ? lib->getRecentPlayHistory(30) : VecPlayHistoryDays();
+    unordered_map<string, int> playsByDate;
+    w.Key("recent_plays");
+    w.StartArray();
+    for (auto &day : daysData) {
+        int dayTotal = 0;
+        for (auto &item : day.items) {
+            dayTotal += item.count;
+            w.StartObject();
+            w.Key("date"); w.String(day.date.c_str());
+            w.Key("song_id"); w.Int(item.songId);
+            w.Key("count"); w.Int(item.count);
+            w.EndObject();
+        }
+        playsByDate[day.date] = dayTotal;
+    }
+    w.EndArray();
+
+    w.Key("daily_play_counts");
+    w.StartArray();
+    time_t now = time(nullptr);
+    for (int i = 29; i >= 0; --i) {
+        time_t t = now - (time_t)i * 86400;
+        char buf[16];
+        strftime(buf, sizeof(buf), "%Y-%m-%d", gmtime(&t));
+        w.StartObject();
+        w.Key("date"); w.String(buf);
+        w.Key("count"); w.Int(playsByDate[buf]);
+        w.EndObject();
     }
     w.EndArray();
 }
@@ -508,7 +664,7 @@ int playlistDurationSeconds(Playlist *playlist) {
     for (int i = 0; i < count; ++i) {
         auto media = playlist->getItem(i);
         if (media && media->duration > 0) {
-            total += media->duration;
+            total += mediaDurationSeconds(media->duration);
         }
     }
     return total;
@@ -732,6 +888,17 @@ void ApiHandler::handleRoute(const ConnectionPtr &connection, const vector<strin
         RapidjsonWriter w(buf);
         w.StartObject();
         writeLibrarySnapshotJson(w);
+        w.EndObject();
+        sendJson(connection, buf.GetString());
+        return;
+    }
+
+    // GET /statistics/snapshot
+    if (tokens.size() == 2 && tokens[0] == "statistics" && tokens[1] == "snapshot" && eqNoCase(m_method, "GET")) {
+        rapidjson::StringBuffer buf;
+        RapidjsonWriter w(buf);
+        w.StartObject();
+        writeStatisticsSnapshotJson(w);
         w.EndObject();
         sendJson(connection, buf.GetString());
         return;

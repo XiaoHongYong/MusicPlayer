@@ -1,3 +1,32 @@
+import { mediaDurationSeconds } from '@/lib/utils';
+import type { LibrarySnapshot, PlaylistDetail, QueueItem, Song, StatisticsSnapshot } from './types';
+
+function normalizeSong(song: Song): Song {
+  return { ...song, duration: mediaDurationSeconds(song.duration) };
+}
+
+function normalizeSnapshot(data: LibrarySnapshot): LibrarySnapshot {
+  return { ...data, songs: (data.songs ?? []).map(normalizeSong) };
+}
+
+function normalizePlaylist(data: PlaylistDetail): PlaylistDetail {
+  return { ...data, songs: (data.songs ?? []).map(normalizeSong) };
+}
+
+function normalizeQueue(data: { items?: QueueItem[] }): { items: QueueItem[] } {
+  return {
+    items: (data.items ?? []).map((item) => ({ ...item, song: normalizeSong(item.song) })),
+  };
+}
+
+function normalizeStatistics(data: StatisticsSnapshot): StatisticsSnapshot {
+  if (!data.song_facts) return data;
+  return {
+    ...data,
+    song_facts: data.song_facts.map((row) => ({ ...row, duration: mediaDurationSeconds(row.duration) })),
+  };
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     ...init,
@@ -22,13 +51,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  bootstrap: () => request<import('./types').Bootstrap>('/api/v1/bootstrap'),
-  snapshot: () => request<import('./types').LibrarySnapshot>('/api/v1/library/snapshot'),
+  bootstrap: async () => {
+    const data = await request<import('./types').Bootstrap>('/api/v1/bootstrap');
+    return { ...data, queue: normalizeQueue(data.queue ?? { items: [] }) };
+  },
+  snapshot: async () => normalizeSnapshot(await request<LibrarySnapshot>('/api/v1/library/snapshot')),
   scanStatus: () => request<import('./types').ScanStatus>('/api/v1/library/scan/status'),
   startScan: () =>
     request<import('./types').ScanStatus>('/api/v1/library/scan', { method: 'POST' }),
   playerState: () => request<import('./types').PlayerState>('/api/v1/player/state'),
-  playerQueue: () => request<{ items: import('./types').QueueItem[] }>('/api/v1/player/queue'),
+  playerQueue: async () => normalizeQueue(await request<{ items: QueueItem[] }>('/api/v1/player/queue')),
   setQueue: (body: {
     action: 'replace' | 'insert';
     song_ids: number[];
@@ -44,39 +76,50 @@ export const api = {
       method: 'POST',
       body: body ? JSON.stringify(body) : undefined,
     }),
-  song: (id: number) => request<import('./types').Song>(`/api/v1/songs/${id}`),
+  song: async (id: number) => normalizeSong(await request<Song>(`/api/v1/songs/${id}`)),
   lyrics: (id: number) => request<import('./types').SongLyrics>(`/api/v1/songs/${id}/lyrics`),
-  setRating: (id: number, rating: number) =>
-    request<import('./types').Song>(`/api/v1/songs/${id}/rating`, {
-      method: 'PUT',
-      body: JSON.stringify({ rating }),
-    }),
+  setRating: async (id: number, rating: number) =>
+    normalizeSong(
+      await request<Song>(`/api/v1/songs/${id}/rating`, {
+        method: 'PUT',
+        body: JSON.stringify({ rating }),
+      }),
+    ),
   playlists: () => request<import('./types').PlaylistBrief[]>('/api/v1/playlists'),
-  playlist: (id: number) => request<import('./types').PlaylistDetail>(`/api/v1/playlists/${id}`),
-  createPlaylist: (name: string) =>
-    request<import('./types').PlaylistDetail>('/api/v1/playlists', {
-      method: 'POST',
-      body: JSON.stringify({ name }),
-    }),
-  patchPlaylist: (id: number, body: { name: string }) =>
-    request<import('./types').PlaylistDetail>(`/api/v1/playlists/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(body),
-    }),
+  playlist: async (id: number) =>
+    normalizePlaylist(await request<PlaylistDetail>(`/api/v1/playlists/${id}`)),
+  createPlaylist: async (name: string) =>
+    normalizePlaylist(
+      await request<PlaylistDetail>('/api/v1/playlists', {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+      }),
+    ),
+  patchPlaylist: async (id: number, body: { name: string }) =>
+    normalizePlaylist(
+      await request<PlaylistDetail>(`/api/v1/playlists/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      }),
+    ),
   deletePlaylist: (id: number) =>
     request<void>(`/api/v1/playlists/${id}`, { method: 'DELETE' }),
-  addPlaylistSongs: (id: number, songIds: number[]) =>
-    request<import('./types').PlaylistDetail>(`/api/v1/playlists/${id}/songs`, {
-      method: 'POST',
-      body: JSON.stringify({ song_ids: songIds }),
-    }),
+  addPlaylistSongs: async (id: number, songIds: number[]) =>
+    normalizePlaylist(
+      await request<PlaylistDetail>(`/api/v1/playlists/${id}/songs`, {
+        method: 'POST',
+        body: JSON.stringify({ song_ids: songIds }),
+      }),
+    ),
   removePlaylistSong: (id: number, songId: number) =>
     request<void>(`/api/v1/playlists/${id}/songs/${songId}`, { method: 'DELETE' }),
-  reorderPlaylistSongs: (id: number, songIds: number[]) =>
-    request<import('./types').PlaylistDetail>(`/api/v1/playlists/${id}/songs/order`, {
-      method: 'PUT',
-      body: JSON.stringify({ song_ids: songIds }),
-    }),
+  reorderPlaylistSongs: async (id: number, songIds: number[]) =>
+    normalizePlaylist(
+      await request<PlaylistDetail>(`/api/v1/playlists/${id}/songs/order`, {
+        method: 'PUT',
+        body: JSON.stringify({ song_ids: songIds }),
+      }),
+    ),
   postHistory: (songId: number, playedAt = new Date().toISOString()) =>
     request<unknown>('/api/v1/history', {
       method: 'POST',
@@ -84,6 +127,8 @@ export const api = {
     }),
   recentHistory: (days = 30) =>
     request<import('./types').HistoryRecent>(`/api/v1/history/recent?days=${days}`),
+  statisticsSnapshot: async () =>
+    normalizeStatistics(await request<StatisticsSnapshot>('/api/v1/statistics/snapshot')),
 };
 
 export function streamUrl(id: number) {

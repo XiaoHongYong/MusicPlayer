@@ -77,7 +77,7 @@ static std::string jsonPlayerQueue() {
         w.Key("year"); w.Int(media->year);
         w.Key("genre"); w.String(media->genre.c_str());
         w.Key("url"); w.String(media->url.c_str());
-        w.Key("duration"); w.Int(media->duration);
+        w.Key("duration"); w.Int(media->duration > 0 ? (media->duration + 500) / 1000 : 0);
         w.Key("fileSize"); w.Int64(media->fileSize);
         w.Key("timeAdded"); w.Int64(media->timeAdded);
         w.Key("timePlayed"); w.Int64(media->timePlayed);

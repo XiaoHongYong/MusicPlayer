@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { useRealtimeStatus } from '@/features/realtime/useRealtimeStatus';
 import { usePlayerStore } from '@/features/player/store';
 import { useUiStore, type PlaybackTarget } from '@/stores/ui-store';
+import { parseSearchTab, searchHref } from '@/features/search/match';
 import { useT } from '@/i18n';
 
 function ConnectionStatusIcon() {
@@ -107,14 +108,16 @@ export function TopBar() {
     setQ(qFromUrl);
   }, [qFromUrl]);
 
+  const tab = location.pathname === '/search' ? parseSearchTab(params.get('tab')) : 'songs';
+
   const goSearch = (value: string) => {
     setQ(value);
     if (location.pathname === '/search') {
-      navigate(value ? `/search?q=${encodeURIComponent(value)}` : '/search', { replace: true });
+      navigate(searchHref(value, tab), { replace: true });
       return;
     }
     if (value.trim()) {
-      navigate(`/search?q=${encodeURIComponent(value)}`);
+      navigate(searchHref(value));
     }
   };
 
@@ -125,7 +128,7 @@ export function TopBar() {
         onSubmit={(e) => {
           e.preventDefault();
           const trimmed = q.trim();
-          navigate(trimmed ? `/search?q=${encodeURIComponent(trimmed)}` : '/search');
+          navigate(trimmed ? searchHref(trimmed, tab) : searchHref('', tab));
         }}
       >
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />

@@ -9,6 +9,7 @@ import { shouldRecordPlayHistory } from './utils';
 function invalidatePlayStats() {
   void queryClient.invalidateQueries({ queryKey: ['history-recent'] });
   void queryClient.invalidateQueries({ queryKey: ['library-snapshot'] });
+  void queryClient.invalidateQueries({ queryKey: ['statistics-snapshot'] });
 }
 
 function target(): PlaybackTarget {

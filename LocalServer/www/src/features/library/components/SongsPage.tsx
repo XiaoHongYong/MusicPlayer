@@ -1,11 +1,11 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useVirtualizer } from '@tanstack/react-virtual';
-import { Mic2, Play, ListPlus } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, ListPlus, Mic2, Play } from 'lucide-react';
 import { api } from '@/api/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TablePagination } from '@/components/TablePagination';
 import { formatDuration } from '@/lib/utils';
 import { usePlayerStore } from '@/features/player/store';
 import { useUiStore } from '@/stores/ui-store';
@@ -18,6 +18,31 @@ import {
   type MediaMenuTarget,
 } from './MediaContextMenu';
 import { useT } from '@/i18n';
+import {
+  clampPage,
+  pageSlice,
+  parseStatsPageSize,
+  type StatsPageSize,
+} from '@/features/statistics/pagination';
+import { compareSongs, nextSongSort, type SongSort, type SongSortKey } from '../songSort';
+
+const SONGS_PAGE_SIZE_KEY = 'pmc.songsPageSize';
+
+function loadSongsPageSize(): StatsPageSize {
+  try {
+    return parseStatsPageSize(localStorage.getItem(SONGS_PAGE_SIZE_KEY));
+  } catch {
+    return 20;
+  }
+}
+
+function saveSongsPageSize(size: StatsPageSize) {
+  try {
+    localStorage.setItem(SONGS_PAGE_SIZE_KEY, String(size));
+  } catch {
+    /* ignore */
+  }
+}
 
 export function useLibrarySnapshot() {
   return useQuery({
@@ -34,7 +59,7 @@ function useFilteredSongs(
   artist: string,
   rating: string,
   hasLyrics: string,
-  sort: string,
+  sort: SongSort,
 ) {
   return useMemo(() => {
     const list = songs ?? [];
@@ -49,14 +74,42 @@ function useFilteredSongs(
       if (!query) return true;
       return [s.title, s.artist, s.album].some((x) => x.toLowerCase().includes(query));
     });
-    return [...filtered].sort((a, b) => {
-      if (sort === 'artist') return a.artist.localeCompare(b.artist) || a.title.localeCompare(b.title);
-      if (sort === 'album') return a.album.localeCompare(b.album) || a.title.localeCompare(b.title);
-      if (sort === 'rating') return b.rating - a.rating || a.title.localeCompare(b.title);
-      if (sort === 'plays') return b.play_count - a.play_count || a.title.localeCompare(b.title);
-      return a.title.localeCompare(b.title);
-    });
+    return [...filtered].sort((a, b) => compareSongs(a, b, sort));
   }, [songs, q, genre, artist, rating, hasLyrics, sort]);
+}
+
+function SortHeader({
+  label,
+  column,
+  sort,
+  onSort,
+  className = '',
+  align = 'left',
+}: {
+  label: string;
+  column: SongSortKey;
+  sort: SongSort;
+  onSort: (key: SongSortKey) => void;
+  className?: string;
+  align?: 'left' | 'right';
+}) {
+  const active = sort.key === column;
+  const Icon = !active ? ArrowUpDown : sort.dir === 'asc' ? ArrowUp : ArrowDown;
+  return (
+    <th
+      className={`px-2 py-2 font-medium ${className}`}
+      aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+    >
+      <button
+        type="button"
+        className={`inline-flex w-full items-center gap-1 hover:text-foreground ${align === 'right' ? 'justify-end' : ''}`}
+        onClick={() => onSort(column)}
+      >
+        <span>{label}</span>
+        <Icon size={13} className={active ? 'text-foreground' : 'opacity-40'} />
+      </button>
+    </th>
+  );
 }
 
 export function SongsPage() {
@@ -68,7 +121,9 @@ export function SongsPage() {
   const [artist, setArtist] = useState('');
   const [rating, setRating] = useState('');
   const [hasLyrics, setHasLyrics] = useState('');
-  const [sort, setSort] = useState('title');
+  const [sort, setSort] = useState<SongSort>({ key: 'title', dir: 'asc' });
+  const [pageSize, setPageSize] = useState<StatsPageSize>(loadSongsPageSize);
+  const [page, setPage] = useState(1);
   const [playlistSong, setPlaylistSong] = useState<Song | null>(null);
   const [menu, setMenu] = useState<MediaMenuTarget | null>(null);
   const songs = useFilteredSongs(data?.songs, q, genre, artist, rating, hasLyrics, sort);
@@ -77,23 +132,25 @@ export function SongsPage() {
   const openLyrics = useUiStore((s) => s.openLyrics);
   const rate = useMutation({
     mutationFn: ({ id, rating }: { id: number; rating: number }) => api.setRating(id, rating),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['library-snapshot'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['library-snapshot'] });
+      void qc.invalidateQueries({ queryKey: ['statistics-snapshot'] });
+    },
   });
   const startScan = async () => {
     await api.startScan();
     void refetch();
   };
 
-  const parentRef = useRef<HTMLDivElement>(null);
-  const virtualizer = useVirtualizer({
-    count: songs.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 44,
-    overscan: 12,
-  });
+  useEffect(() => {
+    setPage(1);
+  }, [q, genre, artist, rating, hasLyrics, sort.key, sort.dir, songs.length]);
 
   if (isLoading) return <p className="p-8 text-muted-foreground">{t('Loading library…')}</p>;
   if (error) return <p className="p-8 text-red-500">{t('Failed to load library')}</p>;
+
+  const currentPage = clampPage(page, songs.length, pageSize);
+  const rows = pageSlice(songs, currentPage, pageSize);
 
   return (
     <div className="flex h-full flex-col gap-4 p-6">
@@ -140,17 +197,6 @@ export function SongsPage() {
         </select>
         <select
           className="h-9 rounded-md border border-border bg-background px-2 text-sm"
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-        >
-          <option value="title">{t('Sort by title')}</option>
-          <option value="artist">{t('Sort by artist')}</option>
-          <option value="album">{t('Sort by album')}</option>
-          <option value="rating">{t('Sort by rating')}</option>
-          <option value="plays">{t('Sort by plays')}</option>
-        </select>
-        <select
-          className="h-9 rounded-md border border-border bg-background px-2 text-sm"
           value={hasLyrics}
           onChange={(e) => setHasLyrics(e.target.value)}
         >
@@ -159,61 +205,87 @@ export function SongsPage() {
           <option value="no">{t('No lyrics')}</option>
         </select>
       </div>
-      <div className="grid grid-cols-[40px_1.4fr_1fr_1fr_72px_88px_56px_52px_52px] gap-2 px-2 text-xs uppercase text-muted-foreground">
-        <span />
-        <span>{t('Title')}</span>
-        <span>{t('Artist')}</span>
-        <span>{t('Album')}</span>
-        <span>{t('Duration')}</span>
-        <span>{t('Rating')}</span>
-        <span>{t('Lyrics')}</span>
-        <span />
-        <span />
-      </div>
-      <div ref={parentRef} className="min-h-0 flex-1 overflow-auto">
-        <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
-          {virtualizer.getVirtualItems().map((row) => {
-            const song = songs[row.index];
-            return (
-              <div
-                key={song.id}
-                className="absolute left-0 grid w-full grid-cols-[40px_1.4fr_1fr_1fr_72px_88px_56px_52px_52px] items-center gap-2 rounded-md px-2 hover:bg-accent"
-                style={{ height: 44, transform: `translateY(${row.start}px)` }}
-                onContextMenu={(e) => setMenu(mediaMenuFromEvent(e, [song]))}
-              >
-                <button onClick={() => playSongs(songs, row.index)} className="text-muted-foreground hover:text-foreground">
-                  <Play size={14} />
-                </button>
-                <button className="truncate text-left text-sm" onClick={() => playSongs(songs, row.index)}>
-                  {song.title}
-                </button>
-                <span className="truncate text-sm text-muted-foreground">{song.artist}</span>
-                <span className="truncate text-sm text-muted-foreground">{song.album}</span>
-                <span className="text-xs text-muted-foreground">{formatDuration(song.duration)}</span>
-                <RatingStars value={song.rating} onChange={(rating) => rate.mutate({ id: song.id, rating })} />
-                <span>
-                  {song.has_lyrics ? (
-                    <button onClick={() => openLyrics(song.id)}>
-                      <Badge className="bg-primary/15 text-primary">
-                        <Mic2 size={12} className="mr-1" />
-                        {t('Yes')}
-                      </Badge>
+      <div className="min-h-0 flex-1 overflow-auto rounded-xl bg-card">
+        <table className="w-full min-w-[860px] text-left text-sm">
+          <thead className="sticky top-0 z-10 bg-card text-xs uppercase text-muted-foreground">
+            <tr className="border-b border-border">
+              <th className="w-10 px-2 py-2 font-medium" />
+              <SortHeader label={t('Title')} column="title" sort={sort} onSort={(key) => setSort((s) => nextSongSort(s, key))} />
+              <SortHeader label={t('Artist')} column="artist" sort={sort} onSort={(key) => setSort((s) => nextSongSort(s, key))} />
+              <SortHeader label={t('Album')} column="album" sort={sort} onSort={(key) => setSort((s) => nextSongSort(s, key))} />
+              <SortHeader label={t('Duration')} column="duration" sort={sort} onSort={(key) => setSort((s) => nextSongSort(s, key))} />
+              <SortHeader label={t('Plays')} column="plays" sort={sort} onSort={(key) => setSort((s) => nextSongSort(s, key))} />
+              <SortHeader label={t('Rating')} column="rating" sort={sort} onSort={(key) => setSort((s) => nextSongSort(s, key))} />
+              <SortHeader label={t('Lyrics')} column="lyrics" sort={sort} onSort={(key) => setSort((s) => nextSongSort(s, key))} />
+              <th className="w-16 px-2 py-2 font-medium" />
+              <th className="w-10 px-2 py-2 font-medium" />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((song, i) => {
+              const index = (currentPage - 1) * pageSize + i;
+              return (
+                <tr
+                  key={song.id}
+                  className="cursor-pointer border-b border-border/60 hover:bg-accent"
+                  onClick={() => playSongs(songs, index)}
+                  onContextMenu={(e) => setMenu(mediaMenuFromEvent(e, [song]))}
+                >
+                  <td className="px-2 py-2">
+                    <button type="button" className="text-muted-foreground hover:text-foreground">
+                      <Play size={14} />
                     </button>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">{t('No')}</span>
-                  )}
-                </span>
-                <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => addToQueue([song])}>
-                  {t('Queue')}
-                </Button>
-                <Button variant="ghost" className="h-7 px-1" onClick={() => setPlaylistSong(song)} title={t('Add to playlist')}>
-                  <ListPlus size={14} />
-                </Button>
-              </div>
-            );
-          })}
-        </div>
+                  </td>
+                  <td className="max-w-[14rem] truncate px-2 py-2">{song.title}</td>
+                  <td className="max-w-[10rem] truncate px-2 py-2 text-muted-foreground">{song.artist}</td>
+                  <td className="max-w-[10rem] truncate px-2 py-2 text-muted-foreground">{song.album}</td>
+                  <td className="px-2 py-2 text-xs text-muted-foreground">{formatDuration(song.duration)}</td>
+                  <td className="px-2 py-2 text-xs tabular-nums text-muted-foreground">{song.play_count}</td>
+                  <td className="px-2 py-2" onClick={(e) => e.stopPropagation()}>
+                    <RatingStars value={song.rating} onChange={(next) => rate.mutate({ id: song.id, rating: next })} />
+                  </td>
+                  <td className="px-2 py-2" onClick={(e) => e.stopPropagation()}>
+                    {song.has_lyrics ? (
+                      <button type="button" onClick={() => openLyrics(song.id)}>
+                        <Badge className="bg-primary/15 text-primary">
+                          <Mic2 size={12} className="mr-1" />
+                          {t('Yes')}
+                        </Badge>
+                      </button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">{t('No')}</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-2" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => addToQueue([song])}>
+                      {t('Queue')}
+                    </Button>
+                  </td>
+                  <td className="px-2 py-2" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" className="h-7 px-1" onClick={() => setPlaylistSong(song)} title={t('Add to playlist')}>
+                      <ListPlus size={14} />
+                    </Button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {songs.length === 0 && <p className="p-4 text-sm text-muted-foreground">{t('No matches found.')}</p>}
       </div>
+      {songs.length > 0 && (
+        <TablePagination
+          total={songs.length}
+          page={currentPage}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            saveSongsPageSize(size);
+            setPage(1);
+          }}
+        />
+      )}
       <AddToPlaylistDialog
         songs={playlistSong ? [playlistSong] : []}
         open={playlistSong != null}

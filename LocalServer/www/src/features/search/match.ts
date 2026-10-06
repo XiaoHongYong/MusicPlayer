@@ -1,3 +1,21 @@
+export type SearchTab = 'songs' | 'albums' | 'artists' | 'playlists';
+
+export const SEARCH_TABS: SearchTab[] = ['songs', 'albums', 'artists', 'playlists'];
+
+export function parseSearchTab(raw: string | null | undefined): SearchTab {
+  if (raw === 'albums' || raw === 'artists' || raw === 'playlists') return raw;
+  return 'songs';
+}
+
+export function searchHref(q: string, tab: SearchTab = 'songs'): string {
+  const sp = new URLSearchParams();
+  const trimmed = q.trim();
+  if (trimmed) sp.set('q', trimmed);
+  if (tab !== 'songs') sp.set('tab', tab);
+  const qs = sp.toString();
+  return qs ? `/search?${qs}` : '/search';
+}
+
 export function normalizeQuery(q: string) {
   return q.trim().toLowerCase();
 }

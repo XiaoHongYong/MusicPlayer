@@ -4,6 +4,7 @@ import { queryClient } from '@/api/query-client';
 import type { PlayerState, QueueItem, ScanStatus } from '@/api/types';
 import { sseManager, type SseEnvelope } from '@/features/realtime/sse';
 import { useUiStore } from '@/stores/ui-store';
+import { mediaDurationSeconds } from '@/lib/utils';
 import { usePlayerStore } from './store';
 
 function asScanStatus(data: unknown): ScanStatus | null {
@@ -34,7 +35,10 @@ function applyEnvelope(envelope: SseEnvelope) {
   if (envelope.event === 'player.queue_changed') {
     if (target !== 'desktop') return;
     const payload = envelope.data as { items?: QueueItem[] };
-    const songs = payload?.items?.map((i) => i.song) ?? [];
+    const songs = payload?.items?.map((i) => ({
+      ...i.song,
+      duration: mediaDurationSeconds(i.song.duration),
+    })) ?? [];
     const cur = usePlayerStore.getState();
     const fake: PlayerState = {
       state: cur.playing ? 'playing' : 'paused',
@@ -57,6 +61,7 @@ function applyEnvelope(envelope: SseEnvelope) {
     if (envelope.event === 'library.scan_finished') {
       void queryClient.invalidateQueries({ queryKey: ['library-snapshot'] });
       void queryClient.invalidateQueries({ queryKey: ['bootstrap'] });
+      void queryClient.invalidateQueries({ queryKey: ['statistics-snapshot'] });
     }
     return;
   }
@@ -64,11 +69,13 @@ function applyEnvelope(envelope: SseEnvelope) {
   if (envelope.event === 'library.updated') {
     void queryClient.invalidateQueries({ queryKey: ['library-snapshot'] });
     void queryClient.invalidateQueries({ queryKey: ['bootstrap'] });
+    void queryClient.invalidateQueries({ queryKey: ['statistics-snapshot'] });
     return;
   }
 
   if (envelope.event === 'rating.changed') {
     void queryClient.invalidateQueries({ queryKey: ['library-snapshot'] });
+    void queryClient.invalidateQueries({ queryKey: ['statistics-snapshot'] });
     return;
   }
 
@@ -84,6 +91,7 @@ function applyEnvelope(envelope: SseEnvelope) {
   if (envelope.event === 'history.updated') {
     void queryClient.invalidateQueries({ queryKey: ['history-recent'] });
     void queryClient.invalidateQueries({ queryKey: ['library-snapshot'] });
+    void queryClient.invalidateQueries({ queryKey: ['statistics-snapshot'] });
   }
 }
 
