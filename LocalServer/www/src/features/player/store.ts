@@ -34,6 +34,10 @@ interface PlayerStore {
   historyReported: boolean;
   playSongs: (songs: Song[], startIndex?: number) => void;
   addToQueue: (songs: Song[]) => void;
+  playNext: (songs: Song[]) => void;
+  removeFromQueue: (at: number) => void;
+  moveInQueue: (from: number, to: number) => void;
+  clearQueue: () => void;
   applyQueueAction: (opts: {
     mode: QueueActionMode;
     thisSongs: Song[];
@@ -54,6 +58,56 @@ interface PlayerStore {
   onTargetChanged: (next: PlaybackTarget) => void;
   tick: () => void;
   current: () => Song | null;
+}
+
+function persistBrowserSession() {
+  if (target() !== 'browser') return;
+  try {
+    const { queue, index, volume, shuffle, repeat } = usePlayerStore.getState();
+    localStorage.setItem(
+      'pmc.browserSession',
+      JSON.stringify({ queue, index, volume, shuffle, repeat }),
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+function loadBrowserSession(): Partial<{
+  queue: Song[];
+  index: number;
+  volume: number;
+  shuffle: boolean;
+  repeat: RepeatMode;
+}> {
+  try {
+    const raw = localStorage.getItem('pmc.browserSession');
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as {
+      queue?: Song[];
+      index?: number;
+      volume?: number;
+      shuffle?: boolean;
+      repeat?: RepeatMode;
+    };
+    return {
+      queue: Array.isArray(parsed.queue) ? parsed.queue : [],
+      index: typeof parsed.index === 'number' ? parsed.index : -1,
+      volume: typeof parsed.volume === 'number' ? parsed.volume : 0.8,
+      shuffle: Boolean(parsed.shuffle),
+      repeat: parsed.repeat === 'off' || parsed.repeat === 'one' || parsed.repeat === 'all' ? parsed.repeat : 'all',
+    };
+  } catch {
+    return {};
+  }
+}
+
+function replaceDesktopQueue(nextQueue: Song[], nextIndex: number, play: boolean) {
+  if (play) {
+    usePlayerStore.getState().playSongs(nextQueue, Math.max(0, nextIndex));
+    return;
+  }
+  syncDesktopQueue('replace', nextQueue, nextIndex, false);
 }
 
 function bindSession(song: Song | null) {
@@ -105,12 +159,14 @@ function syncDesktopQueue(
     .catch(() => undefined);
 }
 
+const saved = target() === 'browser' ? loadBrowserSession() : {};
+
 export const usePlayerStore = create<PlayerStore>((set, get) => ({
-  queue: [],
-  index: -1,
-  shuffle: false,
-  repeat: 'all',
-  volume: 0.8,
+  queue: saved.queue ?? [],
+  index: saved.index ?? -1,
+  shuffle: saved.shuffle ?? false,
+  repeat: saved.repeat ?? 'all',
+  volume: saved.volume ?? 0.8,
   position: 0,
   duration: 0,
   playing: false,
@@ -156,6 +212,56 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       playNow: false,
       addToFront: false,
     });
+  },
+
+  playNext: (songs) => {
+    if (!songs.length) return;
+    const { queue, index } = get();
+    const inQueue = new Set(queue.map((s) => s.id));
+    const toAdd = songs.filter((s) => !inQueue.has(s.id));
+    if (!toAdd.length) return;
+    const insertAt = queue.length === 0 ? 0 : Math.min(queue.length, Math.max(0, index + 1));
+    const nextQueue = [...queue.slice(0, insertAt), ...toAdd, ...queue.slice(insertAt)];
+    const nextIndex = queue.length === 0 ? 0 : index;
+    commitLocalQueue(nextQueue, nextIndex, false, queue.length === 0);
+    if (target() === 'desktop') {
+      if (queue.length === 0) get().playSongs(nextQueue, 0);
+      else syncDesktopQueue('insert', toAdd, insertAt, false);
+    }
+  },
+
+  removeFromQueue: (at) => {
+    const { queue, index, playing } = get();
+    if (at < 0 || at >= queue.length) return;
+    const nextQueue = queue.filter((_, i) => i !== at);
+    let nextIndex = index;
+    if (at < index) nextIndex = index - 1;
+    else if (at === index) nextIndex = Math.min(index, nextQueue.length - 1);
+    const removedCurrent = at === index;
+    commitLocalQueue(nextQueue, nextQueue.length ? Math.max(0, nextIndex) : -1, playing && removedCurrent, removedCurrent);
+    if (target() === 'desktop') {
+      replaceDesktopQueue(nextQueue, nextQueue.length ? Math.max(0, nextIndex) : 0, playing && removedCurrent && nextQueue.length > 0);
+    }
+  },
+
+  moveInQueue: (from, to) => {
+    const { queue, index } = get();
+    if (from === to || from < 0 || to < 0 || from >= queue.length || to >= queue.length) return;
+    const next = [...queue];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item);
+    let nextIndex = index;
+    if (index === from) nextIndex = to;
+    else if (from < index && to >= index) nextIndex = index - 1;
+    else if (from > index && to <= index) nextIndex = index + 1;
+    commitLocalQueue(next, nextIndex, false, false);
+    if (target() === 'desktop') replaceDesktopQueue(next, nextIndex, false);
+  },
+
+  clearQueue: () => {
+    audioEngine.pause();
+    commitLocalQueue([], -1, false, true);
+    if (target() === 'desktop') syncDesktopQueue('replace', [], 0, false);
   },
 
   applyQueueAction: ({ mode, thisSongs, allSongs, startIndex, playNow, addToFront }) => {
@@ -342,7 +448,16 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         .catch(() => undefined);
     } else {
       void api.playerCommand('pause').catch(() => undefined);
-      set({ playing: false, position: 0 });
+      const saved = loadBrowserSession();
+      set({
+        playing: false,
+        position: 0,
+        queue: saved.queue ?? get().queue,
+        index: saved.index ?? get().index,
+        volume: saved.volume ?? get().volume,
+        shuffle: saved.shuffle ?? get().shuffle,
+        repeat: saved.repeat ?? get().repeat,
+      });
     }
   },
 
@@ -382,4 +497,16 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 
 audioEngine.subscribe(() => {
   usePlayerStore.getState().tick();
+});
+
+usePlayerStore.subscribe((state, prev) => {
+  if (
+    state.queue !== prev.queue ||
+    state.index !== prev.index ||
+    state.volume !== prev.volume ||
+    state.shuffle !== prev.shuffle ||
+    state.repeat !== prev.repeat
+  ) {
+    persistBrowserSession();
+  }
 });

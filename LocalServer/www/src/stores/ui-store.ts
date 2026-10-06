@@ -6,10 +6,24 @@ export type PlaybackTarget = 'browser' | 'desktop';
 const KEYS = {
   playback: 'pmc.playbackTarget',
   theme: 'pmc.themeMode',
+  accent: 'pmc.themeAccent',
   sidebar: 'pmc.sidebarCollapsed',
   playImmediately: 'pmc.playImmediately',
   addToQueueFront: 'pmc.addToQueueFront',
 } as const;
+
+export type ThemeAccent = 'violet' | 'blue' | 'green' | 'orange' | 'rose';
+const ACCENTS: ThemeAccent[] = ['violet', 'blue', 'green', 'orange', 'rose'];
+
+export function loadThemeAccent(): ThemeAccent {
+  const v = readStorage(KEYS.accent);
+  return ACCENTS.includes(v as ThemeAccent) ? (v as ThemeAccent) : 'violet';
+}
+
+export function applyThemeAccent(accent: ThemeAccent) {
+  if (typeof document === 'undefined') return;
+  document.documentElement.dataset.accent = accent;
+}
 
 function readStorage(key: string): string | null {
   try {
@@ -58,6 +72,7 @@ export function applyThemeMode(mode: ThemeMode) {
 interface UiState {
   sidebarCollapsed: boolean;
   themeMode: ThemeMode;
+  themeAccent: ThemeAccent;
   nowPlayingOpen: boolean;
   queueOpen: boolean;
   lyricsSongId: number | null;
@@ -66,6 +81,7 @@ interface UiState {
   addToQueueFront: boolean;
   setSidebarCollapsed: (v: boolean) => void;
   setThemeMode: (v: ThemeMode) => void;
+  setThemeAccent: (v: ThemeAccent) => void;
   setNowPlayingOpen: (v: boolean) => void;
   setQueueOpen: (v: boolean) => void;
   setPlaybackTarget: (v: PlaybackTarget) => void;
@@ -76,11 +92,14 @@ interface UiState {
 }
 
 const initialTheme = loadThemeMode();
+const initialAccent = loadThemeAccent();
 applyThemeMode(initialTheme);
+applyThemeAccent(initialAccent);
 
 export const useUiStore = create<UiState>((set) => ({
   sidebarCollapsed: loadSidebarCollapsed(),
   themeMode: initialTheme,
+  themeAccent: initialAccent,
   nowPlayingOpen: false,
   queueOpen: false,
   lyricsSongId: null,
@@ -95,6 +114,11 @@ export const useUiStore = create<UiState>((set) => ({
     writeStorage(KEYS.theme, v);
     applyThemeMode(v);
     set({ themeMode: v });
+  },
+  setThemeAccent: (v) => {
+    writeStorage(KEYS.accent, v);
+    applyThemeAccent(v);
+    set({ themeAccent: v });
   },
   setNowPlayingOpen: (v) => set({ nowPlayingOpen: v }),
   setQueueOpen: (v) => set({ queueOpen: v }),

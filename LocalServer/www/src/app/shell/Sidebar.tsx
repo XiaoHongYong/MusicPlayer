@@ -1,7 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import {
   Home,
-  Search,
   Library,
   ListMusic,
   History,
@@ -11,9 +10,8 @@ import {
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/stores/ui-store';
 
-const items = [
+export const navItems = [
   { to: '/', label: 'Home', icon: Home },
-  { to: '/search', label: 'Search', icon: Search },
   { to: '/library/songs', label: 'Songs', icon: Library },
   { to: '/library/albums', label: 'Albums', icon: Library },
   { to: '/library/artists', label: 'Artists', icon: Library },
@@ -28,7 +26,12 @@ export function Sidebar() {
   const collapsed = useUiStore((s) => s.sidebarCollapsed);
   const setCollapsed = useUiStore((s) => s.setSidebarCollapsed);
   return (
-    <aside className={cn('flex flex-col border-r border-border bg-card py-4', collapsed ? 'w-16' : 'w-56')}>
+    <aside
+      className={cn(
+        'hidden flex-col border-r border-border bg-card py-4 md:flex',
+        collapsed ? 'w-16' : 'w-56',
+      )}
+    >
       <button
         type="button"
         className={cn(
@@ -43,7 +46,7 @@ export function Sidebar() {
         {!collapsed && <span>Music Center</span>}
       </button>
       <nav className="flex flex-1 flex-col gap-0.5 px-2">
-        {items.map((item) => (
+        {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

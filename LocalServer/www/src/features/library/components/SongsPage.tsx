@@ -26,18 +26,36 @@ export function useLibrarySnapshot() {
   });
 }
 
-function useFilteredSongs(songs: Song[] | undefined, q: string, genre: string, hasLyrics: string) {
+function useFilteredSongs(
+  songs: Song[] | undefined,
+  q: string,
+  genre: string,
+  artist: string,
+  rating: string,
+  hasLyrics: string,
+  sort: string,
+) {
   return useMemo(() => {
     const list = songs ?? [];
     const query = q.trim().toLowerCase();
-    return list.filter((s) => {
+    const minRating = rating ? Number(rating) : 0;
+    const filtered = list.filter((s) => {
       if (genre && s.genre !== genre) return false;
+      if (artist && s.artist !== artist) return false;
+      if (minRating && s.rating < minRating) return false;
       if (hasLyrics === 'yes' && !s.has_lyrics) return false;
       if (hasLyrics === 'no' && s.has_lyrics) return false;
       if (!query) return true;
       return [s.title, s.artist, s.album].some((x) => x.toLowerCase().includes(query));
     });
-  }, [songs, q, genre, hasLyrics]);
+    return [...filtered].sort((a, b) => {
+      if (sort === 'artist') return a.artist.localeCompare(b.artist) || a.title.localeCompare(b.title);
+      if (sort === 'album') return a.album.localeCompare(b.album) || a.title.localeCompare(b.title);
+      if (sort === 'rating') return b.rating - a.rating || a.title.localeCompare(b.title);
+      if (sort === 'plays') return b.play_count - a.play_count || a.title.localeCompare(b.title);
+      return a.title.localeCompare(b.title);
+    });
+  }, [songs, q, genre, artist, rating, hasLyrics, sort]);
 }
 
 export function SongsPage() {
@@ -45,10 +63,13 @@ export function SongsPage() {
   const qc = useQueryClient();
   const [q, setQ] = useState('');
   const [genre, setGenre] = useState('');
+  const [artist, setArtist] = useState('');
+  const [rating, setRating] = useState('');
   const [hasLyrics, setHasLyrics] = useState('');
+  const [sort, setSort] = useState('title');
   const [playlistSong, setPlaylistSong] = useState<Song | null>(null);
   const [menu, setMenu] = useState<MediaMenuTarget | null>(null);
-  const songs = useFilteredSongs(data?.songs, q, genre, hasLyrics);
+  const songs = useFilteredSongs(data?.songs, q, genre, artist, rating, hasLyrics, sort);
   const playSongs = usePlayerStore((s) => s.playSongs);
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const openLyrics = useUiStore((s) => s.openLyrics);
@@ -91,6 +112,40 @@ export function SongsPage() {
               {g}
             </option>
           ))}
+        </select>
+        <select
+          className="h-9 rounded-md border border-border bg-background px-2 text-sm"
+          value={artist}
+          onChange={(e) => setArtist(e.target.value)}
+        >
+          <option value="">全部艺人</option>
+          {(data?.artists ?? []).map((a) => (
+            <option key={a} value={a}>
+              {a}
+            </option>
+          ))}
+        </select>
+        <select
+          className="h-9 rounded-md border border-border bg-background px-2 text-sm"
+          value={rating}
+          onChange={(e) => setRating(e.target.value)}
+        >
+          <option value="">全部评分</option>
+          <option value="5">5 星</option>
+          <option value="4">4 星及以上</option>
+          <option value="3">3 星及以上</option>
+          <option value="1">已评分</option>
+        </select>
+        <select
+          className="h-9 rounded-md border border-border bg-background px-2 text-sm"
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+        >
+          <option value="title">按标题</option>
+          <option value="artist">按艺人</option>
+          <option value="album">按专辑</option>
+          <option value="rating">按评分</option>
+          <option value="plays">按播放量</option>
         </select>
         <select
           className="h-9 rounded-md border border-border bg-background px-2 text-sm"

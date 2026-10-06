@@ -68,17 +68,14 @@ protected:
 extern CLanguageTool g_LangTool;
 
 
-// TLS = To local section: indicate the section of current file.
 // TL = To Local
 // TLT = Tolocal
 // TLM = To Local Mark: Mark it need to local
 // TL3 = To Local level 3
-#define _TLS(szString)
 #define _TL(szString)       (g_LangTool.toLocalString(szString))
 #define _TLT(szString)      (g_LangTool.toLocalString(szString))
 #define _TLM(szString)      szString
 
-#define LOADLOCALMENU(ID)   (g_LangTool.LoadLocalMenu(ID))
 #define ERROR2STR_LOCAL(nError) (g_LangTool.toLocalString(Error2Str(nError)))
 
 string removePrefixOfAcckey(cstr_t szStr);

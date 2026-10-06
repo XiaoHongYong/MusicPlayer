@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Search, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, Trash2, X } from 'lucide-react';
 import { useUiStore } from '@/stores/ui-store';
 import { usePlayerStore } from '../store';
 import { formatDuration } from '@/lib/utils';
@@ -12,6 +12,9 @@ export function QueueDrawer() {
   const queue = usePlayerStore((s) => s.queue);
   const index = usePlayerStore((s) => s.index);
   const playSongs = usePlayerStore((s) => s.playSongs);
+  const removeFromQueue = usePlayerStore((s) => s.removeFromQueue);
+  const moveInQueue = usePlayerStore((s) => s.moveInQueue);
+  const clearQueue = usePlayerStore((s) => s.clearQueue);
   const [filter, setFilter] = useState('');
 
   const totalDuration = useMemo(
@@ -39,13 +42,24 @@ export function QueueDrawer() {
               {filtering ? ` · 显示 ${filtered.length} 首` : ''}
             </p>
           </div>
-          <button
-            className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-            onClick={() => setOpen(false)}
-            aria-label="关闭播放队列"
-          >
-            <X size={16} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40"
+              disabled={!queue.length}
+              onClick={() => clearQueue()}
+              aria-label="清空队列"
+              title="清空队列"
+            >
+              <Trash2 size={16} />
+            </button>
+            <button
+              className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+              onClick={() => setOpen(false)}
+              aria-label="关闭播放队列"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
         <div className="relative mt-3">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -61,20 +75,47 @@ export function QueueDrawer() {
       </div>
       <div className="min-h-0 flex-1 space-y-1 overflow-auto p-3">
         {filtered.map(({ song, originalIndex }) => (
-          <button
+          <div
             key={`${song.id}-${originalIndex}`}
-            className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm ${
+            className={`flex items-center gap-1 rounded-md px-1 py-1 text-sm ${
               originalIndex === index ? 'bg-accent' : 'hover:bg-accent/60'
             }`}
-            onClick={() => playSongs(queue, originalIndex)}
           >
-            <span className="truncate">
+            <button
+              className="min-w-0 flex-1 truncate px-2 py-1 text-left"
+              onClick={() => playSongs(queue, originalIndex)}
+            >
               {song.title} <span className="text-muted-foreground">· {song.artist}</span>
-            </span>
-            <span className="ml-2 shrink-0 text-xs text-muted-foreground">
-              {formatDuration(song.duration)}
-            </span>
-          </button>
+            </button>
+            {!filtering && (
+              <div className="flex shrink-0 items-center">
+                <button
+                  className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  disabled={originalIndex === 0}
+                  onClick={() => moveInQueue(originalIndex, originalIndex - 1)}
+                  aria-label="上移"
+                >
+                  <ChevronUp size={14} />
+                </button>
+                <button
+                  className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  disabled={originalIndex === queue.length - 1}
+                  onClick={() => moveInQueue(originalIndex, originalIndex + 1)}
+                  aria-label="下移"
+                >
+                  <ChevronDown size={14} />
+                </button>
+                <button
+                  className="p-1 text-muted-foreground hover:text-foreground"
+                  onClick={() => removeFromQueue(originalIndex)}
+                  aria-label="从队列移除"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            )}
+            <span className="mr-1 shrink-0 text-xs text-muted-foreground">{formatDuration(song.duration)}</span>
+          </div>
         ))}
         {queue.length === 0 && <p className="text-sm text-muted-foreground">队列为空</p>}
         {queue.length > 0 && filtered.length === 0 && (

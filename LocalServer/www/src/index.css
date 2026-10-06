@@ -34,6 +34,39 @@
   --ring: 263 70% 66%;
 }
 
+html[data-accent='blue'] {
+  --primary: 221 83% 53%;
+  --ring: 221 83% 53%;
+}
+html.dark[data-accent='blue'] {
+  --primary: 217 91% 60%;
+  --ring: 217 91% 60%;
+}
+html[data-accent='green'] {
+  --primary: 142 71% 39%;
+  --ring: 142 71% 39%;
+}
+html.dark[data-accent='green'] {
+  --primary: 142 69% 49%;
+  --ring: 142 69% 49%;
+}
+html[data-accent='orange'] {
+  --primary: 24 95% 53%;
+  --ring: 24 95% 53%;
+}
+html.dark[data-accent='orange'] {
+  --primary: 27 96% 61%;
+  --ring: 27 96% 61%;
+}
+html[data-accent='rose'] {
+  --primary: 347 77% 50%;
+  --ring: 347 77% 50%;
+}
+html.dark[data-accent='rose'] {
+  --primary: 347 77% 60%;
+  --ring: 347 77% 60%;
+}
+
 html,
 body,
 #root {

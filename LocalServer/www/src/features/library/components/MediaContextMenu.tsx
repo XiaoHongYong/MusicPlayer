@@ -120,6 +120,16 @@ export function MediaContextMenu({
       <button className={itemClass} onClick={() => run('addAll')}>
         添加所有歌曲到播放列表
       </button>
+      <button
+        className={itemClass}
+        onClick={() => {
+          usePlayerStore.getState().playNext(songs);
+          useToastStore.getState().show(`已将 ${songs.length} 首设为下一首`);
+          onClose();
+        }}
+      >
+        下一首播放
+      </button>
       <div
         className="relative"
         onPointerEnter={() => setPlaylistOpen(true)}
