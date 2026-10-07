@@ -1,6 +1,7 @@
 ﻿#include "../MPlayerUI/MPlayerApp.h"
 #include "Player.h"
 #include "MediaScanner.h"
+#include "MetadataInference/MetadataInference.h"
 #include "../MPlayerUI/PlayListFile.h"
 #include "../MPlayerUI/OnlineSearch.h"
 #include "../LyricsLib/CurrentLyrics.h"
@@ -788,6 +789,12 @@ void CPlayer::updateMediaInfo(Media *media) {
     Media newInfo = *media;
 
     loadMediaTagInfo(&newInfo);
+    // 元数据推断：合并文件名/路径/标签，只改内存与库，不改音频文件。
+    // 已确认(VERIFIED)的歌曲不重跑。
+    if (newInfo.metaStatus != MetadataStatus::VERIFIED && !newInfo.url.empty()) {
+        auto infer = g_metadataInference.inferForMedia(&newInfo);
+        g_metadataInference.applyToMedia(infer, &newInfo);
+    }
     if (!newInfo.isEqual(media)) {
         // update media info to media library, if changed.
         *media = newInfo;

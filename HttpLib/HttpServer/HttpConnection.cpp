@@ -87,6 +87,8 @@ void HttpConnection::reset() {
     _response.headers.clear();
     _response.statusCode = HttpStatusCode::INVALID;
 
+    _bodyTooLarge = false;
+
     http_parser_init(&_httpParser, HTTP_REQUEST);
 
     _status = UNKOWN;
@@ -197,6 +199,13 @@ int HttpConnection::onHeadersCompleteCb(http_parser *parser) {
 int HttpConnection::onBodyCb(http_parser *parser, const char *at, size_t length) {
     HttpConnection *conn = (HttpConnection *)parser->data;
     conn->_status = HttpConnection::IN_REQ_BODY_HANDLING;
+
+    // 限制请求体大小，防止内存被无限制撑大。
+    if (conn->_request.body.size() + length > HttpConnection::MAX_BODY_SIZE) {
+        conn->_bodyTooLarge = true;
+        return 0;
+    }
+
     conn->_request.body.append(at, length);
 
     return 0;
@@ -204,6 +213,15 @@ int HttpConnection::onBodyCb(http_parser *parser, const char *at, size_t length)
 
 int HttpConnection::onMessageCompleteCb(http_parser *parser) {
     HttpConnection *conn = (HttpConnection *)parser->data;
+
+    if (conn->_bodyTooLarge) {
+        // 拒绝超大的请求体，直接回 413，不再交给业务 handler。
+        auto &response = conn->_response;
+        response.statusCode = HttpStatusCode::PAYLOAD_TOO_LARGE;
+        response.body = "413 Payload Too Large";
+        response.sendAll();
+        return 1;
+    }
 
     if (conn->_response.statusCode == HttpStatusCode::INVALID) {
         DLOG(INFO) << "onRequestBody: " << conn->_request.uri << ", method: " << (HttpMethod)parser->method;

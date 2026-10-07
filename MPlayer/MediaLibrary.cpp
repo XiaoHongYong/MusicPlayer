@@ -4,13 +4,14 @@
 #include "MediaScanner.h"
 #include "Utils/rapidjson.h"
 #include <algorithm>
+#include <cstring>
 
 
 #define ALBUM_ARTIST_SEP        "~@~"
 #define ALBUM_ARTIST_SEP_LEN    3
 
 #define MEDIA_LIB_VER_NAME  "version"
-#define MEDIA_LIB_VER_CUR   "1"
+#define MEDIA_LIB_VER_CUR   "2"
 
 
 #define SQL_CREATE_SETTINGS        "CREATE TABLE IF NOT EXISTS settings\
@@ -47,7 +48,10 @@
   bitRate integer DEFAULT 0,\
   channels integer DEFAULT 0,\
   bitsPerSample integer DEFAULT 0,\
-  sampleRate integer DEFAULT 0\
+  sampleRate integer DEFAULT 0,\
+  version text DEFAULT NULL,\
+  disc_number integer DEFAULT -1,\
+  metadata_status integer DEFAULT 0\
 );\
 \
 CREATE UNIQUE INDEX IF NOT EXISTS mli_url on medialib (url);\
@@ -71,7 +75,7 @@ DROP INDEX IF EXISTS mli_music_hash;"
 
 #define SQL_COUNT_OF_MEDIA    "select count(*)  from medialib"
 
-#define SQL_ADD_MEDIA    "INSERT INTO medialib (url, artist, album, title, track, year, genre, comment, duration, filesize, time_added, music_hash, lyrics_file) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+#define SQL_ADD_MEDIA    "INSERT INTO medialib (url, artist, album, title, track, year, genre, comment, duration, filesize, time_added, music_hash, lyrics_file, version, disc_number, metadata_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 
 #define SQL_ADD_MEDIA_FAST    "INSERT INTO medialib (url, artist, title, filesize, time_added, format) VALUES (?, ?, ?, ?, ?, ?);"
 
@@ -81,7 +85,7 @@ DROP INDEX IF EXISTS mli_music_hash;"
 
 #define SQL_MEDIA_UPDATE_INFO "update medialib set url=?, artist=?, album=?, title=?, track=?,"\
     "year=?, genre=?, comment=?, duration=?, filesize=?, lyrics_file=?, music_hash=?,"\
-    "format=?, bitRate=?, channels=?, bitsPerSample=?, sampleRate=? where id=?"
+    "format=?, bitRate=?, channels=?, bitsPerSample=?, sampleRate=?, version=?, disc_number=?, metadata_status=? where id=?"
 
 #define SQL_CREATE_TABLE_PLAYLIST   "CREATE TABLE IF NOT EXISTS playlists \
 (\
@@ -183,6 +187,14 @@ MediaPtr sqliteQueryMedia(CSqlite3Stmt &sqlStmt) {
     media->countPlayed = sqlStmt.columnInt(n++);
     MediaGetSqlite3ColumText(media->musicHash);
     MediaGetSqlite3ColumText(media->lyricsFile);
+    MediaGetSqlite3ColumText(media->format);
+    media->bitRate = sqlStmt.columnInt(n++);
+    media->channels = sqlStmt.columnInt(n++);
+    media->bitsPerSample = sqlStmt.columnInt(n++);
+    media->sampleRate = sqlStmt.columnInt(n++);
+    MediaGetSqlite3ColumText(media->version);
+    media->discNumb = (int16_t)sqlStmt.columnInt(n++);
+    media->metaStatus = (MetadataStatus)sqlStmt.columnInt(n++);
 
     return media;
 }
@@ -554,6 +566,9 @@ ResultCode CMediaLibrary::updateMediaInfo(Media *media) {
     SQLITE3_BIND_INT(m_stmtUpdateMediaInfo, media->channels);
     SQLITE3_BIND_INT(m_stmtUpdateMediaInfo, media->bitsPerSample);
     SQLITE3_BIND_INT(m_stmtUpdateMediaInfo, media->sampleRate);
+    SQLITE3_BIND_TEXT(m_stmtUpdateMediaInfo, media->version);
+    SQLITE3_BIND_INT(m_stmtUpdateMediaInfo, media->discNumb);
+    SQLITE3_BIND_INT(m_stmtUpdateMediaInfo, (int)media->metaStatus);
 
     SQLITE3_BIND_INT(m_stmtUpdateMediaInfo, media->ID);
     ret = m_stmtUpdateMediaInfo.step();
@@ -1230,6 +1245,9 @@ ResultCode CMediaLibrary::doAddMedia(const MediaPtr &media) {
     m_sqlAdd.bindInt64(n++, media->timeAdded);
     SQLITE3_BIND_TEXT(m_sqlAdd, media->musicHash);
     SQLITE3_BIND_TEXT(m_sqlAdd, media->lyricsFile);
+    SQLITE3_BIND_TEXT(m_sqlAdd, media->version);
+    m_sqlAdd.bindInt(n++, media->discNumb);
+    m_sqlAdd.bindInt(n++, (int)media->metaStatus);
 
     ret = m_sqlAdd.step();
     if (ret == ERR_OK) {
@@ -1312,13 +1330,63 @@ int CMediaLibrary::upgradeCheck() {
         return ERR_OK;
     }
 
-    // 版本不一致，需要升级
+    // 追加式升级：只增列，不 DROP 重建（否则丢库）。
+    // fresh 安装时 medialib 表还不存在（init 里 CREATE 在 upgradeCheck 之后），无需 ALTER。
+    if (tableExists("medialib")) {
+        addColumnIfMissing("medialib", "version");
+        addColumnIfMissing("medialib", "disc_number");
+        addColumnIfMissing("medialib", "metadata_status");
+    }
+
     setSettingValue(MEDIA_LIB_VER_NAME, MEDIA_LIB_VER_CUR);
 
-    ret = m_db.exec(DROP_MEDIALIB_TABLE);
-    assert(ret == ERR_OK);
-
     return ERR_OK;
+}
+
+bool CMediaLibrary::tableExists(cstr_t table) {
+    string sql = string("SELECT name FROM sqlite_master WHERE type='table' AND name='") + table + "'";
+    CSqlite3Stmt stmt;
+    if (stmt.prepare(&m_db, sql.c_str()) != ERR_OK) {
+        return false;
+    }
+    bool found = stmt.step() == ERR_SL_OK_ROW;
+    stmt.reset();
+    return found;
+}
+
+bool CMediaLibrary::columnExists(cstr_t table, cstr_t col) {
+    string sql = string("PRAGMA table_info(") + table + ")";
+    CSqlite3Stmt stmt;
+    if (stmt.prepare(&m_db, sql.c_str()) != ERR_OK) {
+        return false;
+    }
+    bool found = false;
+    while (stmt.step() == ERR_SL_OK_ROW) {
+        string name;
+        stmt.columnText(1, name);   // PRAGMA table_info: 第2列是 name
+        if (name == col) {
+            found = true;
+            break;
+        }
+    }
+    stmt.reset();
+    return found;
+}
+
+void CMediaLibrary::addColumnIfMissing(cstr_t table, cstr_t col) {
+    if (columnExists(table, col)) {
+        return;
+    }
+    string sql = string("ALTER TABLE ") + table + " ADD COLUMN " + col + " ";
+    // 列类型与默认值（对应 SQL_CREATE_MEDIALIB 的定义）。
+    if (strcmp(col, "version") == 0) {
+        sql += "text DEFAULT NULL";
+    } else if (strcmp(col, "disc_number") == 0) {
+        sql += "integer DEFAULT -1";
+    } else if (strcmp(col, "metadata_status") == 0) {
+        sql += "integer DEFAULT 0";
+    }
+    executeSQL(sql.c_str());
 }
 
 void CMediaLibrary::updateMediaInMem(Media *media) {

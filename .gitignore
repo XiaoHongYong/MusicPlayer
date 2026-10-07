@@ -55,3 +55,4 @@ Skins-Design/raw/app-icon-source-512.png
 i18n/catalog.json
 i18n/lang/*.ini
 LocalServer/www/src/i18n/messages.generated.ts
+build-ut

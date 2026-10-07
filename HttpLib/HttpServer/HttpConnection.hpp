@@ -90,6 +90,10 @@ private:
     string                                          _headerName, _headerValue;
     bool                                            _hasValue = false;
 
+    // 请求体大小上限，防止无限 buffering 的内存 DoS。
+    static const size_t                             MAX_BODY_SIZE = 8 * 1024 * 1024;
+    bool                                            _bodyTooLarge = false;
+
 };
 
 typedef std::shared_ptr<HttpConnection>     HttpConnectionPtr;

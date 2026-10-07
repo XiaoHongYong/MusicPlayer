@@ -1,0 +1,28 @@
+{
+  "hard": {
+    "technical": [
+      "320k", "320kbps", "256kbps", "192kbps", "128kbps", "96kbps", "64kbps",
+      "flac", "lossless", "ape", "wav", "mp3", "aac", "ogg", "hi-res", "hires",
+      "16bit", "24bit", "32bit", "48khz", "96khz", "192khz", "v0", "v2", "remastered"
+    ],
+    "source": [
+      "web", "web-dl", "cdda", "cd", "vinyl", "rip", "cdrip", "dvdrip", "ostrip",
+      "digital", "master", "itunes", "qobuz", "deezer", "tidal", "spotify",
+      "hdtracks", "studio-master"
+    ]
+  },
+  "soft": {
+    "promotional": [
+      "高品质", "无损", "超清", "收藏版", "完整版", "原版", "正式版", "试听版",
+      "特别版", "珍藏版", "经典", "精选", "极品", "发烧", "歌词", "伴奏", "纯音乐",
+      "铃声", "广告", "试听", "免费下载", "付费", "单曲", "mv"
+    ]
+  },
+  "semantic": {
+    "version": [
+      "live", "remix", "acoustic", "instrumental", "unplugged", "radio edit",
+      "extended mix", "club mix", "mono", "stereo", "demo", "edit", "cover",
+      "karaoke", "original mix"
+    ]
+  }
+}

@@ -180,6 +180,9 @@ protected:
     ResultCode applyPlayRecord(Media *media, cstr_t playedAt);
 
     int upgradeCheck();
+    bool tableExists(cstr_t table);
+    bool columnExists(cstr_t table, cstr_t col);
+    void addColumnIfMissing(cstr_t table, cstr_t col);
 
     void loadNowPlaying();
     void loadPlaylists();

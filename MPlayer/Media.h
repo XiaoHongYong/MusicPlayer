@@ -2,6 +2,7 @@
 
 #include "Utils/Utils.h"
 #include "MPlayerEngine/IPlayerCore.hpp"
+#include "MetadataInference/MetadataResult.h"
 
 
 #define MEDIA_LENGTH_INVALID    0
@@ -17,8 +18,11 @@ public:
     string                      artist;
     string                      album;
     string                      title;
+    string                      version;             // 标题版本词（Live/Remix/...），见 docs/web-console/metadata.md §9
     int16_t                     trackNumb = -1;
+    int16_t                     discNumb = -1;
     int16_t                     year = 0;
+    MetadataStatus              metaStatus = MetadataStatus::RAW;
     string                      genre;
     string                      comments;
 

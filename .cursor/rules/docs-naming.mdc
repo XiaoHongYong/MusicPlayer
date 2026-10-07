@@ -1,0 +1,21 @@
+---
+description: Naming convention for docs/ ordinary markdown files
+globs: docs/**/*.md
+alwaysApply: false
+---
+
+# Docs naming
+
+Ordinary markdown under `docs/` uses **lowercase + kebab-case**.
+
+```text
+✅ docs/file-document-architecture.md
+✅ docs/freemind-mm-format-spec.md
+❌ docs/FILE_DOCUMENT_ARCHITECTURE.md
+❌ docs/Freemind_MM_Format_Spec.md
+```
+
+- Prefer short, descriptive slugs (`project-structure-and-build.md`).
+- Do not use SCREAMING_SNAKE or Title_Case for new ordinary docs.
+- Root files that are repo conventions (`README.md`, `AGENTS.md`, `CHANGELOG.md`, `LICENSE`, …) stay as-is; this rule is for `docs/` content.
+- When renaming, update all in-repo links and comments that point at the old path.

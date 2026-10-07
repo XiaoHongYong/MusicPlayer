@@ -120,6 +120,7 @@ set(SRC_PATHS
     ${PROJECT_SOURCE_DIR}/LyricsLib
     ${PROJECT_SOURCE_DIR}/MediaTags
     ${PROJECT_SOURCE_DIR}/MediaTags/ID3
+    ${PROJECT_SOURCE_DIR}/MetadataInference
     ${PROJECT_SOURCE_DIR}/MLProtocol
     ${PROJECT_SOURCE_DIR}/MPlayer
     ${PROJECT_SOURCE_DIR}/MPlayerEngine
@@ -182,6 +183,7 @@ if(APPLE)
         ${PROJECT_SOURCE_DIR}/Skins-Design/skins
         ${PROJECT_SOURCE_DIR}/Skins-Design/patterns
         ${PROJECT_SOURCE_DIR}/MusicPlayer/MusicPlayer.icns
+        ${PROJECT_SOURCE_DIR}/MetadataInference/config/metadata_words.json
     )
 
     add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SRC} ${RESOURCES} ${HEADER_FILES})
