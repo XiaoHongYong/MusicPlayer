@@ -76,6 +76,16 @@ class AudioEngine {
     return this.audio?.volume ?? 1;
   }
 
+  /** 供 Web Audio AnalyserNode 挂接；可能尚未 ensure。 */
+  getMediaElement(): HTMLAudioElement | null {
+    return this.audio;
+  }
+
+  /** 确保 audio 元素已创建（可视化在 browser 播放时需要）. */
+  ensureMediaElement(): HTMLAudioElement {
+    return this.ensure();
+  }
+
   bindMediaSession(song: Song | null, handlers: { play: () => void; pause: () => void; next: () => void; prev: () => void }) {
     if (!('mediaSession' in navigator)) return;
     if (!song) {

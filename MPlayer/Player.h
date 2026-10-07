@@ -1,9 +1,12 @@
-#pragma once
+﻿#pragma once
 
 #include "TinyJS/utils/UtilsTypes.h"
 #include "../MPlayerEngine/IPlayerCore.hpp"
 #include "../Skin/EventsDispatcherBase.h"
 #include "MediaLibrary.h"
+
+#include <mutex>
+#include <vector>
 
 
 #define LRC_TITLE_MAX_LEN   128
@@ -45,7 +48,7 @@ public:
 
 };
 
-class CPlayer : public IPlayerCoreCallback {
+class CPlayer : public IPlayerCoreCallback, public IAudioAnalysisSink {
 public:
     CPlayer();
     ~CPlayer();
@@ -164,6 +167,12 @@ public:
     void registerVisualizer(IEventHandler *eventHandler);
     void unregisterVisualizer(IEventHandler *eventHandler);
 
+    // 桌面/其它端订阅实时 AudioAnalysisFrame（有订阅者时才开启引擎分析）
+    void subscribeAudioAnalysis(IAudioAnalysisSink *sink);
+    void unsubscribeAudioAnalysis(IAudioAnalysisSink *sink);
+    void setAudioAnalysisOptions(const AudioAnalysisOptions &options);
+    bool supportsAudioAnalysis() const;
+
     //
     // 通知事件
     //
@@ -178,8 +187,12 @@ public:
     // 有效播放（约 10 秒或 20%）写入与网页共用的 play_history。
     void maybeRecordPlayHistory();
 
+    // IAudioAnalysisSink：fan-out 给订阅者（在 Analyzer 线程回调）
+    void onAudioAnalysisFrame(const AudioAnalysisFrame &frame) override;
+
 protected:
     void onMediaChanged();
+    void syncAudioAnalysisSinkToCore();
     void setCurrentMedia(MediaPtr &media);
     void currentMediaChanged();
     void generateShuffleMediaQueue();
@@ -232,6 +245,10 @@ protected:
     bool                        m_isAutoAddToMediaLib = true;
 
     SetStrings                  m_audioFileExts;
+
+    std::mutex                  m_analysisSinksMutex;
+    std::vector<IAudioAnalysisSink *> m_analysisSinks;
+    AudioAnalysisOptions        m_analysisOptions;
 
 };
 

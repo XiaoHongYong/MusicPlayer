@@ -16,6 +16,7 @@
 #include "ApiHandler.hpp"
 #include "Connection.hpp"
 #include "EventStream.hpp"
+#include "AudioAnalysisStream.hpp"
 #include "Utils/Utils.h"
 #include "Utils/rapidjson.h"
 #include "MPlayer/Player.h"
@@ -858,6 +859,13 @@ void ApiHandler::handleRoute(const ConnectionPtr &connection, const vector<strin
             EventStream::instance().sendTo(connection, "player.queue_changed", qbuf.GetString(),
                                            EventStream::instance().stateVersion());
         }
+        return;
+    }
+
+    // GET /audio-analysis (SSE，仅分析帧；有订阅者时才开启桌面端 FFT)
+    if (tokens.size() == 1 && tokens[0] == "audio-analysis" && eqNoCase(m_method, "GET")) {
+        connection->beginSse();
+        AudioAnalysisStream::instance().addSubscriber(connection);
         return;
     }
 

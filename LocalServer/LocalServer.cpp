@@ -7,6 +7,7 @@
 #include "Http/StaticFilesHandler.hpp"
 #include "Http/ApiHandler.hpp"
 #include "Http/EventStream.hpp"
+#include "Http/AudioAnalysisStream.hpp"
 #include "MPlayer/MediaScanner.h"
 #include "Utils/rapidjson.h"
 #include "../Skin/SkinTypes.h"
@@ -57,6 +58,7 @@ LocalServer::LocalServer(cstr_t address, cstr_t httpPort, cstr_t docRoot)
     , m_httpPort(httpPort)
     , m_httpServer(address, httpPort) {
     HttpServer::EventStream::instance().bind(m_httpServer.ioContext());
+    HttpServer::AudioAnalysisStream::instance().bind(m_httpServer.ioContext());
 
     m_httpServer.registerRequestHandler(make_shared<HttpServer::ApiHandler>());
 

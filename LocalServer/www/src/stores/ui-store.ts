@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { isVisualizerId, type VisualizerId } from '@/features/visualization/registry';
 
 type ThemeMode = 'light' | 'dark' | 'system';
 export type PlaybackTarget = 'browser' | 'desktop';
@@ -10,6 +11,7 @@ const KEYS = {
   sidebar: 'pmc.sidebarCollapsed',
   playImmediately: 'pmc.playImmediately',
   addToQueueFront: 'pmc.addToQueueFront',
+  visualizer: 'pmc.visualizerId',
 } as const;
 
 export type ThemeAccent = 'violet' | 'blue' | 'green' | 'orange' | 'rose';
@@ -61,6 +63,11 @@ function loadBool(key: string, fallback: boolean): boolean {
   return v === '1' || v === 'true';
 }
 
+function loadVisualizerId(): VisualizerId {
+  const v = readStorage(KEYS.visualizer);
+  return isVisualizerId(v) ? v : 'spectrum-bars';
+}
+
 export function applyThemeMode(mode: ThemeMode) {
   if (typeof document === 'undefined') return;
   const dark =
@@ -79,6 +86,7 @@ interface UiState {
   playbackTarget: PlaybackTarget;
   playImmediately: boolean;
   addToQueueFront: boolean;
+  visualizerId: VisualizerId;
   setSidebarCollapsed: (v: boolean) => void;
   setThemeMode: (v: ThemeMode) => void;
   setThemeAccent: (v: ThemeAccent) => void;
@@ -87,6 +95,7 @@ interface UiState {
   setPlaybackTarget: (v: PlaybackTarget) => void;
   setPlayImmediately: (v: boolean) => void;
   setAddToQueueFront: (v: boolean) => void;
+  setVisualizerId: (v: VisualizerId) => void;
   openLyrics: (songId: number) => void;
   closeLyrics: () => void;
 }
@@ -106,6 +115,7 @@ export const useUiStore = create<UiState>((set) => ({
   playbackTarget: loadPlaybackTarget(),
   playImmediately: loadBool(KEYS.playImmediately, true),
   addToQueueFront: loadBool(KEYS.addToQueueFront, true),
+  visualizerId: loadVisualizerId(),
   setSidebarCollapsed: (v) => {
     writeStorage(KEYS.sidebar, v ? '1' : '0');
     set({ sidebarCollapsed: v });
@@ -133,6 +143,10 @@ export const useUiStore = create<UiState>((set) => ({
   setAddToQueueFront: (v) => {
     writeStorage(KEYS.addToQueueFront, v ? '1' : '0');
     set({ addToQueueFront: v });
+  },
+  setVisualizerId: (v) => {
+    writeStorage(KEYS.visualizer, v);
+    set({ visualizerId: v });
   },
   openLyrics: (songId) => set({ lyricsSongId: songId }),
   closeLyrics: () => set({ lyricsSongId: null }),

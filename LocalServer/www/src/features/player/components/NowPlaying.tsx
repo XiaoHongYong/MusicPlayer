@@ -6,12 +6,24 @@ import { usePlayerStore } from '../store';
 import { LyricsPanel } from './LyricsPanel';
 import { Button } from '@/components/ui/button';
 import { PlaybackExtraControls } from './PlaybackExtraControls';
+import { VisualizerHost } from '@/features/visualization/VisualizerHost';
+import { VISUALIZER_IDS, type VisualizerId } from '@/features/visualization/registry';
 import { useT } from '@/i18n';
+import { cn } from '@/lib/utils';
+
+function visualizerLabel(id: VisualizerId, t: (key: string) => string) {
+  if (id === 'spectrum-bars') return t('Spectrum');
+  if (id === 'spectrum-circle') return t('Circle');
+  if (id === 'none') return t('Off');
+  return t('Waveform');
+}
 
 export function NowPlaying() {
   const t = useT();
   const open = useUiStore((s) => s.nowPlayingOpen);
   const setOpen = useUiStore((s) => s.setNowPlayingOpen);
+  const visualizerId = useUiStore((s) => s.visualizerId);
+  const setVisualizerId = useUiStore((s) => s.setVisualizerId);
   const song = usePlayerStore((s) => s.current());
   const playing = usePlayerStore((s) => s.playing);
   const position = usePlayerStore((s) => s.position);
@@ -30,6 +42,23 @@ export function NowPlaying() {
           <ChevronDown className="mr-2" size={18} />
           {t('Back')}
         </Button>
+        <div className="flex items-center gap-1 rounded-full border border-border bg-card/80 p-1">
+          {VISUALIZER_IDS.map((id) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setVisualizerId(id)}
+              className={cn(
+                'rounded-full px-3 py-1 text-xs transition-colors',
+                visualizerId === id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {visualizerLabel(id, t)}
+            </button>
+          ))}
+        </div>
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-8 px-8 pb-10 lg:grid-cols-2">
         <div className="flex flex-col items-center justify-center gap-6">
@@ -70,8 +99,18 @@ export function NowPlaying() {
           </div>
           <PlaybackExtraControls />
         </div>
-        <div className="min-h-0 rounded-2xl bg-card">
-          <LyricsPanel songId={song?.id ?? null} position={position} />
+        <div className="flex min-h-0 flex-col gap-4">
+          <VisualizerHost
+            active={open}
+            visualizerId={visualizerId}
+            className={cn(
+              'w-full shrink-0',
+              visualizerId === 'spectrum-circle' ? 'h-44' : 'h-24',
+            )}
+          />
+          <div className="min-h-0 flex-1 rounded-2xl bg-card">
+            <LyricsPanel songId={song?.id ?? null} position={position} />
+          </div>
         </div>
       </div>
     </div>

@@ -16,6 +16,7 @@
 | [metadata.md](metadata.md) | 元数据推断与整理（C++ 独立模块，标签/路径推断、垃圾过滤、置信度） |
 | [audio-visualization-engine.md](audio-visualization-engine.md) | Web Visualizer 设计：`AudioAnalysisFrame` / 插件式 Visualizer / 主题 / 版本划分 |
 | [audio-analysis-stream.md](../audio-analysis-stream.md) | C++ 播放器侧音频分析层：谁真播放谁算 FFT，播放级特征实时流、歌曲级特征预计算 |
+| [mplayer-engine.md](../mplayer-engine.md) | `MPlayerEngine` 播放核、线程模型、引擎侧可视化分析接口 |
 
 ## 落地文档
 

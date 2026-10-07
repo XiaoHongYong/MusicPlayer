@@ -1,4 +1,4 @@
-#include "MPlayerApp.h"
+﻿#include "MPlayerApp.h"
 #include "MPSkinFactory.h"
 #include "MPSkinWnd.h"
 #include "LyricShowMultiRowObj.h"
@@ -13,6 +13,7 @@
 #include "MPSkinInfoTextCtrl.h"
 #include "MediaInfoTextCtrl.h"
 #include "MediaAlbumArtCtrl.h"
+#include "AudioVisualizerCtrl.h"
 #include "MPSkinInfoTextCtrlEx.h"
 #include "DlgAbout.h"
 #include "DlgSearchLyrics.h"
@@ -51,6 +52,7 @@ int CMPSkinFactory::init() {
     AddUIObjNewer(CMPSkinMediaNumInfoCtrl);
     AddUIObjNewer(CMediaInfoTextCtrl);
     AddUIObjNewer(CMediaAlbumArtCtrl);
+    AddUIObjNewer(CAudioVisualizerCtrl);
     AddUIObjNewer(CMPlaylistCtrl);
 
     registerAboutPage(this);

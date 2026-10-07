@@ -7,6 +7,8 @@
 #include "../LyricsLib/CurrentLyrics.h"
 #include "../MPlayerEngine/MPlayerCore.h"
 
+#include <algorithm>
+
 #ifdef _WIN32
 #include "../MPlayerUI/win32/PlayerEventDispatcher.h"
 #endif
@@ -143,8 +145,9 @@ void CPlayer::onInit() {
     }
 
 #ifdef _MAC_OS
-    m_playerCore = new CoreAVPlayer();
-    // m_playerCore = new MPlayerCore();
+    // Visualizer / 音频分析需要 PCM 旁路；CoreAVPlayer（AVPlayer）无 PCM，改用 MPlayerCore。
+    m_playerCore = new MPlayerCore();
+    // m_playerCore = new CoreAVPlayer();
 #else
     m_playerCore = new MPlayerCore();
 #endif
@@ -854,36 +857,70 @@ ResultCode CPlayer::loadMediaTagInfo(Media *media) {
 }
 
 void CPlayer::registerVisualizer(IEventHandler *eventHandler) {
-    // eventHandler->registerHandler(MPlayerApp::getEventsDispatcher(), ET_VIS_DRAW_UPDATE);
-
-    // class CMPVisAdapter         *m_pVisAdapter;
-
-    // MutexAutolock lock(m_mutex);
-    // ListEventHandlers &listHandler = m_vListEventHandler[eventType];
-
-
-    // // register vis ?
-    // if (listHandler.size() == 1) {
-    //     assert(m_pVisAdapter == nullptr);
-    //     m_pVisAdapter = new CMPVisAdapter;
-    //     m_pVisAdapter->ag_player
-    //     g_player.registerVis(m_pVisAdapter);
-    // }
+    // 旧 VisParam 路径已废弃；请用 subscribeAudioAnalysis。
+    (void)eventHandler;
 }
 
 void CPlayer::unregisterVisualizer(IEventHandler *eventHandler) {
-    // eventHandler->registerHandler(MPlayerApp::getEventsDispatcher(), ET_VIS_DRAW_UPDATE);
+    (void)eventHandler;
+}
 
-    // MutexAutolock lock(m_mutex);
-    // ListEventHandlers &listHandler = m_vListEventHandler[eventType];
+bool CPlayer::supportsAudioAnalysis() const {
+    return m_playerCore && m_playerCore->supportsAudioAnalysis();
+}
 
-    // // register vis ?
-    // if (listHandler.size() == 1) {
-    //     assert(m_pVisAdapter == nullptr);
-    //     m_pVisAdapter = new CMPVisAdapter;
-    //     m_pVisAdapter->ag_player
-    //     g_player.registerVis(m_pVisAdapter);
-    // }
+void CPlayer::setAudioAnalysisOptions(const AudioAnalysisOptions &options) {
+    m_analysisOptions = options;
+    if (m_playerCore) {
+        m_playerCore->setAudioAnalysisOptions(options);
+    }
+}
+
+void CPlayer::syncAudioAnalysisSinkToCore() {
+    if (!m_playerCore) {
+        return;
+    }
+    if (m_analysisSinks.empty()) {
+        m_playerCore->setAudioAnalysisSink(nullptr);
+    } else {
+        m_playerCore->setAudioAnalysisOptions(m_analysisOptions);
+        m_playerCore->setAudioAnalysisSink(this);
+    }
+}
+
+void CPlayer::subscribeAudioAnalysis(IAudioAnalysisSink *sink) {
+    if (!sink) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(m_analysisSinksMutex);
+    if (std::find(m_analysisSinks.begin(), m_analysisSinks.end(), sink) == m_analysisSinks.end()) {
+        m_analysisSinks.push_back(sink);
+    }
+    syncAudioAnalysisSinkToCore();
+}
+
+void CPlayer::unsubscribeAudioAnalysis(IAudioAnalysisSink *sink) {
+    if (!sink) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(m_analysisSinksMutex);
+    m_analysisSinks.erase(
+        std::remove(m_analysisSinks.begin(), m_analysisSinks.end(), sink),
+        m_analysisSinks.end());
+    syncAudioAnalysisSinkToCore();
+}
+
+void CPlayer::onAudioAnalysisFrame(const AudioAnalysisFrame &frame) {
+    std::vector<IAudioAnalysisSink *> sinks;
+    {
+        std::lock_guard<std::mutex> lock(m_analysisSinksMutex);
+        sinks = m_analysisSinks;
+    }
+    for (auto *s : sinks) {
+        if (s) {
+            s->onAudioAnalysisFrame(frame);
+        }
+    }
 }
 
 void CPlayer::notifyPlaylistChanged(Playlist *playlist, IMPEvent::PlaylistChangeAction action, int nIndex, int nIndexOld) {

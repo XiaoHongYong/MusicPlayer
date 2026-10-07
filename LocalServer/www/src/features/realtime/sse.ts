@@ -17,21 +17,26 @@ class EventSourceManager {
   private eventHandlers = new Set<EventHandler>();
   private stopped = true;
   private lastVersion = 0;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private reconnectAttempt = 0;
 
   start() {
-    if (!this.stopped && this.es) return;
+    if (!this.stopped && (this.es || this.reconnectTimer != null)) return;
     this.stopped = false;
     this.connect();
   }
 
   reconnectNow() {
     this.stopped = false;
+    this.reconnectAttempt = 0;
+    this.clearReconnectTimer();
     this.disconnectSocket();
     this.connect();
   }
 
   stop() {
     this.stopped = true;
+    this.clearReconnectTimer();
     this.disconnectSocket();
     this.setStatus('disconnected');
   }
@@ -65,15 +70,38 @@ class EventSourceManager {
     this.listeners.forEach((fn) => fn(status));
   }
 
+  private clearReconnectTimer() {
+    if (this.reconnectTimer != null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+  }
+
   private disconnectSocket() {
     if (this.es) {
+      this.es.onopen = null;
+      this.es.onerror = null;
+      this.es.onmessage = null;
       this.es.close();
       this.es = null;
     }
   }
 
+  /** 断开后主动退避重连，不依赖 EventSource 内置重试（进程退出后常停在 CLOSED）。 */
+  private scheduleReconnect() {
+    if (this.stopped || this.reconnectTimer != null) return;
+    const delay = Math.min(1000 * 2 ** this.reconnectAttempt, 10_000);
+    this.reconnectAttempt += 1;
+    this.setStatus('connecting');
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      this.connect();
+    }, delay);
+  }
+
   private connect() {
     if (this.stopped) return;
+    this.clearReconnectTimer();
     this.setStatus('connecting');
     this.disconnectSocket();
     const es = new EventSource('/api/v1/events');
@@ -96,11 +124,17 @@ class EventSourceManager {
     }
     es.onmessage = (ev) => this.dispatch(ev);
     es.onopen = () => {
+      this.reconnectAttempt = 0;
+      // 播放器重启后服务端 version 从 0 重计，需清空以免把新事件当过期丢掉。
+      this.lastVersion = 0;
       this.setStatus('connected');
     };
     es.onerror = () => {
       if (this.stopped) return;
+      // 关掉当前连接，由我们自己重连；避免停在 CLOSED 后不再试。
+      this.disconnectSocket();
       this.setStatus('disconnected');
+      this.scheduleReconnect();
     };
   }
 

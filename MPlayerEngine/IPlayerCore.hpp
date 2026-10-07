@@ -13,6 +13,17 @@
 #include <stdint.h>
 #include <string>
 
+#include "analysis/AudioAnalysisFrame.h"
+#include "analysis/AudioAnalysisOptions.h"
+
+class IAudioAnalysisSink {
+public:
+    virtual ~IAudioAnalysisSink() = default;
+
+    // 保证：不在 MPlayerCore 实时播放线程（threadRun）上调用。
+    virtual void onAudioAnalysisFrame(const AudioAnalysisFrame &frame) = 0;
+};
+
 
 enum {
     EQ_BANDS_COUNT              = 18,
@@ -142,6 +153,16 @@ public:
 
     virtual bool setEQ(const EQualizer *eq) = 0;
     virtual bool getEQ(EQualizer *eq) = 0;
+
+    // 音频分析（可视化）：默认不支持。有 PCM 旁路的核可覆盖。
+    virtual bool supportsAudioAnalysis() const { return false; }
+
+    // sink == nullptr：关闭分析（停入队、停算 FFT）
+    virtual void setAudioAnalysisSink(IAudioAnalysisSink *sink) { (void)sink; }
+
+    virtual void setAudioAnalysisOptions(const AudioAnalysisOptions &options) {
+        (void)options;
+    }
 
     void setCallback(IPlayerCoreCallback *callback) { m_callback = callback; }
 

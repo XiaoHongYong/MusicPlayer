@@ -3,6 +3,7 @@
 #include <vector>
 #include "ConnectionManager.hpp"
 #include "EventStream.hpp"
+#include "AudioAnalysisStream.hpp"
 #include "Server.hpp"
 #include "Utils/url.h"
 #include "Utils/Utils.h"
@@ -22,6 +23,7 @@ void Connection::start() {
 void Connection::stop() {
     if (m_streaming) {
         EventStream::instance().removeSubscriber(shared_from_this());
+        AudioAnalysisStream::instance().removeSubscriber(shared_from_this());
         m_streaming = false;
     }
     m_socket.close();

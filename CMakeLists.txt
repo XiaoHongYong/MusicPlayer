@@ -124,6 +124,7 @@ set(SRC_PATHS
     ${PROJECT_SOURCE_DIR}/MLProtocol
     ${PROJECT_SOURCE_DIR}/MPlayer
     ${PROJECT_SOURCE_DIR}/MPlayerEngine
+    ${PROJECT_SOURCE_DIR}/MPlayerEngine/analysis
     ${PROJECT_SOURCE_DIR}/MPlayerUI
     ${PROJECT_SOURCE_DIR}/Skin
     ${PROJECT_SOURCE_DIR}/Skin/api-js
