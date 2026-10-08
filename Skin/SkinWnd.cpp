@@ -192,6 +192,9 @@ CSkinWnd::CSkinWnd() : m_skinToolTip(this, TIMER_ID_TOOLTIP) {
     m_nTransAlphaBeg = 0;
     m_bClickThrough = false;
     m_bEnableClickThrough = true;
+    m_bGlassEffect = false;
+    m_strGlassMaterial.clear();
+    m_nGlassRadius = -1;
 
     m_bOnMouseHover = false;
     m_translucencyStatus = TS_NORMAL;
@@ -305,6 +308,12 @@ void CSkinWnd::closeSkin() {
     m_nTransAlphaBeg = 0;
     m_bClickThrough = false;
     m_bEnableClickThrough = true;
+    m_bGlassEffect = false;
+    m_strGlassMaterial.clear();
+    m_nGlassRadius = -1;
+    if (isWindow()) {
+        setGlassEffect(false);
+    }
 
     m_wndResizer.fixedHeight(false);
     m_wndResizer.fixedWidth(false);
@@ -1305,6 +1314,16 @@ bool CSkinWnd::setProperty(cstr_t szProperty, cstr_t szValue) {
         }
     } else if (isPropertyName(szProperty, "TranslucencyAlphaOnHover")) {
         m_nTranslucencyAlphaOnHover = atoi(szValue);
+    } else if (isPropertyName(szProperty, "Glass")) {
+        setGlassEffect(isTRUE(szValue));
+    } else if (isPropertyName(szProperty, "GlassMaterial")) {
+        m_strGlassMaterial = szValue;
+        setGlassEffect(m_bGlassEffect, m_strGlassMaterial.c_str());
+    } else if (isPropertyName(szProperty, "GlassRadius")) {
+        m_nGlassRadius = atoi(szValue);
+        if (isWindow()) {
+            Window::setGlassRadius(m_nGlassRadius);
+        }
     } else if (isPropertyName(szProperty, "IsDialog")) {
         m_bDialogWnd = isTRUE(szValue);
     } else if (isPropertyName(szProperty, "animate")) {
@@ -1354,6 +1373,15 @@ void CSkinWnd::enumProperties(CUIObjProperties &listProperties) {
     listProperties.addPropInt("TranslucencyAlpha", m_nTranslucencyAlphaDefault, m_nTranslucencyAlphaDefault != 255);
     listProperties.addPropInt("TranslucencyAlphaOnActive", m_nTranslucencyAlphaOnActive, m_nTranslucencyAlphaOnActive != 255);
     listProperties.addPropInt("TranslucencyAlphaOnHover", m_nTranslucencyAlphaOnHover, m_nTranslucencyAlphaOnHover != 255);
+    listProperties.addPropBoolStr("Glass", m_bGlassEffect, m_bGlassEffect);
+    if (m_bGlassEffect) {
+        if (m_nGlassRadius >= 0 && m_nGlassRadius != 10) {
+            listProperties.addPropInt("GlassRadius", m_nGlassRadius, m_nGlassRadius >= 0);
+        }
+        if (!m_strGlassMaterial.empty()) {
+            listProperties.addPropStr("GlassMaterial", m_strGlassMaterial.c_str(), true);
+        }
+    }
 }
 #endif // _SKIN_EDITOR_
 
@@ -1569,6 +1597,17 @@ void CSkinWnd::enableTranslucencyLayered(bool bTranslucencyLayered) {
     m_bTranslucencyLayered = bTranslucencyLayered;
     if (!bTranslucencyLayered) {
         m_nCurTranslucencyAlpha = 255;
+    }
+}
+
+void CSkinWnd::setGlassEffect(bool bGlassEffect, cstr_t szMaterial) {
+    m_bGlassEffect = bGlassEffect;
+    if (szMaterial) {
+        m_strGlassMaterial = szMaterial;
+    }
+
+    if (isWindow()) {
+        Window::setGlassEffect(bGlassEffect, m_strGlassMaterial.empty() ? nullptr : m_strGlassMaterial.c_str());
     }
 }
 

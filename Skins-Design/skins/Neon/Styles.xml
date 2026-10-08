@@ -109,7 +109,7 @@
     </MenuWindowFrame>
 
     <NeonMainFrame Extends="Window"
-        MinWidth="640" MinHeight="460" Width="800" Height="480">
+        MinWidth="640" MinHeight="400" Width="800" Height="480">
 
 		<Property Name="WindowImage" Image="bg.png" HorzExtendPos="11,53" VertExtendPos="36,56" />
 
@@ -209,10 +209,10 @@
 		<ClientArea Rect="1, 5, w-2, h-5-5"/>
 	</PopupWndFrame>
 
-	<NormalListCtrl Extends="ListCtrl" StripeColor="#1C1C38,#17172E" SelBgColor="#5B3BD6"
+	<NormalListCtrl Extends="ListCtrl" StripeColor="#1C1C38,#181830" SelBgColor="#5B3BD6"
 		TextColor="#E8E8F5" SelTextColor="#FFFFFF"
-		FontName="Verdana" FontHeight="13" LineHeight="22"
-		HeaderHeight="22" LineColor="#46467C"
+		FontName="Verdana" FontHeight="13" LineHeight="36"
+		HeaderHeight="36" LineColor="#35355A" XMargin="4" CellPadding="12"
 		ImageHeader="listctrl-header.png"/>
 
 	<!-- 主窗口播放列表: 深色条纹, 紫色选中, 青色在播 -->

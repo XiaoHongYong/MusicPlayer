@@ -89,6 +89,9 @@ public:
     uint32_t getMediaCount();
 
     MediaPtr getMediaByUrl(cstr_t szUrl);
+    // 大小写不敏感的 url 查找：歌词关联的 keyword 会被 toAssociateKeyword 转成小写，
+    // 而库里的 url 保留原始大小写，需要用 NOCASE 匹配。
+    MediaPtr getMediaByUrlNocase(cstr_t szUrl);
     MediaPtr getMediaByID(int id);
     PlaylistPtr getMediaByIDs(const VecInts &ids);
 

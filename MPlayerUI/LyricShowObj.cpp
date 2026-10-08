@@ -1110,8 +1110,10 @@ void CLyricShowObj::fadeOutVertBorder(CRawGraph *canvas, int yDrawLyrStartPos, i
         clrBg = m_clrBg;
     }
 
+    // 淡出区与 getClipRect() 内容区对齐，避免 margin 外仍画出的歌词露边
+    CRect rcClip = getClipRect();
     CRect rc;
-    rc.setLTRB(m_rcObj.left, m_rcObj.top, m_rcObj.right, m_rcObj.top + m_nFontHeight);
+    rc.setLTRB(m_rcObj.left, rcClip.top, m_rcObj.right, rcClip.top + m_nFontHeight);
     if (rc.bottom > yDrawLyrStartPos) {
         if (m_pSkin->getEnableTranslucencyLayered() && m_pSkin->m_nCurTranslucencyAlpha <= 0) {
             canvas->vertAlphaFadeOut(rc, true);
@@ -1120,8 +1122,8 @@ void CLyricShowObj::fadeOutVertBorder(CRawGraph *canvas, int yDrawLyrStartPos, i
         }
     }
 
-    rc.bottom = m_rcObj.bottom;
-    rc.top = m_rcObj.bottom - m_nFontHeight;
+    rc.bottom = rcClip.bottom;
+    rc.top = rcClip.bottom - m_nFontHeight;
     if (rc.top < yDrawLyrEndPos) {
         if (m_pSkin->getEnableTranslucencyLayered() && m_pSkin->m_nCurTranslucencyAlpha <= 0) {
             canvas->vertAlphaFadeOut(rc, false);

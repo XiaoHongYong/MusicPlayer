@@ -17,6 +17,7 @@ CSkinListView::CSkinListView() {
     m_vColors.resize(CN_CUSTOMIZED_START);
 
     m_nXMargin = 2;
+    m_nCellPadding = 0;
     m_bDrawHeader = false;
     m_bEnableSort = false;
 
@@ -111,7 +112,8 @@ void CSkinListView::onCreate() {
 
     CSkinScrollFrameCtrlBase::onCreate();
 
-    m_nLineHeight = m_font.getHeight() + 4;
+    // 字体高度 + 上下留白，至少接近现代 table 行高
+    m_nLineHeight = m_font.getHeight() + 12;
     if (m_nLineHeight < m_nLineHeightOrg) {
         m_nLineHeight = m_nLineHeightOrg;
     }
@@ -174,6 +176,11 @@ bool CSkinListView::setProperty(cstr_t szProperty, cstr_t szValue) {
         }
     } else if (isPropertyName(szProperty, "XMargin")) {
         m_nXMargin = atoi(szValue);
+    } else if (isPropertyName(szProperty, "CellPadding")) {
+        m_nCellPadding = atoi(szValue);
+        if (m_nCellPadding < 0) {
+            m_nCellPadding = 0;
+        }
     } else if (isPropertyName(szProperty, "LineColor")) {
         m_penLine.createSolidPen(1, parseColorString(szValue));
     } else if (isPropertyName(szProperty, "ImageHeader")) {
@@ -635,7 +642,7 @@ CSkinListView::HitTestArea CSkinListView::hitTest(CPoint &point, int &nColumnInd
     }
 
     if (m_bDrawHeader && point.y - m_rcContent.top < m_nHeaderHeight) {
-        int x = point.x - m_rcContent.left;
+        int x = point.x - m_rcContent.left - m_nXMargin;
         if (m_pHorzScrollBar) {
             x += m_pHorzScrollBar->getScrollPos();
         }
@@ -684,19 +691,23 @@ CSkinListView::HitTestArea CSkinListView::hitTest(CPoint &point, int &nColumnInd
 }
 
 void CSkinListView::drawHeader(CRawGraph *canvas) {
-    int x = m_rcContent.left;
+    int x = m_rcContent.left + m_nXMargin;
     int y = m_rcContent.top;
 
     if (m_pHorzScrollBar) {
         x -= m_pHorzScrollBar->getScrollPos();
     }
 
-    for (int i = 0; i < (int)m_vHeading.size(); i++) {
-        if (i != 0) {
-            // Header 的分割线
-            canvas->line(x - 1, y + 2, x - 1, y + m_nHeaderHeight - 4);
+    // 左侧 XMargin 区域补齐表头背景，与内容列对齐
+    if (m_imageHeader.isValid() && m_nXMargin > 0) {
+        int leftFill = m_rcContent.left;
+        int fillW = x - leftFill;
+        if (fillW > 0) {
+            m_imageHeader.stretchBlt(canvas, leftFill, y, fillW, m_nHeaderHeight);
         }
+    }
 
+    for (int i = 0; i < (int)m_vHeading.size(); i++) {
         CColHeader *pColHeader = m_vHeading[i];
         if (pColHeader->nWidth <= 0) {
             continue;
@@ -726,13 +737,13 @@ void CSkinListView::drawHeader(CRawGraph *canvas) {
 
         // sort flag
         if (pImageSortFlag && pImageSortFlag->isValid()) {
-            pImageSortFlag->blt(canvas, x + pColHeader->nWidth - 8 - pImageSortFlag->width(),
+            pImageSortFlag->blt(canvas, x + pColHeader->nWidth - m_nCellPadding - pImageSortFlag->width(),
                 y + (m_nHeaderHeight - pImageSortFlag->height()) / 2);
         }
 
-        // draw Head Text
-        CRect rc(x + 3, y + 1, x + pColHeader->nWidth - 5, y + m_nHeaderHeight - 2);
-        canvas->drawText(pColHeader->strTitle.c_str(), pColHeader->strTitle.size(), rc, DT_VCENTER);
+        // draw Head Text（左右留白，贴近浏览器 table 表头）
+        CRect rc(x + m_nCellPadding, y + 1, x + pColHeader->nWidth - m_nCellPadding, y + m_nHeaderHeight - 2);
+        canvas->drawText(pColHeader->strTitle.c_str(), pColHeader->strTitle.size(), rc, DT_VCENTER | DT_END_ELLIPSIS);
 
         x += pColHeader->nWidth;
         if (x > m_rcContent.right) {
@@ -759,7 +770,13 @@ bool CSkinListView::isClickedOn(int row, int col, CColHeader *pHeader, int x, in
     if (header->colType == CColHeader::TYPE_IMAGE) {
         CRawImage *image = m_dataSource->getCellImage(row, col);
         if (image != nullptr) {
-            return x >= 0 && x < image->width() && y >= 0 && y < image->height();
+            int imgLeft = m_nCellPadding;
+            if (header->drawTextAlignFlags & DT_CENTER) {
+                int colWidth = header->nWidth;
+                imgLeft = (colWidth - image->width()) / 2;
+            }
+            return x >= imgLeft && x < imgLeft + image->width()
+                && y >= 0 && y < m_nLineHeight;
         }
     } else {
         return true;
@@ -915,16 +932,20 @@ void CSkinListView::draw(CRawGraph *canvas) {
 
         CRect rcItem(x, y, 0, y + m_nLineHeight);
         for (int k = 0; k < (int)m_vHeading.size(); k++) {
-            rcItem.right = rcItem.left + m_vHeading[k]->nWidth;
+            int colLeft = rcItem.left;
+            rcItem.right = colLeft + m_vHeading[k]->nWidth;
             if (k == 0 && nImageCx > 0) {
                 // draw icon.
                 if (nImageCx > 0 && rcItem.width() > 0) {
                     int nImageIndex = m_dataSource->getItemImageIndex(i);
                     if (nImageIndex >= 0) {
-                        m_imageList.draw(canvas, nImageIndex, x, y + (m_nLineHeight - m_imageList.getIconCy()) / 2);
+                        m_imageList.draw(canvas, nImageIndex, colLeft + m_nCellPadding,
+                            y + (m_nLineHeight - m_imageList.getIconCy()) / 2);
                     }
-                    rcItem.left += nImageCx + m_imageListRightSpace;
+                    rcItem.left = colLeft + m_nCellPadding + nImageCx + m_imageListRightSpace;
                 }
+            } else {
+                rcItem.left = colLeft + m_nCellPadding;
             }
             if (rcItem.right < rcContent.left) {
                 rcItem.left = rcItem.right;
@@ -935,11 +956,15 @@ void CSkinListView::draw(CRawGraph *canvas) {
                 rcItem.right = rc.right;
             }
 
-            drawCell(i, k, rcItem, canvas, getColor(nClrName));
+            CRect rcDraw = rcItem;
+            rcDraw.right -= m_nCellPadding;
+            if (rcDraw.right > rcDraw.left) {
+                drawCell(i, k, rcDraw, canvas, getColor(nClrName));
+            }
             if (rcItem.right >= rc.right) {
                 break;
             }
-            rcItem.left = rcItem.right;
+            rcItem.left = colLeft + m_vHeading[k]->nWidth;
         }
         y += m_nLineHeight;
         if (y >= rc.bottom) {

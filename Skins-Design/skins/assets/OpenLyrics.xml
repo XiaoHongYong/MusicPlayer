@@ -12,7 +12,7 @@
     <NormalTextBt ID="CID_SEARCH" Text="&amp;Search" Rect="w-90-10,52,90,"/>
 
     <NormalListCtrl ID="CID_L_LYRICS" Rect="10,85,w-20,h-85-45" EnableHeader="true"
-        EnableSort="true" ImageList="LyrFileType.png"/>
+        EnableSort="true" ImageList="lyric-file-type.png"/>
 
     <NormalTextBt ID="CID_PREV_PAGE" Visible="false" Text="&lt;&lt; Prev Page" Rect="w-230,h-30-15-20,100,"/>
     <NormalTextBt ID="CID_NEXT_PAGE" Visible="false" Text="Next Page &gt;&gt;" Rect="w-110,h-30-15-20,100,"/>

@@ -203,6 +203,25 @@
         "normal": { "iconColor": "$tokens.colors.fg" }
       }
     },
+    "lyric-file-type": {
+      "type": "iconStrip",
+      "file": "lyric-file-type",
+      "columns": 8,
+      "cell": { "width": 16, "height": 16 },
+      "iconInset": 0.04,
+      "states": {
+        "normal": { "iconColor": "$tokens.colors.fg-muted" }
+      },
+      "slots": [
+        { "index": 0, "icon": "lyr-file" },
+        { "index": 1, "icon": "lyr-file-txt" },
+        { "index": 2, "icon": "lyr-file-lrc", "iconColor": "$tokens.colors.teal" },
+        { "index": 3, "icon": "lyr-file-unknown", "iconColor": "$tokens.colors.fg-subtle" },
+        { "index": 4, "icon": "lyr-file-txt-net" },
+        { "index": 5, "icon": "lyr-file-lrc-net", "iconColor": "$tokens.colors.teal" },
+        { "index": 6, "icon": "lyr-file-unknown-net", "iconColor": "$tokens.colors.fg-subtle" }
+      ]
+    },
     "search": {
       "type": "icon",
       "icon": "search",

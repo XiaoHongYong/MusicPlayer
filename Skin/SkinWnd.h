@@ -272,6 +272,11 @@ public:
 
     CColor getTranslucencyColor(const CColor &clr) const;
 
+    // 窗口磨砂玻璃背景：<Window Glass="true"/> 后，透明区域透出系统 blur（mac NSVisualEffect，
+    // win DWM blur-behind）。
+    inline bool getGlassEffect() const { return m_bGlassEffect; }
+    void setGlassEffect(bool bGlassEffect, cstr_t szMaterial = nullptr) override;
+
 #ifdef _WIN32
     void invalidateRectOfLayeredWindow(const CRect* lpRect);
     virtual bool invalidateRect(const CRect* lpRect = nullptr, bool bErase = false);
@@ -300,6 +305,12 @@ public:
     bool                        m_bOnMouseHover;
 
     bool                        m_bEnableClickThrough;
+
+    // 窗口磨砂玻璃背景是否开启（<Window Glass="true"/>）
+    bool                        m_bGlassEffect;
+    string                      m_strGlassMaterial;
+    // 磨砂背板圆角裁剪半径（<Window GlassRadius="10"/>，-1=未设置，mac 用 10）
+    int                         m_nGlassRadius;
 
 
 public:

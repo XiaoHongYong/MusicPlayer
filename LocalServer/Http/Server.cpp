@@ -42,6 +42,14 @@ void Server::run() {
     m_ioContext.run();
 }
 
+void Server::stop() {
+    // 从工作线程外的调用方触发：io_context::stop() 线程安全，会使 run() 返回，
+    // 同时关掉 acceptor 与所有存活连接，让 HTTP 线程尽快退出。
+    m_acceptor.close();
+    m_connectionManager.stopAll();
+    m_ioContext.stop();
+}
+
 void Server::stopConnection(const ConnectionPtr &connection) {
     m_connectionManager.stop(connection);
 }

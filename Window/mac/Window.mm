@@ -62,6 +62,8 @@ bool Window::createForSkin(cstr_t szClassName, cstr_t szCaption, int x, int y, i
     m_handleHolder->window = w;
     m_handleHolder->view = view;
 
+    // contentView 直接是皮肤自绘视图。磨砂玻璃背板不做在这里——只在皮肤开启
+    // Glass 属性时按需加一层（见 setGlassEffect），避免影响所有皮肤窗口。
     [w setContentView:view];
     [w setTitlebarAppearsTransparent:YES];
     [w setTitleVisibility:NSWindowTitleHidden];
@@ -104,6 +106,105 @@ bool Window::createForSkin(cstr_t szClassName, cstr_t szCaption, int x, int y, i
 void Window::setHasShadow(bool hasShadow) {
     [m_handleHolder->window setHasShadow:hasShadow ? YES : NO];
     [m_handleHolder->window invalidateShadow];
+}
+
+// 开关窗口磨砂玻璃：开启后皮肤透明像素透出系统 blur。开启过才会给窗口加一层
+// 磨砂玻璃容器（懒构建，不影响其他未开启 Glass 的窗口）。
+// 容器是普通 NSView，用它的 layer 裁圆角：masksToBounds 会连同内部磨砂材质一起裁剪，
+// 圆角外不放 blur、透出锐利桌面 → 真正的圆角窗。
+// 注意：不能直接调 NSVisualEffectView.layer 的 cornerRadius —— 其材质由系统合成器绘制，
+// layer 圆角对它无效；SDK 也把它自带的 cornerRadius 属性（10.14+）声明在了运行时。
+void Window::setGlassEffect(bool bGlassEffect, cstr_t szMaterial) {
+    WindowMacImp *w = m_handleHolder->window;
+    if (w == nullptr) {
+        return;
+    }
+
+    NSView *container = [w glassContainer];
+    NSVisualEffectView *glass = (NSVisualEffectView *)[[container subviews] firstObject];
+
+    if (bGlassEffect) {
+        // 第一次开启时才把皮肤自绘视图装进带磨砂背板的容器。
+        if (container == nullptr) {
+            NSView *skinView = [w contentView];   // 当前是 ViewMacImp
+
+            container = [[NSView alloc] initWithFrame:[skinView frame]];
+            container.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+            container.wantsLayer = YES;
+            container.layer.cornerRadius = m_glassRadius;
+            container.layer.masksToBounds = YES;
+
+            glass = [[NSVisualEffectView alloc] initWithFrame:container.bounds];
+            glass.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+            glass.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+            glass.state = NSVisualEffectStateActive;
+            [container addSubview:glass];
+            [w setGlassContainer:container];
+            [w setGlassSkinView:skinView];
+
+            [skinView removeFromSuperview];
+            skinView.frame = container.bounds;
+            skinView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+            [container addSubview:skinView];
+
+            [w setContentView:container];
+            [w makeFirstResponder:skinView];
+            [w setOpaque:NO];
+        }
+
+        // 每次开启都重放一遍圆角（支持运行时改 GlassRadius）。
+        container.layer.cornerRadius = m_glassRadius;
+        container.layer.masksToBounds = YES;
+
+        if (szMaterial && glass != nullptr) {
+            NSVisualEffectMaterial mat = NSVisualEffectMaterialFullScreenUI;
+            if (strcasecmp(szMaterial, "sidebar") == 0) {
+                mat = NSVisualEffectMaterialSidebar;
+            } else if (strcasecmp(szMaterial, "popover") == 0) {
+                mat = NSVisualEffectMaterialPopover;
+            } else if (strcasecmp(szMaterial, "underWindowBackground") == 0) {
+                mat = NSVisualEffectMaterialUnderWindowBackground;
+            } else if (strcasecmp(szMaterial, "headerView") == 0) {
+                mat = NSVisualEffectMaterialHeaderView;
+            }
+            [glass setMaterial:mat];
+        }
+        container.hidden = NO;
+    } else {
+        //
+        // 关闭磨砂 = 完全拆掉容器，把皮肤自绘视图恢复成窗口 contentView。
+        // 不能只 setHidden:YES —— 容器里还包着皮肤视图，隐藏容器会连它一起隐藏，
+        // 切换到一个不开磨砂的 skin 时整窗就空白了（这就是"切换 skin 渲染异常"的根因）。
+        NSView *skinView = [w glassSkinView];
+        if (skinView != nullptr) {
+            [skinView removeFromSuperview];
+            [container removeFromSuperview];
+            skinView.frame = container.bounds;
+            skinView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+            [w setContentView:skinView];
+            [w makeFirstResponder:skinView];
+            [w setOpaque:YES]; // 恢复非磨砂(默认不透明)窗口，原 createForSkin 不设 Opaque:NO
+        }
+        [w setGlassContainer:nil];
+        [w setGlassSkinView:nil];
+    }
+
+    invalidateRect();
+}
+
+void Window::setGlassRadius(int radius) {
+    m_glassRadius = radius < 0 ? 0 : radius;
+
+    WindowMacImp *w = m_handleHolder->window;
+    if (w == nullptr) {
+        return;
+    }
+    NSView *container = [w glassContainer];
+    if (container != nullptr && !container.isHidden) {
+        container.layer.cornerRadius = m_glassRadius;
+        container.layer.masksToBounds = YES;
+        invalidateRect();
+    }
 }
 
 void Window::destroy() {

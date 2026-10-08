@@ -418,6 +418,24 @@ MediaPtr CMediaLibrary::getMediaByUrl(cstr_t szUrl) {
     return media;
 }
 
+MediaPtr CMediaLibrary::getMediaByUrlNocase(cstr_t szUrl) {
+    if (!isOK() || isEmptyString(szUrl)) {
+        return nullptr;
+    }
+
+    RMutexAutolock autolock(m_mutexDataAccess);
+
+    auto count = m_allMedias->getCount();
+    for (uint32_t i = 0; i < count; i++) {
+        auto media = m_allMedias->getItem(i);
+        if (media && strcasecmp(media->url.c_str(), szUrl) == 0) {
+            return media;
+        }
+    }
+
+    return nullptr;
+}
+
 MediaPtr CMediaLibrary::getMediaByID(int id) {
     RMutexAutolock autolock(m_mutexDataAccess);
 

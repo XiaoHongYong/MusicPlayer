@@ -253,7 +253,7 @@ endif(WIN32)
 
 set(OS_LINK_OPTS)
 if(WIN32)
-    set(OS_LINK_OPTS odbc32.lib odbccp32.lib ws2_32.lib Winmm.lib comctl32.lib version.lib psapi.lib)
+    set(OS_LINK_OPTS odbc32.lib odbccp32.lib ws2_32.lib Winmm.lib comctl32.lib version.lib psapi.lib dwmapi.lib)
 
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:wWinMainCRTStartup")
 elseif (APPLE)

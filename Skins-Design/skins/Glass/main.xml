@@ -4,7 +4,7 @@
 
 	<skinwnd Extends="GlassMainFrame" Name="MainWnd"
 			MinWidth="660" MinHeight="450" Width="880" Height="520" Menu="MainWndMenu"
-			CmdHandler="ch_common,ch_playlist" Script="main.js" TranslucencyAlpha="225"
+			CmdHandler="ch_common,ch_playlist" Script="main.js"
 			ContextMenu="MainContextMenu">
 
 		<Container Name="Body" Rect="0,0,w,h">
@@ -42,45 +42,55 @@
 				</Container>
 			</Container>
 
-			<!-- 右栏: 玻璃面板(列表/歌词)；视图切换 Tab 在底部工具栏 -->
-			<Container Name="RightPanel" Rect="h-187+10,0,w-(h-187+10),h">
-				<Property Name="BgImage" Image="panel.png" HorzExtendPos="11,21" VertExtendPos="11,21" BlendPixMode="alpha_blend"/>
+			<!-- 右栏: 上为列表/歌词，下为频谱；隐藏频谱时 LinearContainer 自动把上方撑满 -->
+			<LinearContainer Name="RightPanel" Rect="h-187+10,0,w-(h-187+10),h" Orientation="Vertical">
+				<Container Name="RightTopPanel" Width="200" Height="100" Weight="1" LayoutParams="match_parent_width" MinHeight="80">
+					<Property Name="BgImage" Image="panel.png" HorzExtendPos="11,21" VertExtendPos="11,21" BlendPixMode="alpha_blend"/>
 
-				<Container ID="CID_PLAYLIST" Name="PlaylistArea" Rect="0,0,w,h">
-					<!-- 网页风格搜索框: 白胶囊(与编辑框白底融合) + 内置放大镜, 编辑框去边框 -->
-					<Container Name="SearchBar" Rect="12,10,w-24,26">
-						<Property Name="BgImage" Image="search-bg.png" HorzExtendPos="16,48" VertExtendPos="13,14" BlendPixMode="alpha_blend"/>
-						<Image Name="Search" Rect="8,3,20,20" Image="search.png"/>
-						<NormalEdit ID="CID_E_SEARCH_MUSIC" Text="" PlaceHolder="Search music" Rect="34,3,w-34-10,20" EnableBorder="false"/>
+					<Container ID="CID_PLAYLIST" Name="PlaylistArea" Rect="0,0,w,h">
+						<!-- 网页风格搜索框: 白胶囊(与编辑框白底融合) + 内置放大镜, 编辑框去边框 -->
+						<Container Name="SearchBar" Rect="12,10,w-24,26">
+							<Property Name="BgImage" Image="search-bg.png" HorzExtendPos="16,48" VertExtendPos="13,14" BlendPixMode="alpha_blend"/>
+							<Image Name="Search" Rect="8,3,20,20" Image="search.png"/>
+							<NormalEdit ID="CID_E_SEARCH_MUSIC" Text="" PlaceHolder="Search music" Rect="34,3,w-34-10,20" EnableBorder="false"/>
+						</Container>
+
+						<GlassPlaylist Rect="8,42,w-20,h-50" EnableHeader="false" EnableBorder="false" KeywordEdit="CID_E_SEARCH_MUSIC"/>
 					</Container>
 
-					<GlassPlaylist Rect="8,42,w-20,h-50" EnableHeader="false" EnableBorder="false" KeywordEdit="CID_E_SEARCH_MUSIC"/>
+					<DecorativeContainer ID="CID_LYRICS" Name="LyricsArea" Rect="0,0,w,h" Visible="false">
+						<LyricsShow Rect="4,6,w-16,h-12" SetSkinBg="true"
+						EnableToolbar="FALSE" EnableAutoResize="FALSE" />
+
+						<Container ID="CID_LYR_TOOL_BAR" Rect="w-110,10,94,30" Visible="False">
+							<Property Name="BgImage" Image="lyr-ctrl-bg.png" HorzExtendPos="8,22" BlendPixMode="alpha_blend"/>
+
+							<Toolbar ID="ID_TB_LYR_SYNC" Rect="12,4,70,22" Image="fl_buttons.png" enablehover="TRUE"
+									units_x="22" blank_x="-1" blank_cx="22" seperator_x="220" seperator_cx="14" ButtonSpacesCX="2"
+									MarginX="0" MarginY="0" FullStatusImage="TRUE">
+								<button ID="ID_OPEN_LRC" Left="5" />
+								<button ID="ID_BACKWARD_LYRICS" Left="6" Continuous="TRUE"/>
+								<button ID="ID_FORWARD_LYRICS" Left="7" Continuous="TRUE"/>
+							</Toolbar>
+
+							<Toolbar ID="ID_TB_LYR_TXT" Rect="12,4,50,22" Image="fl_buttons.png" enablehover="TRUE"
+									units_x="22" blank_x="-1" blank_cx="22" seperator_x="220" seperator_cx="14" ButtonSpacesCX="1"
+									Margin="8,1,0,0" MarginX="0" MarginY="0" FullStatusImage="TRUE">
+								<button ID="ID_OPEN_LRC" Left="5" />
+								<button ID="ID_LYR_EDITOR" Left="16"/>
+							</Toolbar>
+						</Container>
+					</DecorativeContainer>
 				</Container>
-
-				<DecorativeContainer ID="CID_LYRICS" Name="LyricsArea" Rect="0,0,w,h" Visible="false">
-					<LyricsShow Rect="4,6,w-16,h-12" SetSkinBg="true"
-					  EnableToolbar="FALSE" EnableAutoResize="FALSE" />
-
-					<Container ID="CID_LYR_TOOL_BAR" Rect="w-110,10,94,30" Visible="False">
-						<Property Name="BgImage" Image="lyr-ctrl-bg.png" HorzExtendPos="8,22" BlendPixMode="alpha_blend"/>
-
-						<Toolbar ID="ID_TB_LYR_SYNC" Rect="12,4,70,22" Image="fl_buttons.png" enablehover="TRUE"
-								units_x="22" blank_x="-1" blank_cx="22" seperator_x="220" seperator_cx="14" ButtonSpacesCX="2"
-								MarginX="0" MarginY="0" FullStatusImage="TRUE">
-							<button ID="ID_OPEN_LRC" Left="5" />
-							<button ID="ID_BACKWARD_LYRICS" Left="6" Continuous="TRUE"/>
-							<button ID="ID_FORWARD_LYRICS" Left="7" Continuous="TRUE"/>
-						</Toolbar>
-
-						<Toolbar ID="ID_TB_LYR_TXT" Rect="12,4,50,22" Image="fl_buttons.png" enablehover="TRUE"
-								units_x="22" blank_x="-1" blank_cx="22" seperator_x="220" seperator_cx="14" ButtonSpacesCX="1"
-								Margin="8,1,0,0" MarginX="0" MarginY="0" FullStatusImage="TRUE">
-							<button ID="ID_OPEN_LRC" Left="5" />
-							<button ID="ID_LYR_EDITOR" Left="16"/>
-						</Toolbar>
-					</Container>
-				</DecorativeContainer>
-			</Container>
+				<Container ID="CID_VISUALIZER_PANEL" Name="VisualizerPanel" Width="200" Height="85"
+					FixedHeight="TRUE" LayoutParams="match_parent_width" Margin="0,10,0,0">
+					<Property Name="BgImage" Image="panel.png" HorzExtendPos="11,21" VertExtendPos="11,21" BlendPixMode="alpha_blend"/>
+					<!-- Modes 仅频谱/波形；BarColor = Glass accent -->
+					<AudioVisualizer Name="Visualizer" Rect="10,10,w-20,h-20"
+						Modes="spectrum-bars,waveform"
+						BarColor="#4A9DFF" PeakColor="#4A9DFF" Gap="2" MinBarHeight="1" MinBarWidth="3"/>
+				</Container>
+			</LinearContainer>
 		</Container>
 
 		<Animation ID="CID_AM_HIDE_LYR_TB" FadeOut="CID_LYR_TOOL_BAR"/>

@@ -662,12 +662,19 @@ void CSkinToolbar::groupButtonUncheckOld(int nGroup, int nCurButton) {
 }
 
 bool CSkinToolbar::onCommand(uint32_t nId) {
-    // 皮肤脚本可用 document.postCommand(CID_XXX) 同步自定义按钮的选中态
+    // 皮肤脚本可用 document.postCommand(CID_XXX) 同步 RadioGroup 按钮选中态
     // (如启动时恢复上次选中的 tab)。仅限脚本自定义 ID(ID_ID_USER_BASE 起),
+    // 且只对 RadioGroup 强制 checked——独立 CanCheck 开关由 onLButtonUp 自行翻转。
     // 内置命令按钮(如 ID_MAXIMIZE)的 check/uncheck 由点击流程自己管理, 不参与。
     // 返回 false: 不吞掉命令, 让其继续派发给 JS oncommand 等其它处理者。
     if (nId >= ID_ID_USER_BASE) {
-        setCheck(nId, true);
+        for (int i = 0; i < (int)m_vButtons.size(); i++) {
+            Button &bt = m_vButtons[i];
+            if (bt.nID == nId && bt.nGroup != -1) {
+                setCheck(nId, true);
+                break;
+            }
+        }
     }
     return false;
 }

@@ -1182,6 +1182,7 @@ function buildStylesXml(p: {
     const accent = toXmlColor(tokenColor(p.tokens, "accent", "#5AA9FF"), "#5AA9FF");
     const teal = toXmlColor(tokenColor(p.tokens, "teal", accent), accent);
     const surface = opaqueXmlColor(tokenColor(p.tokens, "bg-surface", "#E8EAF5"), "#E8EAF5");
+    const borderSubtle = toXmlColor(tokenColor(p.tokens, "border-subtle", "#E5E7EB"), "#E5E7EB");
     const font = fontName(p.tokens);
     const captionBg = p.hasCaptionBar
         ? `<Property Name="BgImage" Image="caption-bg.png" HorzExtendPos="${p.extendPanel[0]},${p.extendPanel[1]}" BlendPixMode="alpha_blend"/>`
@@ -1311,6 +1312,12 @@ function buildStylesXml(p: {
     <${p.playlistName} Extends="NormalPlaylist" StripeColor="${stripes}" SelBgColor="${selBg}"
         NowPlayingBgColor="${nowBg}" NowPlayingTextColor="${nowFg}"${custom}
         TextColor="${plFg}" SelTextColor="${plSelFg}" FontName="${font}" FontHeight="14" LineHeight="${lineH}"/>
+
+    <NormalListCtrl Extends="ListCtrl" StripeColor="${stripes}" SelBgColor="${selBg}"
+        TextColor="${text}" SelTextColor="${plSelFg}"
+        FontName="${font}" FontHeight="13" LineHeight="36"
+        HeaderHeight="36" LineColor="${borderSubtle}" XMargin="4" CellPadding="12"
+        ImageHeader="listctrl-header.png"/>
 
     <Slider Extends="SeekCtrl" Height="15" EndWidth="${p.sliderEndWidth}" ImageThumb="thumb.png" ImageTrack="progress.png"/>
   </style>

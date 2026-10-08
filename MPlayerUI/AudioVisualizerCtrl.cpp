@@ -17,6 +17,13 @@ constexpr float kPeakFall = 0.02f;
 constexpr float kAttack = 0.75f;
 constexpr float kRelease = 0.35f;
 constexpr cstr_t kProfileKey = "AudioVisualizerMode";
+
+const CAudioVisualizerCtrl::Mode kDefaultModes[] = {
+    CAudioVisualizerCtrl::Mode::SpectrumBars,
+    CAudioVisualizerCtrl::Mode::Waveform,
+    CAudioVisualizerCtrl::Mode::Circle,
+    CAudioVisualizerCtrl::Mode::None,
+};
 } // namespace
 
 CAudioVisualizerCtrl::CAudioVisualizerCtrl() {
@@ -44,12 +51,13 @@ CAudioVisualizerCtrl::Mode CAudioVisualizerCtrl::modeFromString(cstr_t s) {
     if (strcasecmp(s, "none") == 0 || strcasecmp(s, "off") == 0) {
         return Mode::None;
     }
-    if (strcasecmp(s, "waveform") == 0) {
+    if (strcasecmp(s, "waveform") == 0 || strcasecmp(s, "wave") == 0) {
         return Mode::Waveform;
     }
     if (strcasecmp(s, "spectrum-circle") == 0 || strcasecmp(s, "circle") == 0) {
         return Mode::Circle;
     }
+    // spectrum-bars / spectrum / bars / 其它未知 → 柱状频谱
     return Mode::SpectrumBars;
 }
 
@@ -67,8 +75,47 @@ cstr_t CAudioVisualizerCtrl::modeToString(Mode mode) {
     }
 }
 
+void CAudioVisualizerCtrl::parseAllowedModes(cstr_t szValue) {
+    m_allowedModes.clear();
+    if (!szValue || !*szValue) {
+        return;
+    }
+
+    VecStrings parts;
+    strSplit(szValue, ',', parts);
+    for (auto &part : parts) {
+        trimStr(part);
+        if (part.empty()) {
+            continue;
+        }
+        Mode mode = modeFromString(part.c_str());
+        // 避免同一特效重复入列
+        if (std::find(m_allowedModes.begin(), m_allowedModes.end(), mode) == m_allowedModes.end()) {
+            m_allowedModes.push_back(mode);
+        }
+    }
+}
+
+bool CAudioVisualizerCtrl::isModeAllowed(Mode mode) const {
+    if (m_allowedModes.empty()) {
+        return true;
+    }
+    return std::find(m_allowedModes.begin(), m_allowedModes.end(), mode) != m_allowedModes.end();
+}
+
+CAudioVisualizerCtrl::Mode CAudioVisualizerCtrl::clampToAllowed(Mode mode) const {
+    if (isModeAllowed(mode)) {
+        return mode;
+    }
+    if (!m_allowedModes.empty()) {
+        return m_allowedModes.front();
+    }
+    return Mode::SpectrumBars;
+}
+
 void CAudioVisualizerCtrl::loadMode() {
-    m_mode = modeFromString(g_profile.getString(SZ_SECT_UI, kProfileKey, modeToString(m_mode)));
+    m_mode = clampToAllowed(
+        modeFromString(g_profile.getString(SZ_SECT_UI, kProfileKey, modeToString(m_mode))));
 }
 
 void CAudioVisualizerCtrl::saveMode() const {
@@ -101,20 +148,26 @@ void CAudioVisualizerCtrl::syncAnalysisSubscription() {
 }
 
 void CAudioVisualizerCtrl::cycleMode() {
-    switch (m_mode) {
-    case Mode::SpectrumBars:
-        m_mode = Mode::Waveform;
-        break;
-    case Mode::Waveform:
-        m_mode = Mode::Circle;
-        break;
-    case Mode::Circle:
-        m_mode = Mode::None;
-        break;
-    case Mode::None:
-    default:
-        m_mode = Mode::SpectrumBars;
-        break;
+    const Mode *list = kDefaultModes;
+    size_t count = CountOf(kDefaultModes);
+    if (!m_allowedModes.empty()) {
+        list = m_allowedModes.data();
+        count = m_allowedModes.size();
+    }
+    if (count == 0) {
+        return;
+    }
+    if (count == 1) {
+        m_mode = list[0];
+    } else {
+        size_t idx = 0;
+        for (size_t i = 0; i < count; ++i) {
+            if (list[i] == m_mode) {
+                idx = i;
+                break;
+            }
+        }
+        m_mode = list[(idx + 1) % count];
     }
     saveMode();
     syncAnalysisSubscription();
@@ -409,7 +462,13 @@ bool CAudioVisualizerCtrl::setProperty(cstr_t szProperty, cstr_t szValue) {
     } else if (strcasecmp(szProperty, "MinBarWidth") == 0) {
         m_minBarWidth = std::max(1, atoi(szValue));
     } else if (strcasecmp(szProperty, "Mode") == 0) {
-        m_mode = modeFromString(szValue);
+        m_mode = clampToAllowed(modeFromString(szValue));
+        if (m_bCreated) {
+            syncAnalysisSubscription();
+        }
+    } else if (strcasecmp(szProperty, "Modes") == 0) {
+        parseAllowedModes(szValue);
+        m_mode = clampToAllowed(m_mode);
         if (m_bCreated) {
             syncAnalysisSubscription();
         }

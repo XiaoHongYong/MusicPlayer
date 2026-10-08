@@ -23,6 +23,17 @@ export function resolveIconName(name: string): string | undefined {
     return undefined;
 }
 
+/** 歌词文件类型图标：文档轮廓（折角），供 lyric-file-type 图条复用 */
+function lyrDocOutline(c: string): string {
+    return `<path d="M6.2 3 h7.4 l4.2 4.2 V20.8 H6.2 z" fill="none" stroke="${c}" stroke-width="1.55" stroke-linejoin="round"/>` +
+        `<path d="M13.6 3 V7.2 h4.2" fill="none" stroke="${c}" stroke-width="1.55" stroke-linejoin="round"/>`;
+}
+
+/** 网络来源小云标（右下角） */
+function lyrNetBadge(c: string): string {
+    return `<path d="M13.8 17.6 a1.85 1.85 0 0 1 2.9 -1.15 a1.55 1.55 0 0 1 2.2 1.45 h-5.4 a1.35 1.35 0 0 1 0.3 -2.15 z" fill="${c}"/>`;
+}
+
 const FRAGMENTS: Record<string, (color: string) => string> = {
     // 媒体中心：四宫格入口图标
     "media-center": (c) =>
@@ -30,10 +41,44 @@ const FRAGMENTS: Record<string, (color: string) => string> = {
         `<rect x="13.3" y="4.5" width="6.2" height="6.2" rx="1.2" fill="none" stroke="${c}" stroke-width="1.7"/>` +
         `<rect x="4.5" y="13.3" width="6.2" height="6.2" rx="1.2" fill="none" stroke="${c}" stroke-width="1.7"/>` +
         `<rect x="13.3" y="13.3" width="6.2" height="6.2" rx="1.2" fill="none" stroke="${c}" stroke-width="1.7"/>`,
+    // 歌词文件类型（lyric-file-type.png）：空 / TXT / LRC / 未知，及对应「网络来源」变体
+    "lyr-file": (c) => lyrDocOutline(c),
+    "lyr-file-txt": (c) =>
+        lyrDocOutline(c) +
+        `<path d="M8.4 10.2 h7.2 M8.4 13.2 h7.2 M8.4 16.2 h4.8" fill="none" stroke="${c}" stroke-width="1.45" stroke-linecap="round"/>`,
+    "lyr-file-lrc": (c) =>
+        lyrDocOutline(c) +
+        // 音符：同步歌词（相对纯文本更「带时间轴」）
+        `<circle cx="10.2" cy="16.2" r="1.55" fill="${c}"/>` +
+        `<path d="M11.7 16.2 V9.2 l4.2 1.1 v2.2" fill="none" stroke="${c}" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"/>`,
+    "lyr-file-unknown": (c) =>
+        lyrDocOutline(c) +
+        `<path d="M10.6 10.2 a2.2 2.2 0 1 1 2.3 2.2 v1.2" fill="none" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/>` +
+        `<circle cx="12.9" cy="16.6" r="0.85" fill="${c}"/>`,
+    "lyr-file-txt-net": (c) =>
+        lyrDocOutline(c) +
+        `<path d="M8.4 10 h6.6 M8.4 12.8 h6.6 M8.4 15.6 h3.6" fill="none" stroke="${c}" stroke-width="1.35" stroke-linecap="round"/>` +
+        lyrNetBadge(c),
+    "lyr-file-lrc-net": (c) =>
+        lyrDocOutline(c) +
+        `<circle cx="10" cy="15.2" r="1.35" fill="${c}"/>` +
+        `<path d="M11.3 15.2 V9.4 l3.6 0.95 v1.9" fill="none" stroke="${c}" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>` +
+        lyrNetBadge(c),
+    "lyr-file-unknown-net": (c) =>
+        lyrDocOutline(c) +
+        `<path d="M10.4 9.8 a2 2 0 1 1 2.1 2 v1" fill="none" stroke="${c}" stroke-width="1.4" stroke-linecap="round"/>` +
+        `<circle cx="12.5" cy="15.2" r="0.75" fill="${c}"/>` +
+        lyrNetBadge(c),
     volume: (c) =>
         `<path d="M3 9 h3.5 l5 -4 v14 l-5 -4 H3 z" fill="${c}"/>` +
         `<path d="M14.2 9.2 a3.2 3.2 0 0 1 0 5.6" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/>` +
         `<path d="M16.6 7.2 a6 6 0 0 1 0 9.6" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/>`,
+    // 频谱 / Visualizer：四根不等高柱
+    spectrum: (c) =>
+        `<rect x="4.5" y="11" width="2.8" height="8" rx="0.8" fill="${c}"/>` +
+        `<rect x="8.7" y="6" width="2.8" height="13" rx="0.8" fill="${c}"/>` +
+        `<rect x="12.9" y="8.5" width="2.8" height="10.5" rx="0.8" fill="${c}"/>` +
+        `<rect x="17.1" y="4.5" width="2.8" height="14.5" rx="0.8" fill="${c}"/>`,
     minimize: (c) => `<line x1="5" y1="17" x2="19" y2="17" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/>`,
     maximize: (c) => `<rect x="6" y="6" width="12" height="12" fill="none" stroke="${c}" stroke-width="2"/>`,
     restore: (c) =>

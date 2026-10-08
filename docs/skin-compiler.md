@@ -308,7 +308,7 @@ SVG filter 实现）、`border`、`noise`（0~1 噪点强度）、`highlight`
 | `scrollbar` | 滚动条 | `orientation: "vertical"\|"horizontal"`（默认竖直 → `scrollbar-vert.png`） |
 | `tabButton` | 分段 Tab（StyleBase `NormalTabButton`） | 输出 `button-group.png` |
 | `toolbar` | 视图 Tab | `items`, `cellSize`；`indicator: "top"\|"bottom"`；可选 `indicatorColor` / `indicatorHeight` / `indicatorMargin` / `indicatorPadding`（贴边距，默认 2）/ `indicatorGap`（横线与图标盒间距，默认 1，可负值贴得更紧）/ `iconInset` |
-| `iconStrip` | 单行工具条图标（`lyr-tb.png`） | `columns`（默认 40）、`cell`、`iconColor`；省略 `slots` 时用歌词编辑器列布局 |
+| `iconStrip` | 单行工具条/图条（`lyr-tb.png`、`lyric-file-type.png`） | `columns`、`cell`、`iconColor`；`slots[].icon` / 可选 `slots[].iconColor`；省略 `slots` 时用歌词编辑器列布局 |
 | `icon` | 单张小图 | `icon` 内置名或 `layers`（volume/search/vinyl） |
 | `sprite` | 竖排状态条 | `file`, `cell`, `layout: ["normal","hover",…]` |
 | `playlist` | 播放列表配色 | 见 9.5 |
@@ -609,7 +609,9 @@ Compiler 写出的 XML/INI 键必须跟引擎一致：
 - **内置图标名**（`icon` / `iconOff` / `iconOn` / `icons`，无需 assets）：
   `play`/`triangle-right`、`pause`/`pause-bars`、`prev`、`next`、
   `minimize`、`maximize`、`restore`、`close`、`check`、`search`、
-  `volume`、`list`、`lyric`、`chevron-up`/`down`/`right`。
+  `volume`、`spectrum`、`list`、`lyric`、`media-center`、`chevron-up`/`down`/`right`；
+  歌词文件类型：`lyr-file` / `lyr-file-txt` / `lyr-file-lrc` / `lyr-file-unknown`
+  及对应 `*-net`（网络来源，右下角云标）。
 - **XML 生成**：用模板生成 `Styles.xml`（`<include Name="StyleBase.xml"/>`
   + 各样式覆盖）与可选 `main.xml`；数值一律写 1x 逻辑像素。窗口底座输出
   `<Property Name="WindowImage" .../>`（固定 copy），**默认不生成 Frame**。

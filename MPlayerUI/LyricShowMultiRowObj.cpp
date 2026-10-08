@@ -3,7 +3,7 @@
     FileName :    LyricShowMultiRowObj.cpp
     Author   :    xhy
 
-    Purpose  :    
+    Purpose  :
 *********************************************************************/
 
 #include "MPlayerApp.h"

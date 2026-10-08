@@ -92,22 +92,27 @@ void CSkinScrollText::draw(CRawGraph *canvas) {
     // 仅当串/字体/颜色/描边开关/scale 变化（换歌、切显示项等）才重建缓存。
     CRawGraph *pCache = getOrBuildTextCache(canvas);
     if (pCache) {
-        // 整串缓存里文本像素 i 对应屏幕上 rc.left + i。rc.left 上面已 -= nLeftClip，
-        // 所以这里源 x 必须是 0（不能再跳过 nLeftClip，否则偏移会被算两遍，滚到最右端
-        // 时文字被拖出裁切区左边界、右边永远看不到）；复制的宽度固定为可视宽 nVisibleWidth。
+        // 整串缓存里文本像素 i 对应屏幕 (rc.left + nLeftClip) + (i - nLeftClip)：最终文本左端
+        // (m_rcObj.left + m_nLeftMargin) 处放第 nLeftClip 个文本像素，窗口正好显示文本的
+        // [nLeftClip - m_nLeftMargin … +nVisibleWidth] 这段。因此 blt 目标锚定在减去前的
+        // 原始左端 rc.left + nLeftClip，源从第 nLeftClip 个像素开始，宽度固定为可视窗 nVisibleWidth。
+        // 注意 rc.left 上面已 -= nLeftClip：这一处偏移只能作用在目标或源之一，不能两处都算，
+        // 否则右移滚动时 blt 覆盖不到窗口右端，文字滚着滚着会整串消失。
         RawImageData *s = pCache->getRawBuff();
         int nScale = (int)canvas->getScaleFactor();
-        canvas->bltImage(canvas->mapAndScaleX(rc.left), canvas->mapAndScaleY(rc.top),
+        canvas->bltImage(canvas->mapAndScaleX(rc.left + nLeftClip), canvas->mapAndScaleY(rc.top),
             nVisibleWidth * nScale, s->height,
-            s, 0, 0, BPM_BLEND);
+            s, nLeftClip * nScale, 0, BPM_BLEND);
         return;
     }
     // 缓存不可用（空文本/离屏构建失败）：回退原动态路径，逐帧重绘字形。
+    // 与缓存路径同参：rc.left 已 -= nLeftClip，文本左端本就随滚动左移、窗口左缘自然裁掉
+    // 滚出头的部分，因此 xLeftClipOffset 不再按 nLeftClip 额外裁剪（否则偏移算两遍，最右端整串消失）。
     if (m_font.isOutlined()) {
-        canvas->drawTextClipOutlined(m_strText.c_str(), (int)m_strText.size(), rc, m_font.getTextColor(m_enable), m_font.getColorOutlined(), nLeftClip);
+        canvas->drawTextClipOutlined(m_strText.c_str(), (int)m_strText.size(), rc, m_font.getTextColor(m_enable), m_font.getColorOutlined(), 0);
     } else {
         canvas->setTextColor(m_font.getTextColor(m_enable));
-        canvas->drawTextClip(m_strText.c_str(), (int)m_strText.size(), rc, nLeftClip);
+        canvas->drawTextClip(m_strText.c_str(), (int)m_strText.size(), rc, 0);
     }
 }
 //

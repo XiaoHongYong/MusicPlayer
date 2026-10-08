@@ -6,7 +6,7 @@
 	<!-- 主窗口: 浅色毛玻璃。WindowImage=bg.png 已烘焙圆角/描边/标题条/底栏。 -->
 	<Window ToolTipBgColor="#2B2F3A" ToolTipTextColor="#FFFFFF" ToolTipFontName="Verdana" ToolTipFontHeight="13"
 		FontName="Verdana" FontHeight="13" TextColor="#2B2F3A" BgColor="#E8EAF5"
-		EnableTranslucency="true" TranslucencyAlpha="255"
+		Glass="true" GlassMaterial="fullScreenUI" GlassRadius="10"
 	/>
 
 	<!-- Windows / Linux 标题栏；Mac 用 Caption.mac 覆盖同名样式 -->
@@ -87,7 +87,9 @@
 	</MenuCaption.mac>
 
 	<GlassMainFrame Extends="Window"
-		MinWidth="660" MinHeight="450" Width="880" Height="520">
+		Glass="true" GlassMaterial="fullScreenUI" GlassRadius="10"
+		MinWidth="660" MinHeight="450" Width="880" Height="520"
+		>
 
 		<Property Name="WindowImage" Image="bg.png" HorzExtendPos="11,53" VertExtendPos="43,63" />
 
@@ -97,9 +99,14 @@
 
 		<Container Name="BottomBar" Rect="0,h-30,w,30" TranslucencyWithSkin="TRUE">
 			<PlayingTimeText Name="TimeElapsed" Rect="16,7,44,16" FontName="Verdana" FontHeight="12" TextColor="#5B6372" AlignText="AT_LEFT | AT_VCENTER"/>
-			<Slider Name="Seek" ID="ID_SEEK" Rect="68,8,w-68-200,14"/>
-			<MediaInfoText Name="Duration" Rect="w-190,7,44,16" FontName="Verdana" FontHeight="12" TextColor="#8A93A3" Text="" MediaInfoType="Duration" AlignText="AT_LEFT | AT_VCENTER"/>
-			<!-- 播放列表 / 歌词切换，右侧为媒体中心入口 -->
+			<Slider Name="Seek" ID="ID_SEEK" Rect="68,8,w-68-240,14"/>
+			<MediaInfoText Name="Duration" Rect="w-230,7,44,16" FontName="Verdana" FontHeight="12" TextColor="#8A93A3" Text="" MediaInfoType="Duration" AlignText="AT_LEFT | AT_VCENTER"/>
+			<!-- 频谱面板开关 / 播放列表·歌词切换 / 媒体中心 -->
+			<Toolbar ID="CID_TB_VISUALIZER" Rect="w-176,1,40,28" Image="visualizer.png" enablehover="TRUE"
+					units_x="40" blank_x="-1" blank_cx="40" seperator_x="0" seperator_cx="0"
+					MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
+				<button ID="CID_TOGGLE_VISUALIZER" Left="0" ToolTip="Audio Visualizer"/>
+			</Toolbar>
 			<Toolbar ID="CID_TB_VIEW" Rect="w-136,1,80,28" Image="view-tabs.png" enablehover="TRUE"
 					units_x="40" blank_x="-1" blank_cx="40" seperator_x="0" seperator_cx="0"
 					MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
@@ -162,10 +169,10 @@
 		<ClientArea Rect="1, 5, w-2, h-5-5"/>
 	</PopupWndFrame>
 
-	<NormalListCtrl Extends="ListCtrl" StripeColor="#FFFFFF,#F0F4FA" SelBgColor="#4A9DFF"
+	<NormalListCtrl Extends="ListCtrl" StripeColor="#FFFFFF,#F3F6FA" SelBgColor="#4A9DFF"
 		TextColor="#2B2F3A" SelTextColor="#FFFFFF"
-		FontName="Verdana" FontHeight="13" LineHeight="22"
-		HeaderHeight="22" LineColor="#C9D2E0"
+		FontName="Verdana" FontHeight="13" LineHeight="36"
+		HeaderHeight="36" LineColor="#D5DCE8" XMargin="4" CellPadding="12"
 		ImageHeader="listctrl-header.png"/>
   </style>
 </styles>

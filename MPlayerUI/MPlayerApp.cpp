@@ -166,6 +166,10 @@ bool MPlayerApp::_init() {
 }
 
 void MPlayerApp::_quit() {
+    // 先停掉本地 HTTP 服务线程并 join，避免 g_player 等全局对象析构后，
+    // 后台线程仍调 getPlayPos()/getMediaLength() 访问已释放内存而崩溃(UAF)。
+    LocalServer::getInstance()->stop();
+
     // 因为网络原因会导致 线程卡住，不主动调用 quit.
     // g_LyricSearch.quit();
     // g_LyricsDownloader.quit();

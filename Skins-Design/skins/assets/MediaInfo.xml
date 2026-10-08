@@ -29,7 +29,7 @@
     </Container.basic>
 
     <Container.detail ID="CID_C_MI_DETAIL" Rect="0,10,w,h-10" Visible="false" ClipChildren="true">
-      <NormalListCtrl ID="LIST_DETAILS" Rect="0,0,w,h" LineHeight="30" EnableHorzScrollBar="false" EnableVertScrollBar="false" />
+      <NormalListCtrl ID="LIST_DETAILS" Rect="0,0,w,h" EnableHorzScrollBar="false" EnableVertScrollBar="false" />
     </Container.detail>
 
     <Container.lyrics ID="CID_C_MI_LYRICS" Rect="0,0,w,h" Visible="false">

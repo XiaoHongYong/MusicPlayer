@@ -19,24 +19,14 @@ cstr_t SZ_FOLDER_PREFIX = "LyricFolder";
 #define SZ_S2L_HEADER       "MPS2LV1.1"
 #define LEN_S2L_HEADER      9
 
+// 根据关联 keyword 在媒体库中查找对应的歌曲（大小写不敏感）。
+static MediaPtr getMediaByAssociateKeyword(cstr_t szAssociateFileKeyword);
+
 // rule: 1) http://xxxx
 //       2) without the extention of song file.
 bool isShoutcastMedia(cstr_t szMedia) {
     if (strncasecmp(szMedia, "http:", 5) == 0) {
         return true;
-    } else if (strncasecmp(szMedia, "uvox:", 5) == 0) {
-        return true;
-    }
-
-    return false;
-}
-
-bool isShoutcastAssociateKeyName(cstr_t szMedia) {
-    if (strncasecmp(szMedia, "http:", 5) == 0) {
-        cstr_t p = strstr(szMedia + 5, "/[shoutcast]");
-        if (p) {
-            return true;
-        }
     } else if (strncasecmp(szMedia, "uvox:", 5) == 0) {
         return true;
     }
@@ -208,7 +198,7 @@ bool CLyricsLocalSearch::removeFolder(int nIndex) {
 void CLyricsLocalSearch::init() {
     loadLyricFolderCfg();
 
-    loadLyricsAssociation();
+    migrateLyricsAssociation();
 }
 
 void CLyricsLocalSearch::quit() {
@@ -262,28 +252,48 @@ bool CLyricsLocalSearch::associateLyrics(cstr_t szAssociateFileKeyword, cstr_t s
         return false;
     }
 
-    SONG_LYRIC_MAP::iterator it;
-    string strKey = toAssociateKeyword(szAssociateFileKeyword);
+    ensureLyricsAssociationMigrated();
 
-    {
-        MutexAutolock lock(m_mutex);
-        // Is already associated and same?
-        it = m_mapLyricsAssociate.find(strKey);
-        if (it != m_mapLyricsAssociate.end()) {
-            if (strcmp((*it).second.c_str(), szLyricFile) == 0) {
-                return false;
-            }
+    // 优先持久化到媒体库（medialib.lyrics_file），这样网页版能读到同一份歌词关联。
+    auto media = getMediaByAssociateKeyword(szAssociateFileKeyword);
+    if (media) {
+        if (media->lyricsFile == szLyricFile) {
+            return false;
         }
-        m_mapLyricsAssociate[strKey] = szLyricFile;
+        media->lyricsFile = szLyricFile;
+        if (g_player.getMediaLibrary()) {
+            g_player.getMediaLibrary()->updateMediaInfo(media.get());
+        }
+        return true;
     }
 
-    // save??
-    saveLyricsAssociation();
+    // 不在媒体库里的歌曲（cue/shoutcast 音轨、或尚未入库），仅在本次会话内存中保留。
+    {
+        MutexAutolock lock(m_mutex);
+        auto it = m_mapLyricsAssociate.find(toAssociateKeyword(szAssociateFileKeyword));
+        if (it != m_mapLyricsAssociate.end() && it->second == szLyricFile) {
+            return false;
+        }
+        m_mapLyricsAssociate[toAssociateKeyword(szAssociateFileKeyword)] = szLyricFile;
+    }
 
     return true;
 }
 
 bool CLyricsLocalSearch::cancelAssociate(cstr_t szAssociateFileKeyword) {
+    ensureLyricsAssociationMigrated();
+
+    // 优先清理媒体库里的关联。
+    auto media = getMediaByAssociateKeyword(szAssociateFileKeyword);
+    if (media && !media->lyricsFile.empty()) {
+        media->lyricsFile.resize(0);
+        if (g_player.getMediaLibrary()) {
+            g_player.getMediaLibrary()->updateMediaInfo(media.get());
+        }
+        return true;
+    }
+
+    // 不在媒体库里的歌曲，清理会话内缓存。
     {
         MutexAutolock autoLock(m_mutex);
         auto itLyric = m_mapLyricsAssociate.find(toAssociateKeyword(szAssociateFileKeyword));
@@ -293,22 +303,22 @@ bool CLyricsLocalSearch::cancelAssociate(cstr_t szAssociateFileKeyword) {
         }
     }
 
-    saveLyricsAssociation();
-
     return false;
 }
 
 bool CLyricsLocalSearch::isAssociatedLyrics(cstr_t szAssociateFileKeyword) {
     assert(szAssociateFileKeyword);
-    SONG_LYRIC_MAP::iterator itLyric;
-    MutexAutolock autoLock(m_mutex);
 
-    itLyric = m_mapLyricsAssociate.find(toAssociateKeyword(szAssociateFileKeyword));
-    if (itLyric != m_mapLyricsAssociate.end()) {
+    ensureLyricsAssociationMigrated();
+
+    // 媒体库（持久化）优先。
+    auto media = getMediaByAssociateKeyword(szAssociateFileKeyword);
+    if (media && !media->lyricsFile.empty()) {
         return true;
     }
 
-    return false;
+    MutexAutolock autoLock(m_mutex);
+    return m_mapLyricsAssociate.find(toAssociateKeyword(szAssociateFileKeyword)) != m_mapLyricsAssociate.end();
 }
 
 bool CLyricsLocalSearch::isAssociatedWithNoneLyrics(cstr_t szAssociateKeyword) {
@@ -330,22 +340,39 @@ bool CLyricsLocalSearch::getAssociatedLyrics(cstr_t szAssociateFileKeyword, char
     assert(szLyricFile);
     emptyStr(szLyricFile);
 
-    SONG_LYRIC_MAP::iterator itLyric;
-    MutexAutolock autoLock(m_mutex);
+    ensureLyricsAssociationMigrated();
 
-    itLyric = m_mapLyricsAssociate.find(toAssociateKeyword(szAssociateFileKeyword));
-    if (itLyric != m_mapLyricsAssociate.end()) {
-        strcpy_safe(szLyricFile, nMaxBuff, (*itLyric).second.c_str());
+    string strLyrics;
 
-        if (isLyricsExist(szLyricFile)) {
-            return true;
+    // 媒体库（持久化）优先：能命中歌曲就用 lyricsFile。
+    auto media = getMediaByAssociateKeyword(szAssociateFileKeyword);
+    if (media) {
+        if (!media->lyricsFile.empty()) {
+            strLyrics = media->lyricsFile;
         }
-
-        if (filePathIsBeginWithDriver(szAssociateFileKeyword)
-            && filePathIsBeginWithDriver(szLyricFile)) {
-            szLyricFile[0] = szAssociateFileKeyword[0];
-            return isLyricsExist(szLyricFile);
+    } else {
+        // 不在媒体库里的歌曲（cue/shoutcast、或尚未入库），查会话内缓存。
+        MutexAutolock autoLock(m_mutex);
+        auto itLyric = m_mapLyricsAssociate.find(toAssociateKeyword(szAssociateFileKeyword));
+        if (itLyric != m_mapLyricsAssociate.end()) {
+            strLyrics = itLyric->second;
         }
+    }
+
+    if (strLyrics.empty()) {
+        return false;
+    }
+
+    strcpy_safe(szLyricFile, nMaxBuff, strLyrics.c_str());
+
+    if (isLyricsExist(szLyricFile)) {
+        return true;
+    }
+
+    if (filePathIsBeginWithDriver(szAssociateFileKeyword)
+        && filePathIsBeginWithDriver(szLyricFile)) {
+        szLyricFile[0] = szAssociateFileKeyword[0];
+        return isLyricsExist(szLyricFile);
     }
 
     return false;
@@ -365,120 +392,119 @@ bool CLyricsLocalSearch::isLyricsExist(cstr_t szLyricSource) {
     }
 }
 
-void CLyricsLocalSearch::loadLyricsAssociation() {
-    SONG_LYRIC_MAP::iterator it;
-    char szBuff[1024];
-    char *szStr;
-    int nLen, nLenBuff;
-    FILE *fp;
-    MutexAutolock autoLock(m_mutex);
-
-    string file = getAppDataDir() + "MLyrics.S2L";
-    fp = fopenUtf8(file.c_str(), "rb");
-    if (fp == nullptr) {
-        goto R_END;
+// 根据关联 keyword 在媒体库中查找对应的歌曲（大小写不敏感）。
+// 关联 keyword 对普通歌曲就是歌曲文件路径，与媒体库 url 大小写不敏感地匹配。
+static MediaPtr getMediaByAssociateKeyword(cstr_t szAssociateFileKeyword) {
+    if (isEmptyString(szAssociateFileKeyword)) {
+        return nullptr;
     }
 
-    if (!fgets(szBuff, CountOf(szBuff), fp)) {
-        goto R_END;
+    auto mediaLib = g_player.getMediaLibrary();
+    if (!mediaLib) {
+        return nullptr;
     }
 
-    if (strncmp(szBuff, SZ_S2L_HEADER, LEN_S2L_HEADER) != 0) {
-        goto R_END;
-    }
-
-    while (fgets(szBuff, CountOf(szBuff), fp)) {
-        szStr = szBuff;
-        nLenBuff = (int)strlen(szBuff);
-
-        // get song file name.
-        szStr = readInt_t(szStr, nLen); if (nLen > nLenBuff - int(szStr - szBuff)) continue;
-        if (*szStr == ',') szStr++; else continue;
-
-        string mediaFn(szStr, nLen);
-        szStr += nLen;
-        if (*szStr != ',') {
-            continue;
-        }
-        szStr++;
-
-        // get lyrics file name.
-        szStr = readInt_t(szStr, nLen); if (nLen > nLenBuff - int(szStr - szBuff)) continue;
-        if (*szStr == ',') szStr++; else continue;
-
-        string lyricsFn(szStr, nLen);
-
-        m_mapLyricsAssociate[mediaFn.c_str()] = lyricsFn.c_str();
-    }
-
-R_END:
-    if (fp) {
-        fclose(fp);
-    }
+    return mediaLib->getMediaByUrlNocase(szAssociateFileKeyword);
 }
 
-void CLyricsLocalSearch::saveLyricsAssociation() {
-    SONG_LYRIC_MAP::iterator it;
-    FILE *fp;
-    string str, strUtf8;
-    char szTemp[64];
-
+void CLyricsLocalSearch::migrateLyricsAssociation() {
+    // 歌词关联原本保存在单独的 MLyrics.S2L 文件里。
+    // 阶段A：把旧文件读进内存，保证启动（媒体库尚未就绪）也能关联；旧文件暂不删除。
+    // 阶段B：等媒体库就绪后，在 ensureLyricsAssociationMigrated() 里把关联迁入
+    //        medialib.lyrics_file 并删除旧文件。以后关联只存在媒体库一份。
     string file = getAppDataDir() + "MLyrics.S2L";
 
-    fp = fopenUtf8(file.c_str(), "wb");
-    if (fp == nullptr) {
-        ERR_LOG1("Can't save lyrics association file: %s.", file.c_str());
-        return;
-    }
-
-    if (fwrite(SZ_S2L_HEADER, 1, LEN_S2L_HEADER, fp) != LEN_S2L_HEADER) {
-        return;
-    }
-
-    if (fwrite("\r\n", 1, 2, fp) != 2) {
-        return;
-    }
-
-    MutexAutolock autoLock(m_mutex);
-
-    for (it = m_mapLyricsAssociate.begin(); it != m_mapLyricsAssociate.end(); it++) {
-        if (isShoutcastAssociateKeyName((*it).first.c_str())) {
-            continue;
+    // 老格式：头部 + "len,songFileName,len,lyricFileName\n"
+    {
+        char szBuff[1024];
+        char *szStr;
+        int nLen, nLenBuff;
+        FILE *fp = fopenUtf8(file.c_str(), "rb");
+        if (fp == nullptr) {
+            return;
         }
 
-        str.resize(0);
+        if (!fgets(szBuff, CountOf(szBuff), fp)
+            || strncmp(szBuff, SZ_S2L_HEADER, LEN_S2L_HEADER) != 0) {
+            fclose(fp);
+            return;
+        }
 
-        //
-        // write song file
-        //
-        strUtf8 = (*it).first.c_str();
+        MutexAutolock lock(m_mutex);
+        while (fgets(szBuff, CountOf(szBuff), fp)) {
+            szStr = szBuff;
+            nLenBuff = (int)strlen(szBuff);
 
-        // len
-        snprintf(szTemp, CountOf(szTemp), "%d", (int)strUtf8.size());
-        str += szTemp; str += ",";
+            // song file name.
+            szStr = readInt_t(szStr, nLen); if (nLen > nLenBuff - int(szStr - szBuff)) continue;
+            if (*szStr == ',') szStr++; else continue;
 
-        // file
-        str += strUtf8;
-        str += ",";
+            string mediaFn(szStr, nLen);
+            szStr += nLen;
+            if (*szStr != ',') {
+                continue;
+            }
+            szStr++;
 
-        //
-        // write lyrics file
-        //
-        strUtf8 = (*it).second.c_str();
+            // lyrics file name.
+            szStr = readInt_t(szStr, nLen); if (nLen > nLenBuff - int(szStr - szBuff)) continue;
+            if (*szStr == ',') szStr++; else continue;
 
-        // len
-        snprintf(szTemp, CountOf(szTemp), "%d", (int)strUtf8.size());
-        str += szTemp; str += ",";
+            string lyricsFn(szStr, nLen);
 
-        // file
-        str += strUtf8;
-        str += "\n";
-
-        fwrite(str.c_str(), 1, str.size(), fp);
+            m_mapLyricsAssociate[mediaFn] = lyricsFn;
+        }
     }
 
-    fclose(fp);
-    return;
+    // 若媒体库已就绪则立即迁移；否则等首次查询时自动触发。
+    ensureLyricsAssociationMigrated();
+}
+
+void CLyricsLocalSearch::ensureLyricsAssociationMigrated() {
+    // 只迁移一次。
+    {
+        MutexAutolock lock(m_mutex);
+        if (m_bLyricsMigrated) {
+            return;
+        }
+    }
+
+    auto mediaLib = g_player.getMediaLibrary();
+    if (!mediaLib) {
+        // 媒体库还没就绪，等下一次查询再迁。
+        return;
+    }
+
+    // 快照会话内关联，随后在无锁状态下访问媒体库，避免与
+    // （持媒体库锁 → 调 g_LyricSearch）的路径成环死锁。
+    vector<pair<string, string>> snapshot;
+    {
+        MutexAutolock lock(m_mutex);
+        snapshot.assign(m_mapLyricsAssociate.begin(), m_mapLyricsAssociate.end());
+    }
+
+    vector<string> migratedKeys;
+    for (auto &entry : snapshot) {
+        auto media = mediaLib->getMediaByUrlNocase(entry.first.c_str());
+        if (media) {
+            if (media->lyricsFile != entry.second) {
+                media->lyricsFile = entry.second;
+                mediaLib->updateMediaInfo(media.get());
+            }
+            migratedKeys.push_back(entry.first);
+        }
+        // 不在媒体库的歌（如 shoutcast），保留在会话内关联里。
+    }
+
+    {
+        MutexAutolock lock(m_mutex);
+        for (auto &key : migratedKeys) {
+            m_mapLyricsAssociate.erase(key);    // 已迁入媒体库，移出会话缓存
+        }
+        m_bLyricsMigrated = true;
+        // 迁移完成后删除旧的关联文件。
+        deleteFile((getAppDataDir() + "MLyrics.S2L").c_str());
+    }
 }
 
 // Return the best match lyrics only

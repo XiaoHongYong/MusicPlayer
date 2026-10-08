@@ -48,8 +48,10 @@ public:
 protected:
     void searchLyrics(CLyricsSearchParameter &searchParam, ListLyrSearchResults &vLyrics);
 
-    void loadLyricsAssociation();
-    void saveLyricsAssociation();
+    // 把旧版单独的歌词关联文件（MLyrics.S2L）迁移进媒体库，并删除旧文件。
+    void migrateLyricsAssociation();
+    // 懒迁移：媒体库就绪后，把会话内关联逐条写进媒体库并删除旧文件。只执行一次。
+    void ensureLyricsAssociationMigrated();
 
     string toAssociateKeyword(cstr_t szKeyword) {
 #ifdef _WIN32
@@ -71,17 +73,13 @@ protected:
     VecStrings                  m_vLyricsFolders;
 
     //
-    // Lyrics association map:
+    // Lyrics association:
     //
-    // song file <--->  lyrics file
+    //  关联持久化保存在媒体库的 lyricsFile 字段（medialib.lyrics_file），网页版通过
+    //  /songs/{id}/lyrics 与 has_lyrics 读取同一份数据。
     //
-    // To support removable disk (mp3 file, lyrics are in removable disk):
-    // 1) song file is in lower case
-    // 2) if song file is in same driver with lyrics file, "x:" will be removed, but
-    //    the "x:" in lyrics file should be kept.
-    // 3) if song file do not have driver info,  but lyrics file doesn't exists there,
-    //    Check whether lyrics is in the $Product$ program driver.
-    // 4) "Lyrics" folder should be verified dynamically.
+    //  m_mapLyricsAssociate 仅作为运行时缓存，只用于那些不落在媒体库里的关联
+    //  （如 cue/shoutcast 音轨、或尚未入库的歌曲），不再写回任何关联文件。
     //
     typedef map<string, string> SONG_LYRIC_MAP;
 
@@ -89,4 +87,5 @@ protected:
     std::mutex                  m_mutex;
 
     bool                        m_bSaved;
+    bool                        m_bLyricsMigrated = false;
 };

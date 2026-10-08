@@ -195,8 +195,9 @@ protected:
 
     void fadeOutVertBorder(CRawGraph *canvas, int yDrawLyrStartPos, int yDrawLyrEndPos);
 
+    // m_rcObj 去掉四周 margin 后的内容区
     CRect getClipRect()
-        { CRect rc = m_rcObj; rc.inflate(m_nXMargin, m_nYMargin); return rc; }
+        { CRect rc = m_rcObj; rc.deflate(m_nXMargin, m_nYMargin); return rc; }
 
     void loadBgImageFolder();
 

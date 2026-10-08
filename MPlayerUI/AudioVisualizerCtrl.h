@@ -14,13 +14,14 @@
  * 桌面音频可视化控件：消费 AudioAnalysisFrame。
  * XML 标签名：AudioVisualizer
  *
- * 点击循环切换：spectrum-bars → waveform → spectrum-circle → none
- * 模式写入 g_profile [MusicPlayer] AudioVisualizerMode
- * none 时不绘制可视化，并取消分析订阅以省 CPU。
+ * 点击在 Modes 允许的特效间循环切换（默认：spectrum-bars → waveform →
+ * spectrum-circle → none）。模式写入 g_profile [MusicPlayer] AudioVisualizerMode；
+ * none 时不绘制，并取消分析订阅以省 CPU。
  *
  * 属性：
  *   BarColor / PeakColor / BgColor / Gap / MinBarHeight / MinBarWidth
- *   Mode（可选初始模式，会被已保存设置覆盖）
+ *   Mode（可选初始模式，会被已保存设置覆盖；若不在 Modes 内则钳到首个允许项）
+ *   Modes（逗号分隔允许列表，如 "spectrum-bars,waveform"；省略则全部可切换）
  */
 class CAudioVisualizerCtrl : public CUIObject, public IAudioAnalysisSink {
     UIOBJECT_CLASS_NAME_DECLARE(CUIObject)
@@ -48,6 +49,9 @@ protected:
     void saveMode() const;
     void cycleMode();
     void syncAnalysisSubscription();
+    void parseAllowedModes(cstr_t szValue);
+    bool isModeAllowed(Mode mode) const;
+    Mode clampToAllowed(Mode mode) const;
     static Mode modeFromString(cstr_t s);
     static cstr_t modeToString(Mode mode);
 
@@ -66,6 +70,8 @@ protected:
     float m_ringSmooth = 0.f;
 
     Mode m_mode = Mode::SpectrumBars;
+    // 空 = 默认全开；非空时点击只在列表内循环
+    std::vector<Mode> m_allowedModes;
     bool m_subscribedToAnalysis = false;
     CColor m_barColor;
     CColor m_peakColor;

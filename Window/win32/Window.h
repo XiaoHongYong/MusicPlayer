@@ -174,6 +174,12 @@ public:
     virtual void setTransparent(uint8_t nAlpha, bool bClickThrough);
     virtual bool isClickThrough() { return m_bClickThrough; }
 
+    // 窗口磨砂玻璃背景：DWM blur-behind，透明区域透出桌面/下层窗口。由皮肤 <Window Glass="true"/> 触发。
+    virtual void setGlassEffect(bool bGlassEffect, cstr_t szMaterial = nullptr);
+
+    // DWM blur-behind 作用于整窗，无圆角概念；为保持三平台接口一致留空实现。
+    virtual void setGlassRadius(int radius) { (void)radius; }
+
     bool updateLayeredWindowUsingMemGraph(CRawGraph *canvas);
 
 public:

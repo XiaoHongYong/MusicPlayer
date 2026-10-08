@@ -14,7 +14,6 @@
 #include "PreferPageAlbumArt.h"
 #include "PreferPageTheme.h"
 #include "PreferPageAdvanced.h"
-#include "PreferPageAssociation.h"
 
 
 class CPagePfRoot : public CPagePfBase {

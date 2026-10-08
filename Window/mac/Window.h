@@ -150,9 +150,20 @@ public:
 
     float                       m_scaleFactor;
 
+    // 磨砂背板圆角半径（CSS 像素），默认 10（与皮肤 bg.png 的圆角一致）。
+    int                         m_glassRadius = 10;
+
     // For Mac
     struct WindowHandleHolder *getWindowHandleHolder() const { return m_handleHolder; }
     void setHasShadow(bool hasShadow);
+
+    // 窗口磨砂玻璃背景（透明处透出系统 blur）。由皮肤 <Window Glass="true"/> 触发。
+    virtual void setGlassEffect(bool bGlassEffect, cstr_t szMaterial = nullptr);
+
+    // 磨砂背板圆角裁剪半径（像素）。皮肤 <Window GlassRadius="10"/> 触发；
+    // 圆角外不放 blur，透出锐利桌面，实现真正的圆角窗。
+    virtual void setGlassRadius(int radius);
+    int getGlassRadius() const { return m_glassRadius; }
 
 #ifdef _MAC_OS
     // Mac has a known bug: when click system menubar button, the floating

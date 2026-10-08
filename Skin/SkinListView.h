@@ -306,6 +306,7 @@ protected:
 
     int                         m_nLineHeight, m_nLineHeightOrg;
     int                         m_nXMargin;
+    int                         m_nCellPadding;      // 单元格左右内边距（现代 table 风格）
     int                         m_nFirstVisibleRow;
 
     // Drag to adjust the width of columns

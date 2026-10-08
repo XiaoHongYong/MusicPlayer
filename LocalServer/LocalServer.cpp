@@ -105,5 +105,12 @@ void LocalServer::httpServerThread(void *param) {
 }
 
 void LocalServer::stop() {
+    // 退出前停掉 HTTP 工作线程：stop io_context 使 run() 返回并 join。
+    // 否则应用退出、全局对象(如 g_player)析构后，这个线程仍可能访问它们而崩。
+    if (!m_threadHttpServer.isRunning()) {
+        return;
+    }
+    m_httpServer.stop();
+    m_threadHttpServer.join();
 }
 

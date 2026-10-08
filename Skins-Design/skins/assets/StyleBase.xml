@@ -47,7 +47,7 @@
         RoundWidth="4" ThickWidth="3" XBorder="0" YBorder="0"/>
     <ListCtrlFrame Extends="Frame" Image="listctrl-frame.png" ImageSize="40,26"
         ImagePos="0,0" ImageFocusPos="0,26" ImageHoverPos="0,26"
-        RoundWidth="2" ThickWidth="2" XBorder="0" YBorder="0"/>
+        RoundWidth="6" ThickWidth="2" XBorder="0" YBorder="0"/>
     <NormalComboBox Extends="ComboBox" FontName="Verdana" FontHeight="13" TextColor="#000000" DisabledTextColor="#808080" TabFocus="true"
         Height="22" Padding="5,4" AlignText="AT_LEFT" TextLeftMargin="14" TextRightMargin="30"
         Image="combo-box.png" ImageSize="60,26" ExtendPos="10,40"
@@ -63,10 +63,10 @@
     <VScrollBar Width="15" PushBtHeight="15" ThumbHeight="30" TrackHeight="20" ScrollBarWidth="15" Image="scrollbar-vert.png" ScalableThumb="TRUE" />
     <HScrollBar Height="15" PushBtWidth="15" ThumbWidth="30" TrackWidth="20" ScrollBarHeight="15" Image="scrollbar-horz.png" ScalableThumb="TRUE" />
 
-    <NormalListCtrl Extends="ListCtrl" StripeColor="#FFFFFF,#EDF3FE" SelBgColor="#3875D7" 
-        TextColor="#000000" SelTextColor="#FFFFFF" 
-        FontName="Verdana" FontHeight="13" LineHeight="22"
-        HeaderHeight="22" LineColor="#808080"
+    <NormalListCtrl Extends="ListCtrl" StripeColor="#FFFFFF,#F5F7FA" SelBgColor="#3875D7"
+        TextColor="#1F2937" SelTextColor="#FFFFFF"
+        FontName="Verdana" FontHeight="13" LineHeight="36"
+        HeaderHeight="36" LineColor="#E5E7EB" XMargin="4" CellPadding="12"
         ImageHeader="listctrl-header.png"/>
     <NormalPlaylist Extends="Playlist" ID="ID_PLAYLIST" StripeColor="#FFFFFF,#EDF3FE" SelBgColor="#3875D7" 
         NowPlayingBgColor="#007F00" NowPlayingTextColor="#FFFFFF" CustomizedColors="#FF7F00,#A9A9A9"

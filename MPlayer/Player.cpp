@@ -853,6 +853,15 @@ ResultCode CPlayer::loadMediaTagInfo(Media *media) {
         getArtistTitleFromFileName(media->artist, media->title, media->url.c_str());
     }
 
+    // 建库扫描/刷新给媒体库补上歌词关联（存进 medialib.lyrics_file，供网页版读取）。
+    // 已有显式关联时不覆盖。
+    if (media->lyricsFile.empty() && !media->url.empty()) {
+        string strLyrics;
+        if (g_LyricSearch.getBestMatchLyrics(media->url.c_str(), media->artist.c_str(), media->title.c_str(), strLyrics)) {
+            media->lyricsFile = strLyrics;
+        }
+    }
+
     return ERR_OK;
 }
 

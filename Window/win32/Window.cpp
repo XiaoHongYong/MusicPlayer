@@ -5,6 +5,8 @@
 #include "../GfxRaw/RawGraph.h"
 #include "../Desktop.h"
 
+#include <dwmapi.h>
+
 
 void showInFinder(cstr_t filename) {
     executeCmd(("explorer.exe /select, " + std::string(filename)).c_str());
@@ -859,6 +861,23 @@ void Window::setTransparent(uint8_t nAlpha, bool bClickThrough) {
     } else {
         ::unSetLayeredWindow(m_hWnd);
     }
+}
+
+void Window::setGlassEffect(bool bGlassEffect, cstr_t szMaterial) {
+    // DWM blur-behind：把窗口透明/边框区域渲染成磨砂玻璃（Win7+）。szMaterial 在 win 上暂未区分。
+    (void)szMaterial;
+    if (m_hWnd == nullptr) {
+        return;
+    }
+
+    DWM_BLURBEHIND bb;
+    memset(&bb, 0, sizeof(bb));
+    // 整窗 blur-behind（配合皮肤透明像素，角落/裁切处透出 blur）。
+    bb.dwFlags = DWM_BB_ENABLE;
+    bb.fEnable = bGlassEffect ? TRUE : FALSE;
+    bb.fTransitionOnMaximized = TRUE;
+
+    DwmEnableBlurBehindWindow(m_hWnd, &bb);
 }
 
 bool Window::updateLayeredWindowUsingMemGraph(CRawGraph *canvas) {
