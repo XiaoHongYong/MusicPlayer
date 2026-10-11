@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Orbit 自有风格：纯黑底 + 香槟金；PNG 由 orbit.skin.json 编译 -->
+<styles>
+  <include Name="StyleBase.xml"/>
+
+  <style>
+	<Window ToolTipBgColor="#141414" ToolTipTextColor="#F5F5F5" ToolTipFontName="Verdana" ToolTipFontHeight="13"
+		FontName="Verdana" FontHeight="13" TextColor="#F5F5F5" BgColor="#000000"
+		EnableTranslucency="true" TranslucencyAlpha="255"
+	/>
+
+	<Caption Extends="Container" Name="Caption" TranslucencyWithSkin="FALSE">
+		<MenuBar Rect="14,8,200,20" Name="Menu"
+				 FontName="Verdana"
+		   FontHeight="13" FontBold="false" TextColor="#C8C8C8"
+		   TextColorPressed="#FFFFFF"
+		   BgColorPressed="#B8954A" BgPressedAlpha="200"/>
+		<Text ID="ID_CAPTION" Rect="w/2-150,8,300,20" CaptionText="true" FontName="Verdana" FontHeight="14" FontBold="false" TextColor="#8A8A8A" LeftMargin="0" AlignText="AT_CENTER | AT_VCENTER"/>
+		<Toolbar ID="CID_TB_SYSBT" Rect="w-12-60,10,60,16"
+			 Image="caption-btn.png" enablehover="TRUE" units_x="16"
+			 blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
+			 MarginX="0" MarginY="0" ButtonSpacesCX="5" FullStatusImage="TRUE">
+			<button ID="ID_MINIMIZE" Left="1" />
+			<button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
+		  <button ID="ID_CLOSE" Left="4" />
+		</Toolbar>
+	</Caption>
+	<Caption.mac Extends="Container" Name="Caption" TranslucencyWithSkin="FALSE">
+		<Toolbar ID="CID_TB_SYSBT" Rect="14,10,64,16"
+			 Image="caption-btn-mac.png" enablehover="TRUE" units_x="16"
+			 blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
+			 MarginX="0" MarginY="0" ButtonSpacesCX="8" FullStatusImage="TRUE">
+			<button ID="ID_CLOSE" Left="4" />
+			<button ID="ID_MINIMIZE" Left="1" />
+			<button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
+		</Toolbar>
+		<Text ID="ID_CAPTION" Rect="80,8,w-160,20" CaptionText="true" FontName="Verdana" FontHeight="14" FontBold="false" TextColor="#8A8A8A" LeftMargin="0" AlignText="AT_CENTER | AT_VCENTER"/>
+	</Caption.mac>
+
+	<DialogCaption Extends="Container" Name="Caption bar" TranslucencyWithSkin="TRUE">
+		<Text ID="ID_CAPTION" Rect="24,6,w-80,20" CaptionText="true" FontName="Verdana" FontHeight="15" FontBold="false" TextColor="#F5F5F5" LeftMargin="0" AlignText="AT_LEFT | AT_VCENTER"/>
+		<Toolbar ID="CID_TB_SYSBT" Rect="w-8-16,9,16,16" TranslucencyWithSkin="TRUE"
+			Image="caption-btn.png" enablehover="TRUE" units_x="16"
+			blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
+			MarginX="0" MarginY="0" ButtonSpacesCX="5" FullStatusImage="TRUE">
+		  <button ID="ID_CLOSE" Left="4" />
+		</Toolbar>
+	</DialogCaption>
+	<DialogCaption.mac Extends="Container" Name="Caption bar" TranslucencyWithSkin="TRUE">
+		<Toolbar ID="CID_TB_SYSBT" Rect="12,8,16,16" TranslucencyWithSkin="TRUE"
+			Image="caption-btn-mac.png" enablehover="TRUE" units_x="16"
+			blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
+			MarginX="0" MarginY="0" ButtonSpacesCX="8" FullStatusImage="TRUE">
+		  <button ID="ID_CLOSE" Left="4" />
+		</Toolbar>
+		<Text ID="ID_CAPTION" Rect="40,6,w-80,20" CaptionText="true" FontName="Verdana" FontHeight="15" FontBold="false" TextColor="#F5F5F5" LeftMargin="0" AlignText="AT_CENTER | AT_VCENTER"/>
+	</DialogCaption.mac>
+
+	<MenuCaption Extends="Container" Name="Caption bar" TranslucencyWithSkin="TRUE">
+		<MenuBar Rect="13,6,w/2-20,20" Name="Menu"
+			TranslucencyWithSkin="TRUE" FontName="Verdana"
+			FontHeight="13" FontBold="false" TextColor="#C8C8C8"
+			TextColorPressed="#FFFFFF"
+			BgColorPressed="#B8954A" BgPressedAlpha="200"/>
+		<Text ID="ID_CAPTION" Rect="w/2,6,w/2-10-60-10,20" CaptionText="true" FontName="Verdana" FontHeight="15" FontBold="false" TextColor="#F5F5F5" LeftMargin="0" AlignText="AT_LEFT | AT_VCENTER"/>
+		<Toolbar ID="CID_TB_SYSBT" Rect="w-8-60,9,60,16" TranslucencyWithSkin="TRUE"
+			Image="caption-btn.png" enablehover="TRUE" units_x="16"
+			blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
+			MarginX="0" MarginY="0" ButtonSpacesCX="5" FullStatusImage="TRUE">
+			<button ID="ID_MINIMIZE" Left="1" />
+			<button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
+			<button ID="ID_CLOSE" Left="4" />
+		</Toolbar>
+	</MenuCaption>
+	<MenuCaption.mac Extends="Container" Name="Caption bar" TranslucencyWithSkin="TRUE">
+		<Toolbar ID="CID_TB_SYSBT" Rect="12,8,64,16" TranslucencyWithSkin="TRUE"
+			Image="caption-btn-mac.png" enablehover="TRUE" units_x="16"
+			blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
+			MarginX="0" MarginY="0" ButtonSpacesCX="8" FullStatusImage="TRUE">
+			<button ID="ID_CLOSE" Left="4" />
+			<button ID="ID_MINIMIZE" Left="1" />
+			<button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
+		</Toolbar>
+		<Text ID="ID_CAPTION" Rect="80,6,w-160,20" CaptionText="true" FontName="Verdana" FontHeight="15" FontBold="false" TextColor="#F5F5F5" LeftMargin="0" AlignText="AT_CENTER | AT_VCENTER"/>
+	</MenuCaption.mac>
+
+	<!-- 对话框(无菜单) -->
+	<WindowFrame Extends="Window"
+		MinWidth="100" MinHeight="100" Width="330" Height="400" IsDialog="true"
+		BgColor="#050505">
+
+		<Property Name="WindowImage" Image="bg-dialog.png" HorzExtendPos="11,53" VertExtendPos="33,53" />
+
+		<DialogCaption Rect="2,2,w-4,31"/>
+
+		<ClientArea Rect="10,33,w-20,h-33-10" ClipChildren="true"/>
+	</WindowFrame>
+
+	<!-- 对话框(带菜单) -->
+	<MenuWindowFrame Extends="Window"
+		MinWidth="100" MinHeight="100" Width="330" Height="400"
+		BgColor="#050505">
+
+		<Property Name="WindowImage" Image="bg-dialog.png" HorzExtendPos="11,53" VertExtendPos="33,53" />
+
+		<MenuCaption Rect="2,2,w-4,31"/>
+
+		<ClientArea Rect="6,33,w-12,h-33-6" ClipChildren="true"/>
+	</MenuWindowFrame>
+
+	<WndFrameCaption Extends="Text" ID="ID_CAPTION" Rect="30,4,w-60,20" Text="About MusicPlayer" FontHeight="16" FontBold="true" TextColor="#F5F5F5" LeftMargin="0" AlignText="AT_CENTER | AT_VCENTER"/>
+
+	<!-- 标签/控件：暗色字色；搜索条内编辑框用浅字 -->
+	<NormalText Extends="Text" Height="22" FontName="Verdana" FontHeight="13" TextColor="#F5F5F5" AlignText="AT_VCENTER"/>
+	<NormalTextRight Extends="Text" Height="22" FontName="Verdana" FontHeight="13" TextColor="#F5F5F5" AlignText="AT_VCENTER|AT_RIGHT"/>
+	<TitleText Extends="Text" Height="25" FontName="Verdana" FontHeight="20" TextColor="#F5F5F5" AlignText="AT_CENTER"/>
+	<NormalLink Extends="TxtLink" Height="22" FontName="Verdana" FontHeight="13" TextColor="#E8C070" AlignText="AT_VCENTER"/>
+	<InfoText Name="InfoText" FontName="Verdana" FontHeight="12" FontItalic="1" TextColor="#E8C070"
+		LeftMargin="0" AlignText="AT_CENTER | DT_VCENTER" TranslucencyWithSkin="TRUE"/>
+	<NormalEdit Extends="EditCtrl" Height="20" FontName="Verdana" FontHeight="13" TextColor="#F5F5F5" PlaceHolderColor="#8A8A8A"
+		XMargin="5" YMargin="0"/>
+	<NormalComboBox Extends="ComboBox" FontName="Verdana" FontHeight="13" TextColor="#F5F5F5" DisabledTextColor="#555555" TabFocus="true"
+		Height="22" Padding="5,4" AlignText="AT_LEFT" TextLeftMargin="14" TextRightMargin="30"
+		Image="combo-box.png" ImageSize="60,26" ExtendPos="10,40"
+		ImagePos="0,26" ImageSelPos="0,78" ImageFocusPos="0,52" ImageDisabledPos="0,0"/>
+	<NormalCheckBox Extends="TextButton" FontName="Verdana" FontHeight="13" TextColor="#F5F5F5" DisabledTextColor="#555555"
+		Height="24" Padding="3,2" TextLeftMargin="26" AlignText="AT_LEFT" CheckBox="true" TabFocus="true"
+		Image="checks.png" ImageSize="26,26"
+		ImagePos="0,26" ImageSelPos="0,52" ImageFocusPos="0,78" ImageDisabledPos="0,0"
+		S1_Image="checks.png" S1_ImageSize="26,26"
+		S1_ImagePos="26,26" S1_ImageSelPos="26,52" S1_ImageFocusPos="26,78" S1_ImageDisabledPos="26,0"/>
+	<NormalRadioBt Extends="TextButton" FontName="Verdana" FontHeight="13" TextColor="#F5F5F5" DisabledTextColor="#555555"
+		Height="24" Padding="3,2" TextLeftMargin="26" AlignText="AT_LEFT"
+		Radio="true" TabFocus="true"
+		Image="checks.png" ImageSize="26,26"
+		ImagePos="52,26" ImageSelPos="52,52" ImageFocusPos="52,78" ImageDisabledPos="52,0"
+		S1_Image="checks.png" S1_ImageSize="26,26"
+		S1_ImagePos="78,26" S1_ImageSelPos="78,52" S1_ImageFocusPos="78,78" S1_ImageDisabledPos="78,0"/>
+	<NormalFrame Extends="Frame" Image="frame-ctrl.png" RoundWidth="6" ThickWidth="2"
+		XBorder="0" YBorder="10" FontName="Verdana" FontHeight="13" TextColor="#F5F5F5"/>
+	<NormalTextBt Extends="TextButton" FontName="Verdana" FontHeight="13"
+		TextColor="#F5F5F5" SelTextColor="#FFFFFF" DisabledTextColor="#555555" TabFocus="true"
+		Height="21" Padding="5,3" TextLeftMargin="8" TextRightMargin="8"
+		Image="button.png" ImageSize="40,26" ExtendPos="8,24"
+		ImagePos="0,26" ImageSelPos="0,78" ImageFocusPos="0,52" ImageDisabledPos="0,0"/>
+	<NormalTabButton Extends="TabButton" Height="24" ImageHeight="24"
+		FontName="Verdana" FontHeight="13" TextColor="#C8C8C8" SelTextColor="#FFFFFF"
+		Image="button-group.png" SperatorLineWidth="2" ButtunBorderWidth="13"
+		MarginX="0" MarginY="0" />
+
+	<MenuItemsContainer FontName="Verdana" FontHeight="13" FontBold="false" TextColor="#F5F5F5" BgColor="#141414"
+		TextColorHover="#FFFFFF" BgColorHover="#B8954A" FrameColor="#333333" DisabledTextColor="#555555" BgColorInactive="#0C0C0C"
+		ImageChecked="menu-check.png" ImageSubmenu="menu-expand-right" ImageUpArrow="menu-expand-up" ImageDownArrow="menu-expand-down"/>
+
+	<PopupWndFrame EnableTranslucency="true" TranslucencyAlpha="255"
+		 FixedWidth="true" FixedHeight="true"
+		 BgColor="#141414" EnableClickThrough="false">
+		<XScaleImage Left="0" Top="0" Width="w" Height="5" Name="Top border"
+			Image="menu-frame.png" ImageRect="0,0,50,5"
+			ImageScaleXStart="10" ImageScaleXEnd="40" BlendPixMode="copy"/>
+		<XScaleImage Left="0" Top="h-5" Width="w" Height="5" Name="Bottom border"
+			Image="menu-frame.png" ImageRect="0,15,50,5"
+			ImageScaleXStart="10" ImageScaleXEnd="40" BlendPixMode="copy"/>
+		<Image Left="0" Top="5" Width="1" Height="h-10" Name="left frame"
+			Image="menu-frame.png" ImageRect="0,5,1,10" BltMode="tile"/>
+		<Image Left="w-1" Top="5" Width="1" Height="h-10" Name="left frame"
+			Image="menu-frame.png" ImageRect="49,5,1,10" BltMode="tile"/>
+		<ClientArea Rect="1, 5, w-2, h-5-5"/>
+	</PopupWndFrame>
+
+	<NormalListCtrl Extends="ListCtrl" StripeColor="#141414,#0C0C0C" SelBgColor="#B8954A"
+		TextColor="#F5F5F5" SelTextColor="#FFFFFF"
+		FontName="Verdana" FontHeight="13" LineHeight="36"
+		HeaderHeight="36" LineColor="#1E1E1E" XMargin="4" CellPadding="12"
+		ImageHeader="listctrl-header.png"/>
+
+	<OrbitPlaylist Extends="NormalPlaylist" StripeColor="#0C0C0C,#000000" SelBgColor="#B8954A"
+		NowPlayingBgColor="#1A1810" NowPlayingTextColor="#F5F5F5" CustomizedColors="#E8C070,#8A8A8A"
+		TextColor="#C8C8C8" SelTextColor="#FFFFFF" FontName="Verdana" FontHeight="14" LineHeight="30"/>
+
+	<Slider Extends="SeekCtrl" Height="20" EndWidth="10" ImageThumb="thumb.png" ImageTrack="progress.png"/>
+  </style>
+</styles>

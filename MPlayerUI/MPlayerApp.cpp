@@ -18,7 +18,7 @@
 #include "AlbumArtDownloadMgr.h"
 
 
-#define SZ_DEFSKIN          "Metal"
+#define SZ_DEFSKIN          "Neon"
 
 CurrentLyrics g_currentLyrics;
 
@@ -43,14 +43,8 @@ cstr_t getStrName(STR_NAME nameId) {
 
     switch (nameId) {
         case SN_HTTP_DOMAIN: return "http://www.crintsoft.com";
-        case SN_HTTP_FAQ_INET: return "http://www.crintsoft.com/music-player/internet-connection";
         case SN_HTTP_VERSION_UPDATE: return "http://crintsoft.com/download/music-player-update.json";
-        case SN_HTTP_HELP: return "http://www.crintsoft.com/music-player/help";
         case SN_HTTP_HELP_EDIT_LYR: return "http://www.crintsoft.com/music-player/faq/edit-lyrics";
-        case SN_HTTP_HELP_SEARCH_LYR_SUGGESTIONS: return "http://www.crintsoft.com/music-player/faq/search-lyrics-suggestions";
-        case SN_HTTP_FEEDBACK: return "http://www.crintsoft.com/contactus";
-        case SN_EMAIL: return "mailto:support@crintsoft.com";
-        case SN_SUPPORT_MAIL: return "support@crintsoft.com";
         case SN_WEBHOME: return "www.crintsoft.com";
         default: assert(0); return "";
     }

@@ -22,8 +22,6 @@ public:
         setUIObjectProperty("CID_COPYRIGHT", SZ_PN_LINK, getStrName(SN_HTTP_DOMAIN));
         setUIObjectText("CID_COPYRIGHT", stringPrintf("%s  2001-2025 Crintsoft MusicPlayer", _TLT("Copyright")).c_str());
 
-        setUIObjectProperty("CID_FEEDBACK", SZ_PN_LINK, getStrName(SN_HTTP_FEEDBACK));
-
         CVersionUpdate verUpdate;
         verUpdate.checkNewVersion(false);
     }

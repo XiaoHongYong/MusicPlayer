@@ -1,6 +1,6 @@
 # C++ 播放器音频分析层（Audio Analysis Stream）设计
 
-> 本文档定义 **Fourier/音频分析在“真正播放音频的一端”怎么算、算完怎么送给 Web 端做可视化**。它和 [audio-visualization-engine.md](web-console/audio-visualization-engine.md) 是配套的两篇：那一篇定 Web Visualizer 侧的协议（`AudioAnalysisFrame`、`Visualizer`、`VisualizerPreset`、`VisualTheme`），这一篇定 C++ 播放器侧的**分析来源与传输方式**。
+> 本文档定义 **Fourier/音频分析在“真正播放音频的一端”怎么算、算完怎么送给 Web 端做可视化**。它和 [audio-visualization-engine.md](web-console/audio-visualization-engine.md) 是配套的两篇：那一篇定 Web Visualizer 侧的协议（`AudioAnalysisFrame`、`Visualizer`、`VisualizerPreset`、`VisualTheme`），这一篇定 C++ 播放器侧的**分析来源与传输方式**。封面中心视觉特效的产品设计见 [album-art-visual-effects.md](album-art-visual-effects.md)。
 >
 > 核心原则一句话：
 >
@@ -222,7 +222,17 @@ AnalysisFrame
   "bass": 0.72,
   "mid": 0.51,
   "treble": 0.32,
-  "beat": 0.87
+  "beat": 0.87,
+  "onsetStrength": 0.41,
+  "beatPulse": 0.87,
+  "beatStrength": 0.72,
+  "lowEnergy": 0.65,
+  "lowOnsetStrength": 0.55,
+  "lowOnset": 0.80,
+  "bassPulse": 0.80,
+  "bassStrength": 0.72,
+  "bassRhythmRate": 2.0,
+  "rhythmConfidence": 0.71
 }
 ```
 
@@ -440,7 +450,8 @@ Song Analysis
 | 有界 PCM 队列 + Analyzer 线程 | 不阻塞 `decode → write`；按播放头门控；满则丢最新 | V1 |
 | ring buffer + hop + mono FFT → log bands | `fftSize`/`hopSize`/`outputRate` 可配 | V1 |
 | 传输消息编码 | 低频 SSE 与高频二进制流分离；含 `sessionId`；按需开启 | V1 |
-| `BeatDetector` | 输出 `BeatEvent`（Bass → 低通 → 包络 → 峰值检测），V2 音乐驱动 | V2 |
+| 节奏字段（`onsetStrength` / `beatPulse` / `bassPulse` / `lowOnset` 等） | 见 [beat-detection.md](beat-detection.md)；Bass 与通用 Flux 通道已分离 | V2 |
+| `BeatTracker` | 完整 BPM / 相位预测（尚未实现；`beatPulse` 暂由起音脉冲代理） | 后续 |
 | 歌曲级特征预计算 | 扫描时写入 waveform/bpm/loudness/key/主色等，落库 | V2 |
 
 实现顺序与引擎侧步骤以 [mplayer-engine.md](mplayer-engine.md) §6 为准：先跑通 **PCM 共享旁路 → Analyzer 线程 → 领域帧 → 编码推送 Web**，再补 Beat、再补扫描期预计算。
@@ -450,6 +461,7 @@ Song Analysis
 ## 相关文档
 
 - [mplayer-engine.md](mplayer-engine.md) — `MPlayerEngine` 播放核结构、线程模型，以及引擎侧可视化分析接口。
+- [beat-detection.md](beat-detection.md) — Beat / 低频起音 / 低频节奏：算法、字段与 V2 检测器拆分。
 - [audio-visualization-engine.md](web-console/audio-visualization-engine.md) — Web Visualizer 侧设计：`AudioAnalysisFrame` / `Visualizer` / `VisualizerPreset` / `VisualTheme` 与版本划分。
 - [player.md](web-console/player.md) — Web 播放器领域（队列、Mini/全屏播放器）。
 - [plan.md](web-console/plan.md) — web-console 实施计划与现有 C++ `LocalServer` 实施方式。

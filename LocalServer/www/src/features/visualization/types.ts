@@ -13,8 +13,20 @@ export interface AudioAnalysisFrame {
   bass: number;
   mid: number;
   treble: number;
+  /** 兼容字段；等于 beatPulse */
   beat: number;
+  /** 全频起音强度（连续） */
   onset: number;
+  onsetStrength: number;
+  beatPulse: number;
+  beatStrength: number;
+  lowEnergy: number;
+  lowOnsetStrength: number;
+  lowOnset: number;
+  bassPulse: number;
+  bassStrength: number;
+  bassRhythmRate: number;
+  rhythmConfidence: number;
   centroid: number;
   bandwidth: number;
   flux: number;
@@ -51,6 +63,16 @@ export function emptyAnalysisFrame(bandCount = 64): AudioAnalysisFrame {
     treble: 0,
     beat: 0,
     onset: 0,
+    onsetStrength: 0,
+    beatPulse: 0,
+    beatStrength: 0,
+    lowEnergy: 0,
+    lowOnsetStrength: 0,
+    lowOnset: 0,
+    bassPulse: 0,
+    bassStrength: 0,
+    bassRhythmRate: 0,
+    rhythmConfidence: 0,
     centroid: 0,
     bandwidth: 0,
     flux: 0,

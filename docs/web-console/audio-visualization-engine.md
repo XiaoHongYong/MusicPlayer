@@ -332,9 +332,9 @@ if (target > current) {
 
 ## 7. Beat Detection 很值得做
 
-想做真正漂亮的 Visualizer，**Beat 比 FFT 本身更重要**。
+想做真正漂亮的 Visualizer，**Beat 比 FFT 本身更重要**。算法细节、低频通道拆分与推荐字段见 [beat-detection.md](../beat-detection.md)（不要只用单一 `beat` 数值）。
 
-流程：
+流程（简化）：
 
 ```text
 Bass Energy
@@ -510,6 +510,8 @@ Fragment Shader
 ## 10. 专辑封面 Visualizer（核心特色）
 
 这个应该成为本播放器的一个核心特色：封面决定视觉风格，音乐决定视觉运动。
+
+> 封面中心的特效清单、图层组合与分阶段招牌效果，见独立文档 [album-art-visual-effects.md](../album-art-visual-effects.md)。
 
 ```text
               ╭────────────╮

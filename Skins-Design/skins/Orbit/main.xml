@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<!--
+  Orbit：三独立窗口；纯黑底 + 香槟金
+  Styles/PNG 均在本皮肤目录；共享对话框/占位图走 assets/
+-->
+<skin defmainwnd="MainWnd" mainwnds="MainWnd,PlaylistWnd,LyricsWnd">
+	<include Name="Styles.xml"/>
+
+	<Menus>
+		<Menu Name="OrbitMainMenu" From="MainWndMenu">
+			<Item Action="Append" Type="item" Name="Playlist" IDCmd="CID_TOGGLE_PLAYLIST"
+				CanCheck="true" IsCheckedCmd="CID_IS_PLAYLIST"/>
+			<Item Action="Append" Type="item" Name="Lyrics" IDCmd="CID_TOGGLE_LYRICS"
+				CanCheck="true" IsCheckedCmd="CID_IS_LYRICS"/>
+		</Menu>
+	</Menus>
+
+	<DynCmds>
+		<cmd ID="CID_TOGGLE_PLAYLIST" func="openclose_skin_wnd" param="PlaylistWnd"/>
+		<cmd ID="CID_TOGGLE_LYRICS" func="openclose_skin_wnd" param="LyricsWnd"/>
+		<cmd ID="CID_OPEN_PLAYLIST" func="create_skin_wnd" param="PlaylistWnd"/>
+		<cmd ID="CID_OPEN_LYRICS" func="create_skin_wnd" param="LyricsWnd"/>
+		<cmd ID="CID_IS_PLAYLIST" func="is_skin_wnd_visible" param="PlaylistWnd"/>
+		<cmd ID="CID_IS_LYRICS" func="is_skin_wnd_visible" param="LyricsWnd"/>
+	</DynCmds>
+
+	<styles>
+		<style>
+			<OrbitMainFrame Extends="Window"
+				MinWidth="360" MinHeight="560" Width="400" Height="662">
+				<Property Name="WindowImage" Image="bg.png" HorzExtendPos="11,53" VertExtendPos="36,56"/>
+				<Caption Rect="0,0,w,36"/>
+				<!-- 底栏 230；进度条行加高 -->
+				<ClientArea Rect="8,40,w-16,h-40-230" ClipChildren="true"/>
+				<Container Name="BottomBar" Rect="0,h-230,w,230" TranslucencyWithSkin="FALSE">
+					<MediaInfoText Name="Title" Rect="16,16,w-32,22" FontName="Verdana" FontHeight="16" FontBold="TRUE"
+						TextColor="#F5F5F5" Text="" MediaInfoType="Title" AlignText="AT_CENTER | DT_VCENTER"/>
+					<MediaInfoText Name="Artist" Rect="16,46,w-32,18" FontName="Verdana" FontHeight="12" FontBold="false"
+						TextColor="#8A8A8A" Text="" MediaInfoType="Artist|Album" CombineWith=" - "
+						AlignText="AT_CENTER | DT_VCENTER"/>
+
+					<InfoText Name="StatusInfo" Rect="16,74,w-32,18" FontName="Verdana" FontHeight="12" FontItalic="1"
+						TextColor="#E8C070" LeftMargin="0" AlignText="AT_CENTER | DT_VCENTER" TranslucencyWithSkin="TRUE"/>
+
+					<PlayingTimeText Name="TimeElapsed" Rect="16,112,48,20" FontName="Verdana" FontHeight="12"
+						TextColor="#C8C8C8" AlignText="AT_RIGHT | DT_VCENTER"/>
+					<Slider Name="Seek" ID="ID_SEEK" Rect="72,112,w-72-72,20" Height="20" EndWidth="10"/>
+					<MediaInfoText Name="Duration" Rect="w-64,112,48,20" FontName="Verdana" FontHeight="12"
+						TextColor="#8A8A8A" Text="" MediaInfoType="Duration" AlignText="AT_LEFT | DT_VCENTER"/>
+
+					<!--
+					  播放三键：Rect = ImageSize(48)，整组宽 176，相对窗口水平居中
+					  prev=w/2-88, play=w/2-24, next=w/2+40
+					-->
+					<Toolbar ID="CID_TB_VIEW" Rect="16,172,80,28" Image="view-tabs.png" enablehover="TRUE"
+						units_x="40" blank_x="-1" blank_cx="40" seperator_x="0" seperator_cx="0"
+						MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
+						<button ID="CID_TOGGLE_PLAYLIST" Left="0" ToolTip="Playlist"/>
+						<button ID="CID_TOGGLE_LYRICS" Left="1" ToolTip="Lyrics"/>
+					</Toolbar>
+
+					<Button Rect="w/2-88,162,48,48" ID="ID_PREVIOUS" ImageMask="prev-next-mask.png" ImageMaskRect="0,0,48,48"
+						Image="prev-next.png" ImageSize="48,48" ImagePos="0,0" ImageSelPos="0,96" ImageFocusPos="0,48"/>
+					<Button Rect="w/2-24,162,48,48" ID="ID_PLAYPAUSE" ImageMask="playpause.png" ImageMaskRect="0,0,48,48"
+						S0_Image="playpause.png" S0_ImageSize="48,48" S0_ImagePos="0,0" S0_ImageSelPos="0,96" S0_ImageFocusPos="0,48"
+						S1_Image="playpause.png" S1_ImageSize="48,48" S1_ImagePos="48,0" S1_ImageSelPos="48,96" S1_ImageFocusPos="48,48"/>
+					<Button Rect="w/2+40,162,48,48" ID="ID_NEXT" ImageMask="prev-next-mask.png" ImageMaskRect="48,0,48,48"
+						Image="prev-next.png" ImageSize="48,48" ImagePos="48,0" ImageSelPos="48,96" ImageFocusPos="48,48"/>
+
+					<Toolbar ID="CID_TB_MEDIA_CENTER" Rect="w-56,172,40,28" Image="media-center.png" enablehover="TRUE"
+						units_x="40" blank_x="-1" blank_cx="40" seperator_x="0" seperator_cx="0"
+						MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
+						<button ID="ID_OPEN_MEDIA_CENTER" Left="0" ToolTip="Media Center"/>
+					</Toolbar>
+				</Container>
+			</OrbitMainFrame>
+
+			<OrbitSideFrame Extends="Window"
+				MinWidth="280" MinHeight="240" Width="360" Height="480"
+				BgColor="#000000">
+				<Property Name="WindowImage" Image="bg-dialog.png" HorzExtendPos="11,53" VertExtendPos="33,53"/>
+				<DialogCaption Rect="2,2,w-4,31"/>
+				<ClientArea Rect="8,36,w-16,h-36-10" ClipChildren="true"/>
+			</OrbitSideFrame>
+		</style>
+	</styles>
+
+	<skinwnd Extends="OrbitMainFrame" Name="MainWnd"
+		MinWidth="360" MinHeight="560" Width="400" Height="662" Menu="OrbitMainMenu"
+		CmdHandler="ch_common,ch_playlist" Script="main.js"
+		ContextMenu="MainContextMenu">
+
+		<Container Name="Body" Rect="0,0,w,h">
+			<AlbumArtVisualizer Name="OrbitViz" Rect="4,4,w-8,h-8"
+				Image="albumart-black.png" ArtRatio="0.636" BandCount="64"
+				Palette="#1C1C1C,#C8A85A,#E8C070,#F5F5F5" FallbackColor="#E8C070"/>
+		</Container>
+	</skinwnd>
+
+	<skinwnd Extends="OrbitSideFrame" Name="PlaylistWnd" Caption="Playlist"
+		MinWidth="280" MinHeight="240" Width="360" Height="480"
+		CmdHandler="ch_common,ch_playlist" ContextMenu="PlaylistMenu">
+
+		<Container Name="Body" Rect="0,0,w,h">
+			<Container Name="SearchBar" Rect="8,4,w-16,26">
+				<Property Name="BgImage" Image="search-bg.png" HorzExtendPos="16,48" VertExtendPos="13,14" BlendPixMode="alpha_blend"/>
+				<Image Name="Search" Rect="8,3,20,20" Image="search.png"/>
+				<NormalEdit ID="CID_E_SEARCH_MUSIC" Text="" PlaceHolder="Search music" Rect="34,3,w-34-10,20" EnableBorder="false"/>
+			</Container>
+			<OrbitPlaylist Rect="4,36,w-12,h-42" EnableHeader="false" EnableBorder="false" KeywordEdit="CID_E_SEARCH_MUSIC"/>
+		</Container>
+	</skinwnd>
+
+	<skinwnd Extends="OrbitSideFrame" Name="LyricsWnd" Caption="Lyrics"
+		MinWidth="280" MinHeight="240" Width="380" Height="480"
+		CmdHandler="ch_common" ContextMenu="LyricsMenu" Script="lyrics.js">
+
+		<DecorativeContainer ID="CID_LYRICS" Name="LyricsArea" Rect="0,0,w,h">
+			<LyricsShow Rect="4,2,w-12,h-8" SetSkinBg="true"
+				EnableToolbar="FALSE" EnableAutoResize="FALSE"/>
+
+			<Container ID="CID_LYR_TOOL_BAR" Rect="w-110,8,94,30" Visible="False">
+				<Property Name="BgImage" Image="lyr-ctrl-bg.png" HorzExtendPos="8,22" BlendPixMode="alpha_blend"/>
+				<!-- fl_buttons 为 assets 共享精灵（索引布局固定）；其余控件图为本皮肤 -->
+				<Toolbar ID="ID_TB_LYR_SYNC" Rect="12,4,70,22" Image="fl_buttons.png" enablehover="TRUE"
+					units_x="22" blank_x="-1" blank_cx="22" seperator_x="220" seperator_cx="14" ButtonSpacesCX="2"
+					MarginX="0" MarginY="0" FullStatusImage="TRUE">
+					<button ID="ID_OPEN_LRC" Left="5"/>
+					<button ID="ID_BACKWARD_LYRICS" Left="6" Continuous="TRUE"/>
+					<button ID="ID_FORWARD_LYRICS" Left="7" Continuous="TRUE"/>
+				</Toolbar>
+				<Toolbar ID="ID_TB_LYR_TXT" Rect="12,4,50,22" Image="fl_buttons.png" enablehover="TRUE"
+					units_x="22" blank_x="-1" blank_cx="22" seperator_x="220" seperator_cx="14" ButtonSpacesCX="1"
+					Margin="8,1,0,0" MarginX="0" MarginY="0" FullStatusImage="TRUE">
+					<button ID="ID_OPEN_LRC" Left="5"/>
+					<button ID="ID_LYR_EDITOR" Left="16"/>
+				</Toolbar>
+			</Container>
+		</DecorativeContainer>
+
+		<Animation ID="CID_AM_HIDE_LYR_TB" FadeOut="CID_LYR_TOOL_BAR"/>
+		<Animation ID="CID_AM_SHOW_LYR_TB" FadeIn="CID_LYR_TOOL_BAR"/>
+	</skinwnd>
+</skin>

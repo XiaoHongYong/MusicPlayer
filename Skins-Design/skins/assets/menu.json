@@ -392,10 +392,6 @@
         [
           "$Product$ &Website",
           "ID_WEBHOME"
-        ],
-        [
-          "&Report to Author",
-          "ID_EMAIL"
         ]
       ]
     ],
@@ -1585,10 +1581,6 @@
         [
           "$Product$ &Website",
           "ID_WEBHOME"
-        ],
-        [
-          "&Report to Author",
-          "ID_EMAIL"
         ]
       ]
     ]

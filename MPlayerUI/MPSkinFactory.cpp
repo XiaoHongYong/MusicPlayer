@@ -14,6 +14,7 @@
 #include "MediaInfoTextCtrl.h"
 #include "MediaAlbumArtCtrl.h"
 #include "AudioVisualizerCtrl.h"
+#include "AlbumArtVisualizerCtrl.h"
 #include "MPSkinInfoTextCtrlEx.h"
 #include "DlgAbout.h"
 #include "DlgSearchLyrics.h"
@@ -53,6 +54,7 @@ int CMPSkinFactory::init() {
     AddUIObjNewer(CMediaInfoTextCtrl);
     AddUIObjNewer(CMediaAlbumArtCtrl);
     AddUIObjNewer(CAudioVisualizerCtrl);
+    AddUIObjNewer(CAlbumArtVisualizerCtrl);
     AddUIObjNewer(CMPlaylistCtrl);
 
     registerAboutPage(this);

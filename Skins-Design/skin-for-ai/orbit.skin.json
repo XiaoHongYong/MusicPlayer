@@ -1,0 +1,380 @@
+{
+  "schema": "skin.v1",
+  "meta": {
+    "name": "Orbit",
+    "version": "1.2.0",
+    "author": "AI",
+    "description": "纯黑底 + 香槟金三窗皮肤。PNG 由 compiler 生成，Styles/main XML 手写。"
+  },
+  "tokens": {
+    "colors": {
+      "bg": "#000000",
+      "bg-muted": "#0C0C0C",
+      "bg-surface": "#141414",
+      "bg-solid": "#1A1A1A",
+      "bg-chrome": "#050505",
+      "bg-track": "#2A2A2A",
+      "bg-overlay": "#141414DD",
+      "fg": "#F5F5F5",
+      "fg-muted": "#C8C8C8",
+      "fg-subtle": "#8A8A8A",
+      "fg-on-accent": "#0A0A0A",
+      "border": "#333333",
+      "border-subtle": "#1E1E1E",
+      "accent": "#E8C070",
+      "accent-muted": "#B8954A",
+      "bg-hover": "#1C1A14",
+      "fg-hover": "#FFFFFF",
+      "bg-pressed": "#121212",
+      "fg-pressed": "#F5F5F5",
+      "bg-focus": "#E8C070",
+      "fg-focus": "#0A0A0A",
+      "bg-selected": "#B8954A",
+      "fg-selected": "#FFFFFF",
+      "bg-disabled": "#0A0A0A",
+      "fg-disabled": "#555555",
+      "bg-danger": "#C45C4A",
+      "fg-danger": "#FFFFFF",
+      "bg-danger-pressed": "#9A4038",
+      "fg-danger-pressed": "#FFFFFF",
+      "teal": "#E8C070"
+    },
+    "radius": { "window": 10, "panel": 10, "control": 8, "pill": 13 },
+    "typography": { "body": { "font": "Verdana", "size": 13 } },
+    "shadows": { "control": { "offset": [0, 1], "blur": 6, "color": "#00000050" } }
+  },
+  "components": {
+    "windowBg": {
+      "type": "windowBackground",
+      "radius": "$tokens.radius.window",
+      "size": { "width": 64, "height": 128 },
+      "chrome": {
+        "caption": 36, "mid": 20, "bottom": 230,
+        "captionFill": "$tokens.colors.bg-chrome",
+        "bottomFill": "$tokens.colors.bg-chrome",
+        "hairlineColor": "$tokens.colors.border-subtle",
+        "bottomChrome": true
+      },
+      "fill": "$tokens.colors.bg",
+      "border": { "width": 2, "color": "$tokens.colors.border" }
+    },
+    "windowDialog": {
+      "type": "windowBackground",
+      "variant": "dialog",
+      "radius": "$tokens.radius.window",
+      "size": { "width": 64, "height": 64 },
+      "chrome": {
+        "caption": 33, "mid": 20, "bottom": 11,
+        "captionFill": "$tokens.colors.bg-chrome",
+        "hairlineColor": "$tokens.colors.border-subtle",
+        "bottomChrome": false
+      },
+      "fill": "$tokens.colors.bg-chrome",
+      "border": { "width": 2, "color": "$tokens.colors.border" }
+    },
+    "windowFrame": {
+      "type": "windowFrame",
+      "roundWidth": 10,
+      "thickWidth": 3,
+      "border": { "width": 2, "color": "$tokens.colors.border" }
+    },
+    "captionBar": {
+      "type": "captionBar",
+      "size": { "width": 32, "height": 31 },
+      "radius": 10,
+      "fill": "$tokens.colors.bg-chrome",
+      "highlight": { "opacity": 0.12 }
+    },
+    "captionBtns": {
+      "type": "captionToolbar",
+      "cellSize": 16,
+      "fullStatusImage": true,
+      "states": {
+        "normal": { "iconColor": "$tokens.colors.fg-muted" },
+        "hover": { "$extends": "normal", "fill": "$tokens.colors.bg-hover", "iconColor": "$tokens.colors.fg-hover" },
+        "pressed": { "$extends": "hover", "fill": "$tokens.colors.bg-pressed", "iconColor": "$tokens.colors.fg-pressed" }
+      }
+    },
+    "captionBtnsLg": {
+      "type": "captionToolbar",
+      "file": "caption-btn-lg",
+      "cellSize": 20,
+      "fullStatusImage": true,
+      "states": {
+        "normal": { "iconColor": "$tokens.colors.fg-muted" },
+        "hover": { "$extends": "normal", "fill": "$tokens.colors.bg-hover", "iconColor": "$tokens.colors.fg-hover" },
+        "pressed": { "$extends": "hover", "fill": "$tokens.colors.bg-pressed", "iconColor": "$tokens.colors.fg-pressed" }
+      }
+    },
+    "panel": {
+      "type": "panel",
+      "radius": 10,
+      "fill": "$tokens.colors.bg-surface",
+      "border": { "width": 1, "color": "$tokens.colors.border" }
+    },
+    "searchBar": {
+      "type": "searchBar",
+      "size": { "width": 64, "height": 26 },
+      "radius": "$tokens.radius.pill",
+      "layers": [
+        { "type": "roundedRect", "radius": 13, "fill": "$tokens.colors.bg-track" },
+        { "type": "border", "width": 1, "color": "$tokens.colors.border", "radius": 13 }
+      ]
+    },
+    "lyrCtrlBg": {
+      "type": "panel",
+      "size": { "width": 30, "height": 30 },
+      "radius": 8,
+      "fill": "$tokens.colors.bg-overlay",
+      "border": { "width": 1, "color": "$tokens.colors.border" }
+    },
+    "playPause": {
+      "type": "toggleButton",
+      "size": { "width": 48, "height": 48 },
+      "iconOff": "play",
+      "iconOn": "pause",
+      "states": {
+        "normal": {
+          "fill": "$tokens.colors.bg-track",
+          "border": { "width": 1, "color": "$tokens.colors.accent" },
+          "iconColor": "$tokens.colors.fg",
+          "radius": 24
+        },
+        "hover": { "$extends": "normal", "fill": "$tokens.colors.accent", "iconColor": "$tokens.colors.fg-on-accent" },
+        "pressed": { "$extends": "hover", "scale": 0.96 }
+      }
+    },
+    "prevNext": {
+      "type": "button",
+      "file": "prev-next",
+      "size": { "width": 48, "height": 48 },
+      "icons": ["prev", "next"],
+      "mask": "hitbox",
+      "iconInset": 0.12,
+      "states": {
+        "normal": { "iconColor": "$tokens.colors.fg-subtle" },
+        "hover": { "$extends": "normal", "iconColor": "$tokens.colors.accent" },
+        "pressed": { "$extends": "hover", "scale": 0.94 }
+      }
+    },
+    "seekSlider": {
+      "type": "slider",
+      "track": {
+        "height": 10, "endWidth": 10, "radius": 5,
+        "remaining": { "fill": "$tokens.colors.bg-track" },
+        "played": { "fill": "$tokens.colors.accent" }
+      },
+      "thumb": {
+        "size": { "width": 18, "height": 18 },
+        "states": {
+          "normal": { "fill": "$tokens.colors.fg", "border": { "width": 1, "color": "$tokens.colors.accent" } },
+          "hover": { "$extends": "normal" },
+          "pressed": { "$extends": "hover", "scale": 0.9 }
+        }
+      }
+    },
+    "viewTabs": {
+      "type": "toolbar",
+      "cellSize": { "width": 40, "height": 28 },
+      "items": [{ "icon": "list" }, { "icon": "lyric" }],
+      "iconInset": 0.14,
+      "states": {
+        "normal": { "iconColor": "$tokens.colors.fg-subtle" },
+        "hover": { "$extends": "normal", "iconColor": "$tokens.colors.fg-muted" },
+        "pressed": { "$extends": "hover" },
+        "checked": { "iconColor": "$tokens.colors.accent" }
+      }
+    },
+    "mediaCenter": {
+      "type": "toolbar",
+      "file": "media-center",
+      "cellSize": { "width": 40, "height": 28 },
+      "items": [{ "icon": "media-center" }],
+      "iconInset": 0.16,
+      "states": {
+        "normal": { "iconColor": "$tokens.colors.fg-subtle" },
+        "hover": { "$extends": "normal", "iconColor": "$tokens.colors.fg-muted" },
+        "pressed": { "$extends": "hover" },
+        "checked": { "iconColor": "$tokens.colors.accent" }
+      }
+    },
+    "lyrTb": {
+      "type": "iconStrip",
+      "file": "lyr-tb",
+      "columns": 40,
+      "cell": { "width": 22, "height": 26 },
+      "iconInset": 0.1,
+      "states": {
+        "normal": { "iconColor": "$tokens.colors.fg" }
+      }
+    },
+    "lyric-file-type": {
+      "type": "iconStrip",
+      "file": "lyric-file-type",
+      "columns": 8,
+      "cell": { "width": 16, "height": 16 },
+      "iconInset": 0.04,
+      "states": {
+        "normal": { "iconColor": "$tokens.colors.fg-muted" }
+      },
+      "slots": [
+        { "index": 0, "icon": "lyr-file" },
+        { "index": 1, "icon": "lyr-file-txt" },
+        { "index": 2, "icon": "lyr-file-lrc", "iconColor": "$tokens.colors.accent" },
+        { "index": 3, "icon": "lyr-file-unknown", "iconColor": "$tokens.colors.fg-subtle" },
+        { "index": 4, "icon": "lyr-file-txt-net" },
+        { "index": 5, "icon": "lyr-file-lrc-net", "iconColor": "$tokens.colors.accent" },
+        { "index": 6, "icon": "lyr-file-unknown-net", "iconColor": "$tokens.colors.fg-subtle" }
+      ]
+    },
+    "search": {
+      "type": "icon",
+      "icon": "search",
+      "size": { "width": 20, "height": 20 },
+      "iconInset": 0.08,
+      "iconColor": "$tokens.colors.fg-subtle"
+    },
+    "volume": {
+      "type": "icon",
+      "icon": "volume",
+      "size": { "width": 20, "height": 20 },
+      "iconInset": 0.04,
+      "iconColor": "$tokens.colors.fg-muted"
+    },
+    "vinyl": {
+      "type": "icon",
+      "size": { "width": 280, "height": 280 },
+      "layers": [
+        { "type": "circle", "fill": "#0A0A0A", "r": 138 },
+        { "type": "circle", "fill": "#1A1A1A", "r": 48 }
+      ]
+    },
+    "scrollbar": { "type": "scrollbar", "fill": "$tokens.colors.fg-subtle" },
+    "scrollbarHorz": { "type": "scrollbar", "orientation": "horizontal", "fill": "$tokens.colors.fg-subtle" },
+
+    "checks": { "type": "checkbox" },
+    "edit": {
+      "type": "edit",
+      "states": {
+        "disabled": {
+          "fill": "$tokens.colors.bg-disabled",
+          "border": { "width": 2, "color": "$tokens.colors.border-subtle" },
+          "radius": 4
+        },
+        "normal": {
+          "fill": "$tokens.colors.bg-track",
+          "border": { "width": 2, "color": "$tokens.colors.border" },
+          "radius": 4
+        },
+        "focused": {
+          "fill": "$tokens.colors.bg-track",
+          "border": { "width": 2, "color": "$tokens.colors.bg-focus" },
+          "radius": 4
+        }
+      }
+    },
+    "comboBox": {
+      "type": "comboBox",
+      "states": {
+        "disabled": { "fill": "$tokens.colors.bg-disabled", "border": { "width": 1, "color": "$tokens.colors.border-subtle" }, "iconColor": "$tokens.colors.fg-disabled" },
+        "normal": { "fill": "$tokens.colors.bg-track", "border": { "width": 1, "color": "$tokens.colors.border" }, "iconColor": "$tokens.colors.fg-muted" },
+        "hover": { "fill": "$tokens.colors.bg-hover", "border": { "width": 1, "color": "$tokens.colors.accent" }, "iconColor": "$tokens.colors.fg" },
+        "pressed": { "fill": "$tokens.colors.bg-pressed", "border": { "width": 1, "color": "$tokens.colors.accent-muted" }, "iconColor": "$tokens.colors.fg" }
+      }
+    },
+    "menu": {
+      "type": "menu",
+      "frame": { "fill": "$tokens.colors.bg-surface", "border": { "width": 1, "color": "$tokens.colors.border" }, "radius": 4 }
+    },
+
+    "dialogButton": {
+      "type": "sprite",
+      "file": "button",
+      "cell": { "width": 40, "height": 26 },
+      "layout": ["disabled", "normal", "hover", "pressed", "disabled", "normal", "hover"],
+      "states": {
+        "disabled": { "fill": "$tokens.colors.bg-disabled", "border": { "width": 1, "color": "$tokens.colors.border-subtle" }, "radius": 6 },
+        "normal": { "fill": "$tokens.colors.bg-track", "border": { "width": 1, "color": "$tokens.colors.border" }, "radius": 6 },
+        "hover": { "fill": "$tokens.colors.bg-hover", "border": { "width": 1, "color": "$tokens.colors.accent" }, "radius": 6 },
+        "pressed": { "fill": "$tokens.colors.bg-pressed", "border": { "width": 1, "color": "$tokens.colors.accent-muted" }, "radius": 6 }
+      }
+    },
+
+    "buttonFlat": {
+      "type": "sprite",
+      "file": "button-flat",
+      "cell": { "width": 40, "height": 24 },
+      "layout": ["normal", "hover", "pressed", "checked", "selected", "focused"],
+      "states": {
+        "normal": { "fill": "$tokens.colors.bg-track", "border": { "width": 1, "color": "$tokens.colors.border" }, "radius": 4 },
+        "hover": { "fill": "$tokens.colors.bg-hover", "border": { "width": 1, "color": "$tokens.colors.accent" }, "radius": 4 },
+        "pressed": { "fill": "$tokens.colors.bg-pressed", "border": { "width": 1, "color": "$tokens.colors.accent-muted" }, "radius": 4 },
+        "checked": { "fill": "$tokens.colors.bg-selected", "border": { "width": 1, "color": "$tokens.colors.accent" }, "radius": 4 },
+        "selected": { "fill": "$tokens.colors.accent-muted", "border": { "width": 1, "color": "$tokens.colors.accent" }, "radius": 4 },
+        "focused": { "fill": "$tokens.colors.bg-pressed", "border": { "width": 1, "color": "$tokens.colors.bg-focus" }, "radius": 4 }
+      }
+    },
+
+    "buttonGroup": {
+      "type": "tabButton",
+      "size": { "width": 60, "height": 24 },
+      "radius": 10,
+      "states": {
+        "normal": { "fill": "$tokens.colors.bg-track", "border": { "width": 2, "color": "$tokens.colors.border" } },
+        "hover": { "$extends": "normal", "fill": "$tokens.colors.bg-hover", "border": { "width": 2, "color": "$tokens.colors.accent" } },
+        "pressed": { "$extends": "hover", "fill": "$tokens.colors.bg-pressed" },
+        "checked": { "fill": "$tokens.colors.bg-selected", "border": { "width": 2, "color": "$tokens.colors.accent" } },
+        "selected": { "fill": "$tokens.colors.accent-muted", "border": { "width": 2, "color": "$tokens.colors.accent" } },
+        "focused": { "fill": "$tokens.colors.bg-pressed", "border": { "width": 2, "color": "$tokens.colors.bg-focus" } }
+      }
+    },
+
+    "frameCtrl": {
+      "type": "windowFrame",
+      "file": "frame-ctrl",
+      "size": { "width": 40, "height": 40 },
+      "roundWidth": 6,
+      "thickWidth": 2,
+      "border": { "width": 1, "color": "$tokens.colors.border" }
+    },
+
+    "listctrlFrame": {
+      "type": "sprite",
+      "file": "listctrl-frame",
+      "cell": { "width": 40, "height": 26 },
+      "layout": ["normal", "hover"],
+      "states": {
+        "normal": { "fill": "#00000000", "border": { "width": 1, "color": "$tokens.colors.border" }, "radius": 2 },
+        "hover": { "fill": "#00000000", "border": { "width": 1, "color": "$tokens.colors.bg-focus" }, "radius": 2 }
+      }
+    },
+
+    "listHeader": {
+      "type": "sprite",
+      "file": "listctrl-header",
+      "cell": { "width": 40, "height": 22 },
+      "layout": ["normal", "hover"],
+      "states": {
+        "normal": { "fill": "$tokens.colors.bg-chrome" },
+        "hover": { "fill": "$tokens.colors.bg-hover" }
+      }
+    },
+
+    "playlist": {
+      "type": "playlist",
+      "stripeColors": ["$tokens.colors.bg-muted", "$tokens.colors.bg"],
+      "selBgColor": "$tokens.colors.bg-selected",
+      "nowPlayingBgColor": "#1A1810",
+      "nowPlayingTextColor": "$tokens.colors.fg",
+      "customizedColors": ["$tokens.colors.accent", "$tokens.colors.fg-subtle"],
+      "textColor": "$tokens.colors.fg-muted",
+      "selTextColor": "$tokens.colors.fg-selected",
+      "lineHeight": 30
+    }
+  },
+  "lyrics": {
+    "textColor": "$tokens.colors.fg-subtle",
+    "highlightColor": "$tokens.colors.accent",
+    "bgColor": "#000000"
+  }
+}

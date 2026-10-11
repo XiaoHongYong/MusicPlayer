@@ -13,7 +13,8 @@
     "example": "tsx src/cli.ts compile examples/glass-blue.skin.json --out examples/out",
     "glass": "tsx src/cli.ts compile ../glass.skin.json --out ../../skins --png-only --force",
     "neon": "tsx src/cli.ts compile ../neon.skin.json --out ../../skins --png-only --force",
-    "crystal": "tsx src/cli.ts compile ../crystal.skin.json --out ../../skins --png-only --force"
+    "orbit": "tsx src/cli.ts compile ../orbit.skin.json --out ../../skins --png-only --force",
+    "mini": "tsx src/cli.ts compile ../mini.skin.json --out ../../skins --png-only --force"
   },
   "engines": {
     "node": ">=18",

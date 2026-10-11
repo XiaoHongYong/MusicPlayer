@@ -28,6 +28,14 @@ bool JsSkinDocument::onSetValue(VMContext *ctx, const StringView &name, const Js
                 _skinWnd->moveWindow(rc.left, rc.top, rc.width(), h);
             }
         }
+    } else if (name.equal(SS_WIDTH)) {
+        auto w = (int32_t)ctx->runtime->toNumber(ctx, value);
+        if (w >= 10 && w <= 3840) {
+            CRect rc;
+            if (_skinWnd->getWindowRect(&rc)) {
+                _skinWnd->moveWindow(rc.left, rc.top, w, rc.height());
+            }
+        }
     } else if (name.equal(SS_ON_COMMAND)) {
         _skinWnd->m_onCommandListener = value;
     } else if (name.equal(SS_ON_MOUSE_MOVE)) {
@@ -51,6 +59,11 @@ JsValue JsSkinDocument::onGetValue(VMContext *ctx, const StringView &name) {
         if (_skinWnd->getWindowRect(&rc)) {
             return makeJsValueInt32(rc.height());
         }
+    } else if (name.equal(SS_WIDTH)) {
+        CRect rc;
+        if (_skinWnd->getWindowRect(&rc)) {
+            return makeJsValueInt32(rc.width());
+        }
     } else if (name.equal(SS_ON_COMMAND)) {
         return _skinWnd->m_onCommandListener;
     } else if (name.equal(SS_ON_MOUSE_MOVE)) {
@@ -71,6 +84,8 @@ JsValue JsSkinDocument::onGetValue(VMContext *ctx, const StringView &name) {
 void JsSkinDocument::onEnumAllProperties(VMContext *ctx, VecStringViews &names, VecJsValues &values) {
     CRect rc;
     if (_skinWnd->getWindowRect(&rc)) {
+        names.push_back(SS_WIDTH);
+        values.push_back(makeJsValueInt32(rc.width()));
         names.push_back(SS_HEIGHT);
         values.push_back(makeJsValueInt32(rc.height()));
     }

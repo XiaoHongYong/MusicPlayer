@@ -18,6 +18,10 @@ uint16_t nextPow2AtLeast(uint16_t v, uint16_t minV = 64, uint16_t maxV = 8192) {
     return n;
 }
 
+float smoothingAlpha(float dt, float tau) {
+    return 1.f - std::exp(-dt / std::max(0.001f, tau));
+}
+
 } // namespace
 
 AudioAnalyzer::AudioAnalyzer() {
@@ -26,6 +30,11 @@ AudioAnalyzer::AudioAnalyzer() {
 
 void AudioAnalyzer::setOptions(const AudioAnalysisOptions &options) {
     applyOptions(options);
+}
+
+void AudioAnalyzer::resetPublishSchedule() {
+    _nextPublishSample = 0;
+    _publishScheduleReady = false;
 }
 
 void AudioAnalyzer::applyOptions(const AudioAnalysisOptions &options) {
@@ -58,6 +67,8 @@ void AudioAnalyzer::applyOptions(const AudioAnalysisOptions &options) {
     _smooth.assign(_options.bandCount, 0.f);
     _floor.assign(_options.bandCount, 0.f);
     _smoothReady = false;
+    resetDetectors();
+    resetPublishSchedule();
 
     buildHann();
     rebuildBandTables();
@@ -96,12 +107,11 @@ void AudioAnalyzer::rebuildBandTables() {
     };
 
     size_t kMin = std::max<size_t>(1, hzToBin(fMin));
-    size_t kMaxEx = std::min(half, hzToBin(fMax) + 1); // exclusive
+    size_t kMaxEx = std::min(half, hzToBin(fMax) + 1);
     if (kMaxEx <= kMin + 1) {
         return;
     }
 
-    // 对数边界 → bin，再强制每带至少 1 个独立 bin（避免空带回退到同一 nearest）
     std::vector<size_t> edges(bandCount + 1);
     const float logMin = std::log(fMin);
     const float logMax = std::log(fMax);
@@ -132,7 +142,8 @@ void AudioAnalyzer::rebuildBandTables() {
             edges[i] = edges[i - 1] + 1;
         }
         if (edges[i] >= edges[bandCount]) {
-            edges[i] = edges[bandCount] > i ? edges[bandCount] - ((size_t)bandCount - i) : edges[i - 1];
+            edges[i] = edges[bandCount] > i ? edges[bandCount] - ((size_t)bandCount - i)
+                                             : edges[i - 1];
         }
     }
 
@@ -140,7 +151,7 @@ void AudioAnalyzer::rebuildBandTables() {
         size_t k0 = edges[b];
         size_t k1 = edges[b + 1];
         if (k1 <= k0) {
-            k1 = k0; // 空带：输出 0，绝不借用邻带
+            k1 = k0;
         }
         k0 = std::min(k0, half);
         k1 = std::min(k1, half);
@@ -157,24 +168,37 @@ void AudioAnalyzer::clearRing() {
     }
 }
 
+void AudioAnalyzer::resetDetectors() {
+    _lowOnset.reset();
+    _spectralFlux.reset();
+    _bassRhythm.reset();
+    _beatPulseEnv = 0.f;
+    _beatStrengthHold = 0.f;
+    _lowOnsetEnv = 0.f;
+    _bassPulseEnv = 0.f;
+    _bassStrengthHold = 0.f;
+}
+
 void AudioAnalyzer::reset(uint64_t sessionId, uint64_t samplePosition) {
     _sessionId = sessionId;
     _sequence = 0;
     _samplePos = samplePosition;
-    _lastEmitCenter = samplePosition;
     clearRing();
     _smoothReady = false;
     std::fill(_smooth.begin(), _smooth.end(), 0.f);
     std::fill(_floor.begin(), _floor.end(), 0.f);
+    resetDetectors();
+    resetPublishSchedule();
 }
 
 void AudioAnalyzer::seek(uint64_t samplePosition) {
     _samplePos = samplePosition;
-    _lastEmitCenter = samplePosition;
     clearRing();
     _smoothReady = false;
     std::fill(_smooth.begin(), _smooth.end(), 0.f);
     std::fill(_floor.begin(), _floor.end(), 0.f);
+    resetDetectors();
+    resetPublishSchedule();
 }
 
 void AudioAnalyzer::pushMono(float sample) {
@@ -235,7 +259,6 @@ void AudioAnalyzer::mapLogBands(float *bandsOut, uint16_t bandCount) const {
         const float lin = std::clamp((db - kDbMin) / (kDbMax - kDbMin), 0.f, 1.f);
         float level = std::pow(lin, kGamma);
 
-        // 压制最低约 20% 频带，避免 20Hz 起的 sub 轻易顶满
         if (bandCount > 1) {
             const float t = (float)b / (float)(bandCount - 1);
             float shelf = 1.f;
@@ -252,24 +275,23 @@ void AudioAnalyzer::mapLogBands(float *bandsOut, uint16_t bandCount) const {
     }
 }
 
-void AudioAnalyzer::applyFloorRelative(float *bands, uint16_t bandCount) {
+void AudioAnalyzer::applyFloorRelative(float *bands, uint16_t bandCount, float deltaSeconds) {
     if (_floor.size() < bandCount) {
         _floor.assign(bandCount, 0.f);
     }
     for (uint16_t i = 0; i < bandCount; ++i) {
         float &fl = _floor[i];
         const float x = bands[i];
-        const float a = x > fl ? kFloorUp : kFloorDown;
-        fl += (x - fl) * a;
+        const float tau = x > fl ? kFloorUpSec : kFloorDownSec;
+        fl += (x - fl) * smoothingAlpha(deltaSeconds, tau);
 
-        // 扣掉部分持续底床，再统一抬显示增益
         const float denom = std::max(1e-4f, 1.f - kFloorMix * fl);
         const float rel = std::clamp((x - kFloorMix * fl) / denom, 0.f, 1.f);
         bands[i] = std::clamp(rel * kDisplayGain, 0.f, 1.f);
     }
 }
 
-void AudioAnalyzer::smoothBands(float *bands, uint16_t bandCount) {
+void AudioAnalyzer::smoothBands(float *bands, uint16_t bandCount, float deltaSeconds) {
     if (!_smoothReady) {
         for (uint16_t i = 0; i < bandCount; ++i) {
             _smooth[i] = bands[i];
@@ -280,29 +302,105 @@ void AudioAnalyzer::smoothBands(float *bands, uint16_t bandCount) {
     for (uint16_t i = 0; i < bandCount; ++i) {
         const float cur = _smooth[i];
         const float tgt = bands[i];
-        const float a = tgt > cur ? kAttack : kRelease;
-        _smooth[i] = cur + (tgt - cur) * a;
+        const float tau = tgt > cur ? kBandAttackSec : kBandReleaseSec;
+        _smooth[i] = cur + (tgt - cur) * smoothingAlpha(deltaSeconds, tau);
         bands[i] = _smooth[i];
     }
 }
 
-bool AudioAnalyzer::tryEmit(AudioAnalysisFrame &out) {
+void AudioAnalyzer::updateRhythmFeatures(AudioAnalysisFrame &out, float deltaSeconds) {
+    const float pulseDecay = std::exp(-deltaSeconds / kPulseDecaySec);
+    const float strengthDecay = std::exp(-deltaSeconds / kStrengthDecaySec);
+
+    const auto flux = _spectralFlux.process(_mag.data(), _mag.size(), _sampleRate, _options.fftSize,
+                                            deltaSeconds);
+    const auto low = _lowOnset.process(_mag.data(), _mag.size(), _sampleRate, _options.fftSize,
+                                       deltaSeconds);
+
+    out.onsetStrength = flux.onsetStrength;
+    out.lowEnergy = low.lowEnergy;
+    out.lowOnsetStrength = low.onset;
+
+    // 低频冲击包络：只在 hit 时冲顶，然后衰减（不每帧注入连续 onset）
+    _lowOnsetEnv *= pulseDecay;
+    _bassPulseEnv *= pulseDecay;
+    if (low.hit && low.onset >= 0.35f) {
+        _lowOnsetEnv = std::max(_lowOnsetEnv, low.onset);
+        _bassPulseEnv = std::max(_bassPulseEnv, low.onset);
+        _bassStrengthHold = low.onset;
+        const double tSec =
+            (double)out.samplePosition / (double)std::max<uint32_t>(1, out.sampleRate);
+        _bassRhythm.onLowHit(tSec);
+    }
+
+    // 通用打击：仅 Spectral Flux；强度门槛集中在检测器内部，外层不再叠加
+    _beatPulseEnv *= pulseDecay;
+    if (flux.hit) {
+        _beatPulseEnv = std::max(_beatPulseEnv, flux.pulse);
+        _beatStrengthHold = flux.pulse;
+    }
+
+    _beatStrengthHold *= strengthDecay;
+    _bassStrengthHold *= strengthDecay;
+    if (_beatPulseEnv < 0.02f) {
+        _beatPulseEnv = 0.f;
+    }
+    if (_lowOnsetEnv < 0.015f) {
+        _lowOnsetEnv = 0.f;
+    }
+    if (_bassPulseEnv < 0.015f) {
+        _bassPulseEnv = 0.f;
+    }
+    if (_beatStrengthHold < 0.03f) {
+        _beatStrengthHold = 0.f;
+    }
+    if (_bassStrengthHold < 0.03f) {
+        _bassStrengthHold = 0.f;
+    }
+
+    _bassRhythm.tick(deltaSeconds);
+
+    out.beatPulse = std::clamp(_beatPulseEnv, 0.f, 1.f);
+    out.beatStrength = std::clamp(_beatStrengthHold, 0.f, 1.f);
+    out.lowOnset = std::clamp(_lowOnsetEnv, 0.f, 1.f);
+    out.bassPulse = std::clamp(_bassPulseEnv, 0.f, 1.f);
+    out.bassStrength = std::clamp(_bassStrengthHold, 0.f, 1.f);
+    out.bassRhythmRate = _bassRhythm.rateHz();
+    out.rhythmConfidence = _bassRhythm.confidence();
+    out.beat = out.beatPulse;
+}
+
+bool AudioAnalyzer::shouldPublish(uint64_t center) {
+    if (_options.outputRate == 0) {
+        return true;
+    }
+    const uint64_t step = std::max<uint64_t>(1, (uint64_t)_sampleRate / _options.outputRate);
+    if (!_publishScheduleReady) {
+        _publishScheduleReady = true;
+        _nextPublishSample = center + step;
+        return true;
+    }
+    if (center < _nextPublishSample) {
+        return false;
+    }
+    // 按计划时刻推进，避免从「实际输出时刻」重计时造成抖动
+    do {
+        _nextPublishSample += step;
+    } while (_nextPublishSample <= center);
+    return true;
+}
+
+bool AudioAnalyzer::processHop(AudioAnalysisFrame &out) {
     const size_t n = _options.fftSize;
     const size_t hop = _options.hopSize;
     if (_ringCount < n || _sampleRate == 0) {
         return false;
     }
 
-    const uint64_t center = _samplePos + n / 2;
-    if (_options.outputRate > 0 && _sequence > 0) {
-        const uint64_t minStep = std::max<uint64_t>(1, (uint64_t)_sampleRate / _options.outputRate);
-        if (center < _lastEmitCenter + minStep) {
-            const size_t drop = std::min(hop, _ringCount);
-            _ringCount -= drop;
-            _samplePos += drop;
-            return false;
-        }
-    }
+    const uint64_t windowStart = _samplePos;
+    const uint64_t center = windowStart + n / 2;
+    const float deltaSeconds =
+        std::clamp((float)hop / (float)_sampleRate, 1e-4f, 0.25f);
 
     const size_t start = (_ringWrite + _ringCap - _ringCount) % _ringCap;
     float rmsAcc = 0.f;
@@ -320,41 +418,47 @@ bool AudioAnalyzer::tryEmit(AudioAnalysisFrame &out) {
     _fft.forward(_time.data(), _complex.data());
     computeMagnitude();
 
-    out = AudioAnalysisFrame{};
-    out.sessionId = _sessionId;
-    out.sequence = ++_sequence;
-    out.samplePosition = _samplePos;
-    out.sampleRate = _sampleRate;
-    out.rms = std::sqrt(rmsAcc / (float)n);
-    out.peak = peak;
-    out.beat = 0.f;
-    out.bandCount = _options.bandCount;
+    // 每个 hop 都更新频谱平滑与节奏检测（即使本帧不发布）
+    AudioAnalysisFrame frame{};
+    frame.sessionId = _sessionId;
+    frame.samplePosition = center; // 分析中心时间，供节奏对齐
+    frame.sampleRate = _sampleRate;
+    frame.rms = std::sqrt(rmsAcc / (float)n);
+    frame.peak = peak;
+    frame.bandCount = _options.bandCount;
 
-    mapLogBands(out.bands.data(), out.bandCount);
-    applyFloorRelative(out.bands.data(), out.bandCount);
-    smoothBands(out.bands.data(), out.bandCount);
+    mapLogBands(frame.bands.data(), frame.bandCount);
+    applyFloorRelative(frame.bands.data(), frame.bandCount, deltaSeconds);
+    smoothBands(frame.bands.data(), frame.bandCount, deltaSeconds);
 
-    const uint16_t nb = out.bandCount;
+    const uint16_t nb = frame.bandCount;
     const uint16_t b1 = std::max<uint16_t>(1, nb / 6);
     const uint16_t b2 = std::max<uint16_t>((uint16_t)(b1 + 1), (uint16_t)(nb * 2 / 3));
     auto avg = [&](uint16_t from, uint16_t to) {
         float s = 0.f;
         uint16_t c = 0;
         for (uint16_t i = from; i < to && i < nb; ++i) {
-            s += out.bands[i];
+            s += frame.bands[i];
             ++c;
         }
         return c ? s / (float)c : 0.f;
     };
-    out.bass = avg(0, b1);
-    out.mid = avg(b1, b2);
-    out.treble = avg(b2, nb);
+    frame.bass = avg(0, b1);
+    frame.mid = avg(b1, b2);
+    frame.treble = avg(b2, nb);
 
-    _lastEmitCenter = center;
+    updateRhythmFeatures(frame, deltaSeconds);
 
     const size_t drop = std::min(hop, _ringCount);
     _ringCount -= drop;
     _samplePos += drop;
+
+    if (!shouldPublish(center)) {
+        return false;
+    }
+
+    frame.sequence = ++_sequence;
+    out = frame;
     return true;
 }
 
@@ -370,33 +474,68 @@ size_t AudioAnalyzer::pushInterleavedS16(const int16_t *samples, size_t frameCou
         _smoothReady = false;
         std::fill(_smooth.begin(), _smooth.end(), 0.f);
         std::fill(_floor.begin(), _floor.end(), 0.f);
+        resetDetectors();
+        resetPublishSchedule();
         _sampleRate = sampleRate;
         rebuildBandTables();
     }
 
-    if (channels == 1) {
-        for (size_t i = 0; i < frameCount; ++i) {
-            pushMono(samples[i] / 32768.f);
-        }
-    } else {
-        for (size_t i = 0; i < frameCount; ++i) {
-            float sum = 0.f;
-            for (int c = 0; c < channels; ++c) {
-                sum += samples[i * (size_t)channels + (size_t)c] / 32768.f;
+    size_t produced = 0;
+    size_t consumed = 0;
+    // 写入与分析交错：避免超大块一次灌满 ring 覆盖未分析样点
+    const size_t writeChunk = std::max<size_t>(1, _options.hopSize);
+
+    auto drainHops = [&]() {
+        while (_ringCount >= _options.fftSize) {
+            const size_t before = _ringCount;
+            AudioAnalysisFrame frame;
+            if (processHop(frame)) {
+                if (produced < maxOut) {
+                    outFrames[produced++] = frame;
+                }
+                // maxOut 已满仍继续分析，保证检测不漏；多余发布帧丢弃
             }
-            pushMono(sum / (float)channels);
+            if (_ringCount >= before) {
+                break; // 未消耗则退出，防止死循环
+            }
         }
+    };
+
+    while (consumed < frameCount) {
+        size_t freeSlots = (_ringCount < _ringCap) ? (_ringCap - _ringCount) : 0;
+        if (freeSlots == 0) {
+            drainHops();
+            freeSlots = (_ringCount < _ringCap) ? (_ringCap - _ringCount) : 0;
+            if (freeSlots == 0) {
+                // ring 仍满：强制分析一窗腾位置；若仍无法则覆盖最旧（pushMono 行为）
+                if (_ringCount >= _options.fftSize) {
+                    AudioAnalysisFrame frame;
+                    if (processHop(frame) && produced < maxOut) {
+                        outFrames[produced++] = frame;
+                    }
+                }
+                freeSlots = (_ringCount < _ringCap) ? (_ringCap - _ringCount) : writeChunk;
+            }
+        }
+
+        const size_t nWrite = std::min({writeChunk, freeSlots, frameCount - consumed});
+        if (channels == 1) {
+            for (size_t i = 0; i < nWrite; ++i) {
+                pushMono(samples[consumed + i] / 32768.f);
+            }
+        } else {
+            for (size_t i = 0; i < nWrite; ++i) {
+                float sum = 0.f;
+                for (int c = 0; c < channels; ++c) {
+                    sum += samples[(consumed + i) * (size_t)channels + (size_t)c] / 32768.f;
+                }
+                pushMono(sum / (float)channels);
+            }
+        }
+        consumed += nWrite;
+        drainHops();
     }
 
-    size_t produced = 0;
-    while (produced < maxOut && _ringCount >= _options.fftSize) {
-        const size_t countBefore = _ringCount;
-        AudioAnalysisFrame frame;
-        if (tryEmit(frame)) {
-            outFrames[produced++] = frame;
-        } else if (_ringCount >= countBefore) {
-            break;
-        }
-    }
+    drainHops();
     return produced;
 }

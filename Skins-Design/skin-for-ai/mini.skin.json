@@ -1,0 +1,138 @@
+{
+  "schema": "skin.v1",
+  "meta": {
+    "name": "Mini",
+    "version": "1.1.0",
+    "author": "AI",
+    "description": "单行迷你条；Styles/对话框图复用 Glass（ExtraResouceFolder）。Compiler 只出 bg-mini 与播放键图。",
+    "extraResourceFolder": "Glass"
+  },
+
+  "tokens": {
+    "colors": {
+      "bg": "#00000000",
+      "bg-bar": "#FAFBFDCC",
+      "bg-bar-hover": "#FAFBFDCC",
+      "bg-lyrics": "#FAFBFDCC",
+      "bg-sys": "#FAFBFDCC",
+      "bg-solid": "#FFFFFF",
+      "bg-chrome": "#FAFBFDEB",
+      "bg-surface": "#FFFFFFBE",
+      "fg": "#2B2F3A",
+      "fg-muted": "#5B6372",
+      "fg-subtle": "#8A93A3",
+      "fg-on-accent": "#FFFFFF",
+      "border": "#FFFFFF99",
+      "border-subtle": "#C9D2E0",
+      "accent": "#4A9DFF",
+      "accent-muted": "#2F7FE0",
+      "bg-hover": "#F4F8FECC",
+      "fg-hover": "#2B2F3A",
+      "bg-pressed": "#E8F2FCCC",
+      "fg-pressed": "#2B2F3A",
+      "bg-focus": "#4A9DFF",
+      "fg-focus": "#FFFFFF",
+      "bg-selected": "#D6E8FA",
+      "fg-selected": "#1E4A8C",
+      "bg-disabled": "#F5F7FACC",
+      "fg-disabled": "#8A93A3"
+    },
+    "radius": { "window": 12, "control": 10, "sys": 8 },
+    "typography": { "body": { "font": "Verdana", "size": 13 } },
+    "shadows": { "control": { "offset": [0, 1], "blur": 4, "color": "#00000028" } }
+  },
+
+  "components": {
+    "windowBg": {
+      "type": "windowBackground",
+      "file": "bg-mini",
+      "radius": 12,
+      "size": { "width": 200, "height": 44 },
+      "clearColumns": [139, 166],
+      "layers": [
+        {
+          "type": "path",
+          "fill": "$tokens.colors.bg-bar",
+          "d": "M140,0 L32,0 A12,12 0 0 0 20,12 L20,32 A12,12 0 0 0 32,44 L140,44 Z"
+        },
+        {
+          "type": "path",
+          "fill": "$tokens.colors.bg-bar",
+          "d": "M164,0 L188,0 A12,12 0 0 1 200,12 L200,32 A12,12 0 0 1 188,44 L164,44 Z"
+        }
+      ]
+    },
+
+    "playPause": {
+      "type": "toggleButton",
+      "size": { "width": 40, "height": 40 },
+      "iconOff": "play",
+      "iconOn": "pause",
+      "iconInset": 0.18,
+      "states": {
+        "normal": {
+          "fill": "#00000000",
+          "radius": 10,
+          "iconColor": "$tokens.colors.fg"
+        },
+        "hover": {
+          "$extends": "normal",
+          "fill": "$tokens.colors.bg-hover",
+          "iconColor": "$tokens.colors.accent"
+        },
+        "pressed": { "$extends": "hover", "fill": "$tokens.colors.bg-pressed", "scale": 0.96 }
+      }
+    },
+
+    "prevNext": {
+      "type": "button",
+      "file": "prev-next",
+      "size": { "width": 36, "height": 36 },
+      "icons": ["prev", "next"],
+      "mask": "hitbox",
+      "iconInset": 0.16,
+      "states": {
+        "normal": {
+          "fill": "#00000000",
+          "radius": 10,
+          "iconColor": "$tokens.colors.fg-muted"
+        },
+        "hover": {
+          "$extends": "normal",
+          "fill": "$tokens.colors.bg-hover",
+          "iconColor": "$tokens.colors.accent"
+        },
+        "pressed": { "$extends": "hover", "fill": "$tokens.colors.bg-pressed", "scale": 0.96 }
+      }
+    },
+
+    "lyricsToggle": {
+      "type": "button",
+      "file": "lyrics-toggle",
+      "size": { "width": 36, "height": 36 },
+      "icons": ["chevron-right"],
+      "mask": "hitbox",
+      "iconInset": 0.2,
+      "states": {
+        "normal": {
+          "fill": "#00000000",
+          "radius": 10,
+          "iconColor": "$tokens.colors.fg-muted"
+        },
+        "hover": {
+          "$extends": "normal",
+          "fill": "$tokens.colors.bg-hover",
+          "iconColor": "$tokens.colors.accent"
+        },
+        "pressed": { "$extends": "hover", "fill": "$tokens.colors.bg-pressed", "scale": 0.96 }
+      }
+    }
+  },
+
+  "lyrics": {
+    "bgColor": "#FAFBFD00",
+    "highlightColor": "#4A9DFF",
+    "textColor": "#5B6372",
+    "fontSize": 36
+  }
+}

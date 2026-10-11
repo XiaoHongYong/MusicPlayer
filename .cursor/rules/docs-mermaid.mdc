@@ -1,0 +1,15 @@
+---
+description: Docs diagrams use Mermaid instead of ASCII art or external image tools
+globs: docs/**/*.md
+alwaysApply: false
+---
+
+# Docs 中的结构图用 Mermaid
+
+在 `docs/` 下写设计文档、架构说明时：
+
+- **结构关系、调用顺序、状态切换、分层** 等图，优先用 **Mermaid**（` ```mermaid ` 代码块）。
+- 不要用大段 ASCII 框图代替；简单一行数据流可用短 text，复杂图用 Mermaid。
+- 参考图（视觉效果截图、UI 样例）仍可用普通图片；Mermaid 负责「结构与流程」，图片负责「观感」。
+- 常用类型：`flowchart`、`sequenceDiagram`、`classDiagram`、`stateDiagram-v2`。
+- 节点与边的文字保持简短；中英文术语与正文一致。

@@ -123,7 +123,6 @@ DEFINE_CMD_ID(ID_ADJUST_HUE)                                        \
 DEFINE_CMD_ID(ID_BR_ALBUM_ART)                                      \
 DEFINE_CMD_ID(ID_LOGIN_VIA_IE)                                      \
 DEFINE_CMD_ID(ID_APPLY_ACCOUNT)                                     \
-DEFINE_CMD_ID(ID_EMAIL)                                             \
 DEFINE_CMD_ID(ID_WEBHOME)                                           \
 DEFINE_CMD_ID(ID_LDO_AUTO)                                          \
 DEFINE_CMD_ID(ID_LDO_NORMAL)                                        \
@@ -136,7 +135,6 @@ DEFINE_CMD_ID(ID_LDS_SINGLE_LINE)                                   \
 DEFINE_CMD_ID(ID_LDS_VOBSUB)                                        \
 DEFINE_CMD_ID_TIP(ID_NO_SUITTABLE_LYRICS, _TLM("&No Suitable Lyrics for the Song File")) \
 DEFINE_CMD_ID_TIP(ID_INSTRUMENTAL_MUSIC, _TLM("Instrumental music, no lyrics")) \
-DEFINE_CMD_ID_TIP(ID_SEARCH_LYR_SUGGESTIONS, _TLM("Lyrics search suggestions")) \
 DEFINE_CMD_ID(ID_REMOVE_FROM_LIBRARY)                               \
 DEFINE_CMD_ID(ID_REPLACE_NOW_PLAYING_WITH_SELECTED)                 \
 DEFINE_CMD_ID(ID_REPLACE_NOW_PLAYING_WITH_RESULTS)                  \

@@ -300,7 +300,7 @@ struct AudioAnalysisFrame {
     uint64_t sessionId;        // 每次 play / 换歌递增；消费者丢弃不匹配帧
     uint64_t sequence;         // 本 session 内递增
 
-    uint64_t samplePosition;   // 本帧窗口对应的音频样点位置（mono 流上）
+    uint64_t samplePosition;   // 分析窗中心样点（mono 流上），非窗口起点
     uint32_t sampleRate;
 
     float rms;
@@ -308,7 +308,19 @@ struct AudioAnalysisFrame {
     float bass;
     float mid;
     float treble;
-    float beat;                // V1 可先恒为 0；V2 接 BeatDetector
+    float beat;                // 兼容旧字段；等于 beatPulse
+
+    // 节奏 / 起音（算法见 beat-detection.md；LowOnset 与 SpectralFlux 通道分离）
+    float onsetStrength;
+    float beatPulse;           // 仅 Flux hit
+    float beatStrength;
+    float lowEnergy;           // 固定 dB 映射
+    float lowOnsetStrength;    // 连续低频起音
+    float lowOnset;            // 仅 LowOnset hit 包络
+    float bassPulse;           // 仅低频 hit
+    float bassStrength;
+    float bassRhythmRate;
+    float rhythmConfidence;
 
     uint16_t bandCount;
     std::array<float, 128> bands;  // 内部容量；有效长度为 bandCount
@@ -321,8 +333,8 @@ struct AudioAnalysisFrame {
 |---|---|
 | `sessionId` | 切歌 / 新一次 `play` 时 `++`；队列与网络上残留的旧帧全部作废 |
 | `sequence` | 同 session 内排序、去重 |
-| `samplePosition` + `sampleRate` | 音频时间轴；`positionSec ≈ samplePosition / sampleRate` |
-| `outputRate` | 上限产出频率（如 30 Hz），不是视频 FPS |
+| `samplePosition` + `sampleRate` | 音频时间轴；`samplePosition` 为**分析窗中心**样点；`positionSec ≈ samplePosition / sampleRate` |
+| `outputRate` | 上限**发布**频率（如 30 Hz）；分析仍按每个 `hopSize` 执行，不因限流跳过 Onset |
 | `fftSize` / `hopSize` | 分开配置，见下节 |
 
 不要把该 struct 的内存布局直接当 WebSocket/二进制线上格式；线上协议见 [audio-analysis-stream.md](audio-analysis-stream.md)。
@@ -335,7 +347,7 @@ struct AudioAnalysisFrame {
 sampleRate = 48000
 fftSize    = 2048   → 窗长 ≈ 42.7 ms
 hopSize    = 1024   → 步长 ≈ 21.3 ms → 理论分析更新 ≈ 46.9 Hz
-outputRate = 30     → 对外最多 30 Frame/s（多余 hop 可合并或丢弃）
+outputRate = 30     → 对外最多 30 Frame/s（每个 hop 仍分析；仅发布限流）
 ```
 
 Analyzer **自己维护 PCM ring buffer**：把陆续到来的 decode 块拼成连续 mono 流，按 hop 滑窗做 FFT，而不是 `FFT(每个 decode buffer)` 一次（否则窗口绑在解码器缓冲边界上）。

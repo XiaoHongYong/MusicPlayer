@@ -381,6 +381,8 @@ protected:
 
     virtual void onLoadWndSizePos();
     void saveWndPos();
+    // 配置节名：<皮肤名>.<窗口名>，使每个皮肤各自记住大小/位置
+    string getWndPosProfileSection();
 
     void processMouseMove(CPoint point);
 

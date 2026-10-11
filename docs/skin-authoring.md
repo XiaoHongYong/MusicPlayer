@@ -42,11 +42,40 @@
 根元素：
 
 ```xml
-<skin defmainwnd="MainWnd" mainwnds="MainWnd" ExtraResouceFolder="Classic">
+<skin defmainwnd="MainWnd" mainwnds="MainWnd" ExtraResouceFolder="Glass">
 ```
 
 - `mainwnds`：本皮肤可创建的窗口列表；`defmainwnd`：主窗口。
-- `ExtraResouceFolder`：额外资源目录（另一个皮肤文件夹名），可整体借用其图片。
+- `ExtraResouceFolder`：额外资源目录（另一个皮肤文件夹名），可整体借用其图片与 Styles（引擎历史拼写，勿改成 Resource）。
+
+### 1.1 子皮肤复用（例：Mini → Glass）
+
+若新皮肤只改主窗布局、其余对话框/菜单/配色图与某现有皮肤相同，不必复制整份 `Styles.xml` 和 PNG：
+
+1. 根上写 `ExtraResouceFolder="Glass"`（或其它源皮肤名）。
+2. **不要**在本皮肤放同名的 `Styles.xml`（否则会挡住 Extra 目录里的那份）。
+3. `main.xml` 里照常 `<include Name="Styles.xml"/>`，再跟一段本皮肤的 `<styles>`，只覆盖差异（如 Mini 关掉 Glass 磨砂、透明 `BgColor`）：
+
+```xml
+<skin defmainwnd="MainWnd" mainwnds="MainWnd" ExtraResouceFolder="Glass">
+  <include Name="Styles.xml"/>
+  <styles>
+    <style>
+      <Window BgColor="#00000000" Glass="false"
+        EnableTranslucency="true" TranslucencyAlpha="255" ... />
+    </style>
+  </styles>
+  <skinwnd Extends="Window" Name="MainWnd" ...>
+    ...
+  </skinwnd>
+</skin>
+```
+
+样式按出现顺序合并，同名后者覆盖。图片同理：本皮肤只放专有图（如 `bg-mini.png`），`caption-btn.png` 等未放置的文件会落到 Extra 皮肤或 `assets/`。
+
+专有歌词配色仍用本皮肤 `theme.xml`（查找时本目录优先）。
+
+参考实现：`Skins-Design/skins/Mini/`。
 
 `<skinwnd>` 关键属性：
 
@@ -204,7 +233,7 @@ hover/pressed 行采样越界，按钮在悬停时直接消失。
 - `RadioGroup="1"`：同组按钮互斥（radio），选中一个自动取消其他
   （`CSkinToolbar::groupButtonUncheckOld`）。Neon 右下角的「列表/歌词」
   视图 Tab 即此用法（`view-tabs.png`：4 列 = 列表/歌词 × 未选/选中，3 行状态）。
-- 标题栏按钮列语义（沿用 Classic/Metal 约定）：1=最小化 2=最大化 3=还原 4=关闭。
+- 标题栏按钮列语义（沿用 Neon/Glass 约定）：1=最小化 2=最大化 3=还原 4=关闭。
 
 ### 4.4 Frame（边框，可选）
 
@@ -310,7 +339,7 @@ profile.writeInt('Neon-ShowLyrics', 1);
 ## 7. 图片与 @2x
 
 - 皮肤 PNG 由 Skin Compiler 从 `Skins-Design/skin-for-ai/<name>.skin.json` 生成：
-  `cd Skins-Design/skin-for-ai && ./compile.sh glass`（或 `neon` / `classic` / `metal` / `fantasy`）。
+  `cd Skins-Design/skin-for-ai && ./compile.sh glass`（或 `neon` / `orbit` / `mini`）。
   格式见 `docs/skin-compiler.md`。不要再写 `Skins-Design/raw/*_gen_assets.py`。
 
 ## 8. 调试技巧
@@ -328,7 +357,7 @@ profile.writeInt('Neon-ShowLyrics', 1);
    `MPEventsDispatcher.h` 的 `SZ_SECT_UI`）。旧机器上的 ini 可能把它放在遗留的
    `[MP3Player]` 节下——那样会被静默忽略，皮肤从 app bundle 的
    `Resources/skins` 加载（日志表现为新皮肤 "main.xml does NOT exist" 并回退
-   Metal；旧皮肤能"正常"加载只是因为 bundle 里有构建时的旧拷贝）。
+   Neon；旧皮肤能"正常"加载只是因为 bundle 里有构建时的旧拷贝）。
    另外注意：`DefaultSkin` 指向的皮肤是**直接加载、不应用 theme.xml** 的
    （theme 只在用户在偏好设置里手动切换皮肤时写入 profile）；调试歌词配色时
    要么手动切换一次皮肤，要么直接改 ini 的 `[LyrDispaly]`/`[FloatingLyr]` 节。
@@ -339,7 +368,7 @@ profile.writeInt('Neon-ShowLyrics', 1);
    对话框同样挂 `WindowImage` 即可，不必再叠 Frame。
    引擎在已有有效 `WindowImage` 时**不会**再让 root 用 `BgColor` 整窗填色
    （否则会盖掉圆角透明与中段底色，看起来变方角/发白）；`BgColor` 仍保留给
-   子控件 `getBgColor()` 回退。参考 Glass/Crystal/Neon 的 `bg.png` /
+   子控件 `getBgColor()` 回退。参考 Glass/Neon/Orbit 的 `bg.png` /
    `bg-dialog.png`。
 8. **浮动歌词窗口**：固定加载 `floatinglyr.xml`（`MPFloatingLyrWnd.cpp`），
    皮肤目录放同名文件即可覆盖 assets 版本（assets 版 `BgColor` 写死蓝色）。

@@ -22,6 +22,7 @@ const StringView SS_ON_ACTIVATE = makeCommonString("onactivate");
 const StringView SS_ON_DESTORY = makeCommonString("ondestory");
 const StringView SS_ON_MOUSE_ACTIVATE = makeCommonString("onmouseactivate");
 const StringView SS_HEIGHT = makeCommonString("height");
+const StringView SS_WIDTH = makeCommonString("width");
 
 enum SkinJsDataTypes {
     SJT_DOCUMENT,

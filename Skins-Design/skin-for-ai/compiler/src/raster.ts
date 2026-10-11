@@ -42,6 +42,35 @@ export async function renderSvgToPair(outDir: string, name: string, svg: string,
     return savePngPair(outDir, name, hi, w, h);
 }
 
+/** 将 [x0, x1) 列置为全透明（1x 逻辑坐标；@2x 由调用方乘 2）。用于 9-slice 中段 tile 前清掉抗锯齿半透明列。 */
+export async function clearPngColumns(filePath: string, x0: number, x1: number): Promise<void> {
+    const img = sharp(filePath).ensureAlpha();
+    const meta = await img.metadata();
+    const width = meta.width ?? 0;
+    const height = meta.height ?? 0;
+    if (width <= 0 || height <= 0) {
+        return;
+    }
+    const data = await img.raw().toBuffer();
+    const left = Math.max(0, Math.min(width, Math.floor(x0)));
+    const right = Math.max(0, Math.min(width, Math.floor(x1)));
+    if (left >= right) {
+        return;
+    }
+    const stride = width * 4;
+    for (let y = 0; y < height; y++) {
+        const row = y * stride;
+        for (let x = left; x < right; x++) {
+            const i = row + x * 4;
+            data[i] = 0;
+            data[i + 1] = 0;
+            data[i + 2] = 0;
+            data[i + 3] = 0;
+        }
+    }
+    await sharp(data, { raw: { width, height, channels: 4 } }).png().toFile(filePath);
+}
+
 export async function compositeSheet(
     cols: number,
     rows: number,

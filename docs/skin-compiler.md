@@ -39,10 +39,9 @@ App 加载的仍是现有格式的皮肤目录（`main.xml` + `Styles.xml` + PNG
 与「运行时动态 Skin」区分开：本方案把不确定性全部留在编译期，
 运行时行为与手写皮肤完全一致，可用 skin-authoring.md 第 8 节的方法调试。
 
-当前源文件在 `Skins-Design/skin-for-ai/`：`glass`、`neon` 全量由 compiler
-产出控件 PNG；`classic`、`metal`、`fantasy` 同样产出 StyleBase 控件 PNG，
-但主窗 `frame.png`（及 Fantasy 的 `frame-mask.png`/`title_line.png`）保持手绘，
-JSON 里不要用 `windowFrame` 覆盖它们。编译：`./compile.sh classic`。
+当前源文件在 `Skins-Design/skin-for-ai/`：`glass`、`neon`、`orbit` 全量由
+compiler 产出控件 PNG；`mini` 只出主条专有图，其余通过
+`ExtraResouceFolder="Glass"` 复用。编译：`./compile.sh glass`。
 
 ## 2. 设计原则
 
@@ -180,7 +179,7 @@ Compiler 的核心职责是把"组件 + 状态"翻译成引擎约定的精灵图
   "version": "1.0.0",
   "author": "AI",
   "description": "Light blue glass desktop skin",
-  "extraResourceFolder": "Classic"   // 可选；XML 必须写成 ExtraResouceFolder（引擎历史拼写）
+  "extraResourceFolder": "Glass"     // 可选；XML 必须写成 ExtraResouceFolder（引擎历史拼写）
 }
 ```
 
@@ -291,7 +290,7 @@ SVG filter 实现）、`border`、`noise`（0~1 噪点强度）、`highlight`
 
 | type | 说明 | 特有字段 |
 |---|---|---|
-| `windowBackground` | 窗口 9-slice 底座（圆角外透明） | `variant: "main"\|"dialog"`；`file`；`chrome: { caption, bottom, mid, captionFill, bottomFill, hairlineColor, bottomChrome }` |
+| `windowBackground` | 窗口 9-slice 底座（圆角外透明） | `variant: "main"\|"dialog"`；`file`；`chrome: { caption, bottom, mid, captionFill, bottomFill, hairlineColor, bottomChrome }`；可选 `clearColumns: [x0, x1)`：渲染后把 1x 列 `[x0,x1)`（及 @2x 的 2 倍）清成全透明，供中段 tile（如 Mini `bg-mini`） |
 | `windowFrame` | 可选的独立边框精灵图 | `roundWidth`, `thickWidth`, `layers` |
 | `captionToolbar` | 标题栏按钮条 | `file`（如 `caption-btn-lg`）、`cellSize`。`caption-btn` 会额外出 `caption-btn-mac` 红绿灯 |
 | `captionBar` | 标题栏 9-slice 底 | `layers` / `file` |
@@ -590,8 +589,8 @@ Compiler 写出的 XML/INI 键必须跟引擎一致：
 4. layer `type` 只能用 9.2 表格里的类型（含 `border`/`highlight`）。
 5. 主窗口必备：`windowBackground`、`captionToolbar`、`toggleButton`(播放)、
    `slider`、`playlist`。建议再给对话框一份 `variant:"dialog"`。
-   `windowFrame` 不是必备。Classic/Metal/Fantasy 的主窗 `frame.png` 为手绘纹理，
-   JSON 里不要用 `windowFrame`/`file: frame` 覆盖它。现有皮肤用 `--png-only` 只换 PNG。
+   `windowFrame` 不是必备。若主窗 `frame.png` 为手绘纹理，JSON 里不要用
+   `windowFrame`/`file: frame` 覆盖它。现有皮肤用 `--png-only` 只换 PNG。
 6. 不写任何脚本、事件、表达式；不要输出 `@2x` 相关字段（Compiler 自动）。
 7. 需要交互（视图切换 tab 等）时，只在 `layout` 里放 `CID_*` 控件并
    在 `meta.description` 注明需要手写 main.js，不要在 JSON 里写 JS。

@@ -13,6 +13,16 @@ type WireFrame = {
   mid?: number;
   treble?: number;
   beat?: number;
+  onsetStrength?: number;
+  beatPulse?: number;
+  beatStrength?: number;
+  lowEnergy?: number;
+  lowOnsetStrength?: number;
+  lowOnset?: number;
+  bassPulse?: number;
+  bassStrength?: number;
+  bassRhythmRate?: number;
+  rhythmConfidence?: number;
   bands?: number[];
 };
 
@@ -22,6 +32,8 @@ function parseWire(data: WireFrame): AudioAnalysisFrame {
   for (let i = 0; i < bands.length; i++) {
     spectrum[i] = Math.min(1, Math.max(0, (bands[i] ?? 0) / 255));
   }
+  const beatPulse = Number(data.beatPulse ?? data.beat ?? 0);
+  const onsetStrength = Number(data.onsetStrength ?? 0);
   return {
     sessionId: Number(data.sessionId ?? 0),
     sequence: Number(data.sequence ?? 0),
@@ -33,11 +45,21 @@ function parseWire(data: WireFrame): AudioAnalysisFrame {
     bass: Number(data.bass ?? 0),
     mid: Number(data.mid ?? 0),
     treble: Number(data.treble ?? 0),
-    beat: Number(data.beat ?? 0),
-    onset: 0,
+    beat: beatPulse,
+    onset: onsetStrength,
+    onsetStrength,
+    beatPulse,
+    beatStrength: Number(data.beatStrength ?? 0),
+    lowEnergy: Number(data.lowEnergy ?? 0),
+    lowOnsetStrength: Number(data.lowOnsetStrength ?? 0),
+    lowOnset: Number(data.lowOnset ?? 0),
+    bassPulse: Number(data.bassPulse ?? 0),
+    bassStrength: Number(data.bassStrength ?? 0),
+    bassRhythmRate: Number(data.bassRhythmRate ?? 0),
+    rhythmConfidence: Number(data.rhythmConfidence ?? 0),
     centroid: 0,
     bandwidth: 0,
-    flux: 0,
+    flux: onsetStrength,
     timestamp: performance.now(),
   };
 }

@@ -2,7 +2,10 @@
 
 #include "AudioAnalysisFrame.h"
 #include "AudioAnalysisOptions.h"
+#include "BassRhythmEstimator.h"
 #include "Fft.h"
+#include "LowOnsetDetector.h"
+#include "SpectralFluxOnsetDetector.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -11,18 +14,11 @@
 /**
  * 播放端实时分析流水线（平台无关）：
  *
- *   PCM (int16 interleaved)
- *     → mono downmix
- *     → ring buffer
- *     → 取 fftSize 样点
- *     → Hann 窗
- *     → FFT
- *     → |X[k]| (跳过 DC)
- *     → 对数频带 RMS（bin 对齐，每带至少 1 bin）
- *     → dB → 0..1 → gamma(<1 抬弱信号)
- *     → 慢速底噪跟随 + 显示增益
- *     → attack/release 平滑
- *     → AudioAnalysisFrame
+ *   PCM → mono → ring
+ *     → 每个 hopSize 做 FFT / Onset / 节奏（分析频率）
+ *     → 按 outputRate 决定是否发布 AudioAnalysisFrame（输出频率）
+ *
+ * 二者分离：降低输出帧率不会跳过鼓点检测。
  */
 class AudioAnalyzer {
 public:
@@ -43,21 +39,30 @@ private:
     void applyOptions(const AudioAnalysisOptions &options);
     void clearRing();
     void pushMono(float sample);
-    bool tryEmit(AudioAnalysisFrame &out);
+    void resetDetectors();
+    void resetPublishSchedule();
+
+    /** 处理一个分析窗口；若应发布则填充 out 并返回 true。始终消耗 hop（数据足够时）。 */
+    bool processHop(AudioAnalysisFrame &out);
+    bool shouldPublish(uint64_t center);
 
     void buildHann();
     void rebuildBandTables();
     void computeMagnitude();
     void mapLogBands(float *bandsOut, uint16_t bandCount) const;
-    void applyFloorRelative(float *bands, uint16_t bandCount);
-    void smoothBands(float *bands, uint16_t bandCount);
+    void applyFloorRelative(float *bands, uint16_t bandCount, float deltaSeconds);
+    void smoothBands(float *bands, uint16_t bandCount, float deltaSeconds);
+    void updateRhythmFeatures(AudioAnalysisFrame &out, float deltaSeconds);
 
     AudioAnalysisOptions _options;
     Fft _fft;
+    LowOnsetDetector _lowOnset;
+    SpectralFluxOnsetDetector _spectralFlux;
+    BassRhythmEstimator _bassRhythm;
 
     uint64_t _sessionId = 0;
     uint64_t _sequence = 0;
-    uint64_t _samplePos = 0;
+    uint64_t _samplePos = 0; // ring 中最早样点的绝对位置（窗口起点）
     uint32_t _sampleRate = 0;
 
     std::vector<float> _ring;
@@ -70,30 +75,36 @@ private:
     std::vector<float> _complex;
     std::vector<float> _mag;
 
-    // 每带 FFT bin 半开区间 [k0, k1)
     std::vector<uint16_t> _bandK0;
     std::vector<uint16_t> _bandK1;
 
     std::vector<float> _smooth;
-    std::vector<float> _floor; // 慢速底噪，压持续低频床
+    std::vector<float> _floor;
 
-    uint64_t _lastEmitCenter = 0;
+    uint64_t _nextPublishSample = 0;
+    bool _publishScheduleReady = false;
+
     bool _smoothReady = false;
 
+    float _beatPulseEnv = 0.f;
+    float _beatStrengthHold = 0.f;
+    float _lowOnsetEnv = 0.f;
+    float _bassPulseEnv = 0.f;
+    float _bassStrengthHold = 0.f;
+
+    static constexpr float kPulseDecaySec = 0.12f;
+    static constexpr float kStrengthDecaySec = 0.45f;
+    static constexpr float kBandAttackSec = 0.025f;
+    static constexpr float kBandReleaseSec = 0.12f;
+    static constexpr float kFloorUpSec = 0.55f;
+    static constexpr float kFloorDownSec = 0.18f;
     static constexpr float kFMinHz = 20.f;
     static constexpr float kFMaxHz = 18000.f;
     static constexpr float kDbMin = -58.f;
     static constexpr float kDbMax = 0.f;
-    // gamma < 1：全频段抬低幅度响应，弱信号更灵敏，强信号仍不易顶满
     static constexpr float kGamma = 0.82f;
-    static constexpr float kAttack = 0.9f;
-    static constexpr float kRelease = 0.6f;
-    // 底噪跟随：保留节奏起伏，但少扣一点，避免整体柱高过矮
-    static constexpr float kFloorUp = 0.018f;
-    static constexpr float kFloorDown = 0.06f;
     static constexpr float kFloorMix = 0.45f;
     static constexpr float kDisplayGain = 1.4f;
-    // 最低 20% 频带压制：最底端约 ×0.42，10% 处 ×0.70，20% 以上恢复 1.0
     static constexpr float kLowShelfEnd = 0.20f;
     static constexpr float kLowShelfMid = 0.10f;
     static constexpr float kLowShelfGain0 = 0.80f;

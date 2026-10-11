@@ -114,9 +114,14 @@ string colorToStr(const CColor &clr) {
     return szValue;
 }
 
-// FgColor="#FFFFFF"
+// FgColor="#FFFFFF" 或 "#RRGGBBAA"
 void getColorValue(CColor &clr, cstr_t szColor) {
-    clr.set(stringToColor(szColor, clr.get()));
+    COLORREF rgb = clr.get();
+    uint8_t alpha = clr.getAlpha();
+    if (parseColorValue(szColor, rgb, alpha)) {
+        clr.set(rgb);
+        clr.setAlpha(alpha);
+    }
 }
 
 int getMenuKey(cstr_t szText) {
@@ -275,6 +280,9 @@ void CSkinWnd::closeSkin() {
     if (m_bRememberSizePos) {
         saveWndPos();
     }
+
+    // 放开系统最小尺寸，避免切换到更小皮肤时被旧 minSize 卡住
+    setMinSize(1, 1);
 
     m_scriptFile.clear();
 
@@ -855,9 +863,9 @@ void CSkinWnd::onPaint(CRawGraph *canvas, CRect *rcClip) {
 
 CColor CSkinWnd::getTranslucencyColor(const CColor &clr) const {
     if (m_bTranslucencyLayered) {
+        // 颜色自身 AA（#RRGGBBAA）× 窗口 translucency；RGB 保持直通，由 fillRect 再预乘
         CColor clrNew = clr;
-        clrNew.setAlpha((uint8_t)m_nCurTranslucencyAlpha);
-        preMultiplyColor(clrNew, (uint8_t)m_nCurTranslucencyAlpha);
+        clrNew.setAlpha((uint8_t)((int)clr.getAlpha() * m_nCurTranslucencyAlpha / 255));
         return clrNew;
     } else {
         return clr;
@@ -1970,6 +1978,10 @@ int CSkinWnd::fromXML(SXNode *pXmlNode) {
 
     m_fontProperty.create();
 
+    // 必须先更新系统级 minSize，再恢复窗口大小。
+    // 否则 macOS 仍沿用上一皮肤的 minSize（如 Glass 450），会把 Mini 等小皮肤卡住。
+    setMinSize(m_wndResizer.getMinCx(), m_wndResizer.getMinCy());
+
     // load window size of skin
     onLoadWndSizePos();
 
@@ -2158,6 +2170,19 @@ void CSkinWnd::onTimerAnimation() {
     }
 }
 
+string CSkinWnd::getWndPosProfileSection() {
+    string section;
+    if (m_pSkinFactory) {
+        cstr_t skinName = m_pSkinFactory->getSkinName();
+        if (skinName && skinName[0]) {
+            section = skinName;
+            section += ".";
+        }
+    }
+    section += getSkinWndName();
+    return section;
+}
+
 void CSkinWnd::onLoadWndSizePos() {
 #ifdef _WIN32
     if (::GetParent(m_hWnd)) {
@@ -2168,6 +2193,9 @@ void CSkinWnd::onLoadWndSizePos() {
     // WndSizeMode        sizeMode;
     CRect rcNew;
     bool bCenterWnd = true;
+    string section = getWndPosProfileSection();
+    // 是否已有该皮肤的记忆尺寸（无则用 XML 默认宽高）
+    bool hasSavedSize = g_profile.getString(section.c_str(), "wnd_width", "")[0] != '\0';
 
     if (isZoomed()) {
         restore();
@@ -2177,11 +2205,11 @@ void CSkinWnd::onLoadWndSizePos() {
 
     rcNew = m_rcBoundBox;
 
-    if (m_bRememberSizePos) {
-        rcNew.left = g_profile.getInt(getSkinWndName(), "wnd_left", rcNew.left);
-        rcNew.top = g_profile.getInt(getSkinWndName(), "wnd_top", rcNew.top);
-        rcNew.right = rcNew.left + g_profile.getInt(getSkinWndName(), "wnd_width", m_nWidth);
-        rcNew.bottom = rcNew.top + g_profile.getInt(getSkinWndName(), "wnd_height", m_nHeight);
+    if (m_bRememberSizePos && hasSavedSize) {
+        rcNew.left = g_profile.getInt(section.c_str(), "wnd_left", rcNew.left);
+        rcNew.top = g_profile.getInt(section.c_str(), "wnd_top", rcNew.top);
+        rcNew.right = rcNew.left + g_profile.getInt(section.c_str(), "wnd_width", m_nWidth);
+        rcNew.bottom = rcNew.top + g_profile.getInt(section.c_str(), "wnd_height", m_nHeight);
         bCenterWnd = false;
 
         if (m_wndResizer.isFixedWidth()) {
@@ -2191,6 +2219,7 @@ void CSkinWnd::onLoadWndSizePos() {
             rcNew.bottom = rcNew.top + m_nHeight;
         }
     } else {
+        // 首次使用该皮肤：保持当前位置，尺寸用 XML 默认值
         rcNew.right = rcNew.left + m_nWidth;
         rcNew.bottom = rcNew.top + m_nHeight;
     }
@@ -2244,6 +2273,7 @@ void CSkinWnd::onLoadWndSizePos() {
 //        save current skin window size pos.
 void CSkinWnd::saveWndPos() {
     CRect rcToSave;
+    string section = getWndPosProfileSection();
 
 #ifdef _WIN32
     if (::GetParent(m_hWnd)) {
@@ -2268,15 +2298,15 @@ void CSkinWnd::saveWndPos() {
         sizeMode = WndSizeMode_Normal;
     }
 
-    g_profile.writeInt(getSkinWndName(), "SizeMode", sizeMode);
+    g_profile.writeInt(section.c_str(), "SizeMode", sizeMode);
 #else
     if (!getWindowRect(&rcToSave)) {
         return;
     }
 #endif
 
-    g_profile.writeInt(getSkinWndName(), "wnd_left", rcToSave.left);
-    g_profile.writeInt(getSkinWndName(), "wnd_top", rcToSave.top);
-    g_profile.writeInt(getSkinWndName(), "wnd_width", rcToSave.width());
-    g_profile.writeInt(getSkinWndName(), "wnd_height", rcToSave.height());
+    g_profile.writeInt(section.c_str(), "wnd_left", rcToSave.left);
+    g_profile.writeInt(section.c_str(), "wnd_top", rcToSave.top);
+    g_profile.writeInt(section.c_str(), "wnd_width", rcToSave.width());
+    g_profile.writeInt(section.c_str(), "wnd_height", rcToSave.height());
 }

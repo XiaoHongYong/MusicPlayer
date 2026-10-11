@@ -70,10 +70,6 @@ bool CMPCommonCmdHandler::onCommand(uint32_t nID) {
             MPlayerApp::getInstance()->dispatchResearchLyrics();
         }
         break;
-    case ID_SEARCH_LYR_SUGGESTIONS:
-        openUrl(m_pSkinWnd, getStrName(SN_HTTP_HELP_SEARCH_LYR_SUGGESTIONS));
-        break;
-
     case ID_RATE_LYR_1:
     case ID_RATE_LYR_2:
     case ID_RATE_LYR_3:
@@ -177,17 +173,6 @@ bool CMPCommonCmdHandler::onCommand(uint32_t nID) {
     case ID_WEBHOME:
         openUrl(m_pSkinWnd, getStrName(SN_HTTP_DOMAIN));
         break;
-    case ID_EMAIL:
-        // feed back
-        {
-            string str;
-
-            str = getStrName(SN_EMAIL);
-            str += "?subject=feedback";
-
-            openUrl(m_pSkinWnd, str.c_str());
-        }
-        break;
     case ID_APPLY_ACCOUNT:
         {
             openUrl(m_pSkinWnd, getStrName(SN_HTTP_SIGNUP));
@@ -260,8 +245,6 @@ bool CMPCommonCmdHandler::onCommand(uint32_t nID) {
             CUIObject *pObjLyrEdit = m_pSkinWnd->getUIObjectByClassName(CLyricShowTextEditObj::className());
             if (pObjLyrEdit && pObjLyrEdit->isVisible()) {
                 openUrl(m_pSkinWnd, getStrName(SN_HTTP_HELP_EDIT_LYR));
-            } else {
-                openUrl(m_pSkinWnd, getStrName(SN_HTTP_HELP));
             }
         }
         break;

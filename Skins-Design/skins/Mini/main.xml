@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<!-- Styles/PNG 多数复用 Glass（ExtraResouceFolder）；本皮肤只留主条布局与专有图 -->
+<skin defmainwnd="MainWnd" mainwnds="MainWnd" ExtraResouceFolder="Glass">
+	<!-- 无本皮肤 Styles.xml → 落到 Glass/Styles.xml -->
+	<include Name="Styles.xml"/>
+
+	<!-- 覆盖 Glass Window：迷你条不要磨砂主窗底色 -->
+	<styles>
+		<style>
+			<Window ToolTipBgColor="#2B2F3A" ToolTipTextColor="#FFFFFF" ToolTipFontName="Verdana" ToolTipFontHeight="13"
+				FontName="Verdana" FontHeight="13" TextColor="#2B2F3A" BgColor="#00000000"
+				Glass="false"
+				EnableTranslucency="true" TranslucencyAlpha="255"
+			/>
+		</style>
+	</styles>
+
+	<!--
+		bg-mini: 左(sys槽+播放底) | 中透明拉伸 | 右(扩展键底)
+		歌词底 CID_LYRICS_BG 与条带同色，仅 focus/hover 时 FadeIn
+	-->
+	<skinwnd Extends="Window" Name="MainWnd"
+			MinWidth="173" MinHeight="44" Width="480" Height="44" Menu="MainWndMenu"
+			CmdHandler="ch_common,ch_playlist" Script="main.js"
+			ContextMenu="MainContextMenu"
+			EnableTranslucency="true"
+			TranslucencyAlpha="255"
+			TranslucencyAlphaOnHover="255"
+			TranslucencyAlphaOnActive="255">
+
+		<!-- 中段纯透明列，避免 tile 出竖条；歌词底由 CID_LYRICS_BG 单独铺 -->
+		<Property Name="WindowImage" Image="bg-mini.png" HorzExtendPos="139,166" VertExtendPos="12,32" />
+
+		<Container Name="Body" Rect="0,0,w,h">
+
+			<!-- sys：仅在鼠标移入或窗口 focus 时渐显；caption-btn 图走 Glass -->
+			<Container ID="CID_SYS" Name="SysChrome" Rect="2,2,18,h-4" Visible="false">
+				<Toolbar os="mac" ID="CID_TB_CLOSE" Rect="1,h/2-17,16,16"
+					Image="caption-btn-mac.png" enablehover="TRUE" units_x="16"
+					blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
+					MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
+					<button ID="ID_CLOSE" Left="4" />
+				</Toolbar>
+				<Toolbar os="mac" ID="CID_TB_MINIMIZE" Rect="1,h/2+1,16,16"
+					Image="caption-btn-mac.png" enablehover="TRUE" units_x="16"
+					blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
+					MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
+					<button ID="ID_MINIMIZE" Left="1" />
+				</Toolbar>
+				<Toolbar os="win,linux" ID="CID_TB_CLOSE" Rect="1,h/2-17,16,16"
+					Image="caption-btn.png" enablehover="TRUE" units_x="16"
+					blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
+					MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
+					<button ID="ID_CLOSE" Left="4" />
+				</Toolbar>
+				<Toolbar os="win,linux" ID="CID_TB_MINIMIZE" Rect="1,h/2+1,16,16"
+					Image="caption-btn.png" enablehover="TRUE" units_x="16"
+					blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
+					MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
+					<button ID="ID_MINIMIZE" Left="1" />
+				</Toolbar>
+			</Container>
+
+			<!-- 播放三键：始终可见 -->
+			<Button Rect="22,h/2-18,36,36" ID="ID_PREVIOUS" ImageMask="prev-next-mask.png" ImageMaskRect="0,0,36,36"
+				Image="prev-next.png" ImageSize="36,36" ImagePos="0,0" ImageSelPos="0,72" ImageFocusPos="0,36" />
+			<Button Rect="58,h/2-20,40,40" ID="ID_PLAYPAUSE" ImageMask="playpause.png" ImageMaskRect="0,0,40,40"
+				S0_Image="playpause.png" S0_ImageSize="40,40" S0_ImagePos="0,0" S0_ImageSelPos="0,80" S0_ImageFocusPos="0,40"
+				S1_Image="playpause.png" S1_ImageSize="40,40" S1_ImagePos="40,0" S1_ImageSelPos="40,80" S1_ImageFocusPos="40,40" />
+			<Button Rect="100,h/2-18,36,36" ID="ID_NEXT" ImageMask="prev-next-mask.png" ImageMaskRect="36,0,36,36"
+				Image="prev-next.png" ImageSize="36,36" ImagePos="36,0" ImageSelPos="36,72" ImageFocusPos="36,36" />
+
+			<!-- 歌词背景：与条带同色 80%；仅 focus/hover 时渐显，失焦渐隐 -->
+			<Container ID="CID_LYRICS_BG" Name="LyricsBg" Rect="139,0,w-139-34,h" Visible="false"
+				BgColor="#FAFBFDCC" />
+
+			<DecorativeContainer ID="CID_LYRICS" Name="LyricsArea" Rect="139,0,w-139-34,h">
+				<LyricsShow Rect="4,0,w-8,h" SetSkinBg="true"
+					EnableToolbar="FALSE" EnableAutoResize="FALSE"
+					LyrDisplayStyle="LyricShowSingleRow" />
+			</DecorativeContainer>
+
+			<!-- 扩展/收拢：始终可见 -->
+			<Button Rect="w-36,h/2-18,34,34" ID="CID_TOGGLE_LYRICS" ToolTip="Lyrics"
+				Image="lyrics-toggle.png" ImageSize="36,36" ImagePos="0,0" ImageSelPos="0,72" ImageFocusPos="0,36"
+				ImageMask="lyrics-toggle-mask.png" ImageMaskRect="0,0,36,36" />
+		</Container>
+
+		<Animation ID="CID_AM_SHOW_SYS" FadeIn="CID_SYS"/>
+		<Animation ID="CID_AM_HIDE_SYS" FadeOut="CID_SYS"/>
+		<Animation ID="CID_AM_SHOW_LYR_BG" FadeIn="CID_LYRICS_BG"/>
+		<Animation ID="CID_AM_HIDE_LYR_BG" FadeOut="CID_LYRICS_BG"/>
+
+	</skinwnd>
+</skin>

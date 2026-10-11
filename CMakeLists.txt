@@ -126,6 +126,9 @@ set(SRC_PATHS
     ${PROJECT_SOURCE_DIR}/MPlayerEngine
     ${PROJECT_SOURCE_DIR}/MPlayerEngine/analysis
     ${PROJECT_SOURCE_DIR}/MPlayerUI
+    ${PROJECT_SOURCE_DIR}/MPlayerUI/albumart-viz
+    ${PROJECT_SOURCE_DIR}/MPlayerUI/albumart-viz/effects
+    ${PROJECT_SOURCE_DIR}/MPlayerUI/albumart-viz/transitions
     ${PROJECT_SOURCE_DIR}/Skin
     ${PROJECT_SOURCE_DIR}/Skin/api-js
     ${PROJECT_SOURCE_DIR}/Window

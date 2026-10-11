@@ -510,7 +510,7 @@ void COnlineSearch::threadSearchOnline(void *lpParam) {
         str += _TLT("Failed to search lyrics with error:");
         str += " ";
         str += cstr_t(ERROR2STR_LOCAL(nRet));
-        MPlayerApp::getInstance()->dispatchLongErrorText(str.c_str(), getStrName(SN_HTTP_FAQ_INET));
+        MPlayerApp::getInstance()->dispatchLongErrorText(str.c_str());
 
         pSearchParam->pOnlineSearch->m_bRunning = false;
         delete pSearchParam;
@@ -537,7 +537,7 @@ void COnlineSearch::threadSearchOnline(void *lpParam) {
         str += _TLT("Failed to search lyrics with error:");
         str += " ";
         str += (cstr_t)ERROR2STR_LOCAL(nRet);
-        MPlayerApp::getInstance()->dispatchLongErrorText(str.c_str(), getStrName(SN_HTTP_FAQ_INET));
+        MPlayerApp::getInstance()->dispatchLongErrorText(str.c_str());
     }
 
     pSearchParam->pOnlineSearch->m_bRunning = false;

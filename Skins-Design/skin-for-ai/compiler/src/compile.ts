@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import { colorToHex, parseColor, type Rgba } from "./color.js";
 import { insertTagStripSvg, resolveIconName } from "./icons.js";
-import { compositeSheet, extendPos, hashJson, kebabName, rasterSvg, renderSvgToPair, savePngPair, SS, type SavedPng } from "./raster.js";
+import { clearPngColumns, compositeSheet, extendPos, hashJson, kebabName, rasterSvg, renderSvgToPair, savePngPair, SS, type SavedPng } from "./raster.js";
 import { resolveSkin, validateLayerTypes, type ResolveIssue } from "./refs.js";
 import { assertComponentType, formatZodError, SkinJsonSchema, type ComponentType } from "./schema.js";
 import { frameRingSvg, maskShapeSvg, visualToSvg, type Visual } from "./svg.js";
@@ -147,6 +147,20 @@ function windowBgVariant(comp: Record<string, unknown>): "main" | "dialog" {
     return comp.variant === "dialog" ? "dialog" : "main";
 }
 
+/** windowBackground.clearColumns: [x0, x1) 逻辑 1x 列，渲染后清成全透明（供中段 tile） */
+function clearColumnsOf(comp: Record<string, unknown>): [number, number] | null {
+    const cc = comp.clearColumns;
+    if (!Array.isArray(cc) || cc.length !== 2) {
+        return null;
+    }
+    const a = Number(cc[0]);
+    const b = Number(cc[1]);
+    if (!Number.isFinite(a) || !Number.isFinite(b) || a >= b) {
+        return null;
+    }
+    return [Math.floor(a), Math.floor(b)];
+}
+
 function windowBgDims(comp: Record<string, unknown>, radius: number): {
     w: number; h: number; horz: [number, number]; vert: [number, number]; file: string;
 } {
@@ -158,7 +172,8 @@ function windowBgDims(comp: Record<string, unknown>, radius: number): {
     const sized = sizeOf(comp, side, side);
     const w = sized.width;
     const h = (caption != null && bottom != null) ? caption + mid + bottom : sized.height;
-    const horz = extendPos(w, radius);
+    const cleared = clearColumnsOf(comp);
+    const horz: [number, number] = cleared ?? extendPos(w, radius);
     const vert: [number, number] = (caption != null && bottom != null)
         ? [caption, h - bottom]
         : extendPos(h, radius);
@@ -533,7 +548,15 @@ async function emitWindowBg(name: string, comp: Record<string, unknown>, ctx: Em
     }
     const wrapped: Visual = { layers: [{ type: "clip", radius: r, layers: inner }] };
     const svg = visualToSvg(wrapped, d.w, d.h);
-    return [await renderSvgToPair(ctx.outDir, d.file, svg, d.w, d.h)];
+    const saved = await renderSvgToPair(ctx.outDir, d.file, svg, d.w, d.h);
+    const cols = clearColumnsOf(comp);
+    if (cols) {
+        const [x0, x1] = cols;
+        await clearPngColumns(path.join(ctx.outDir, `${d.file}.png`), x0, x1);
+        await clearPngColumns(path.join(ctx.outDir, `${d.file}@2x.png`), x0 * 2, x1 * 2);
+        console.log(`  clearColumns: ${d.file} [${x0},${x1})  @2x [${x0 * 2},${x1 * 2})`);
+    }
+    return [saved];
 }
 
 async function emitFrame(name: string, comp: Record<string, unknown>, ctx: EmitCtx): Promise<SavedPng[]> {

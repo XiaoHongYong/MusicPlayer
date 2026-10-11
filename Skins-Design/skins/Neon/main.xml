@@ -3,7 +3,7 @@
 	<include Name="Styles.xml"/>
 
 	<skinwnd Extends="NeonMainFrame" Name="MainWnd"
-			MinWidth="640" MinHeight="400" Width="800" Height="480" Menu="MainWndMenu"
+			MinWidth="700" MinHeight="400" Width="800" Height="480" Menu="MainWndMenu"
 			CmdHandler="ch_common,ch_playlist" Script="main.js"
 			ContextMenu="MainContextMenu">
 
@@ -11,7 +11,7 @@
 
 			<!-- 左栏: 封面 + 频谱 + 媒体信息（自底向上 Info64 / 隙6 / Spectrum36 / 隙6 / Album） -->
 			<Container Name="LeftPanel" Rect="5,5,h-77-10-5,h-10">
-				<AlbumArt Name="AlbumArt" Rect="5,5,w-10,h-135" ID="ID_ALBUMART" Image="albumart.png"/>
+				<AlbumArt Name="AlbumArt" Rect="5,5,w-10,h-135" ID="ID_ALBUMART" Image="albumart-black.png"/>
 
 				<AudioVisualizer Name="Visualizer" Rect="8,h-124,w-16,54"
 					BarColor="#2EE6C8" PeakColor="#E8FFF9" Gap="2" MinBarHeight="1" MinBarWidth="3"/>

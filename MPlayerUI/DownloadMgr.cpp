@@ -109,11 +109,7 @@ bool CDownloadMgr::searchInCacheResult(bool bShowInfoText) {
         static int nFailedCount = 0;
         nFailedCount++;
         if (bShowInfoText && nFailedCount > 2) {
-            string str;
-            str = _TLT("Failed to get lyrics search results.");
-            str += " ";
-            str += _TLT("Please contact us to report this issue.");
-            MPlayerApp::getInstance()->dispatchLongErrorText(str.c_str(), ID_EMAIL);
+            MPlayerApp::getInstance()->dispatchLongErrorText(_TLT("Failed to get lyrics search results."));
         }
         return false;
     }
@@ -122,7 +118,7 @@ bool CDownloadMgr::searchInCacheResult(bool bShowInfoText) {
         if (bShowInfoText) {
             string str;
             str = _TLT("Search returned no results.");
-            int cmds[] = { ID_NO_SUITTABLE_LYRICS, ID_INSTRUMENTAL_MUSIC, ID_SEARCH_LYR_SUGGESTIONS };
+            int cmds[] = { ID_NO_SUITTABLE_LYRICS, ID_INSTRUMENTAL_MUSIC };
             string strCmd = "cmd://";
             for (int i = 0; i < CountOf(cmds); i++) {
                 if (i != 0) {
@@ -545,7 +541,7 @@ int CDownloadMgr::runHttpTask(CDownloadTask *pTask) {
             str += "\r\n";
             str += (cstr_t)ERROR2STR_LOCAL(nRet);
             if (pTask->taskType == DTT_LYRICS) {
-                MPlayerApp::getInstance()->dispatchLongErrorText(str.c_str(), getStrName(SN_HTTP_FAQ_INET));
+                MPlayerApp::getInstance()->dispatchLongErrorText(str.c_str());
             }
             DBG_LOG1("%s", str.c_str());
 
@@ -563,7 +559,7 @@ int CDownloadMgr::runHttpTask(CDownloadTask *pTask) {
             str += "\r\n";
             str += (cstr_t)ERROR2STR_LOCAL(nRet);
             if (pTask->taskType == DTT_LYRICS) {
-                MPlayerApp::getInstance()->dispatchLongErrorText(str.c_str(), getStrName(SN_HTTP_FAQ_INET));
+                MPlayerApp::getInstance()->dispatchLongErrorText(str.c_str());
             }
             DBG_LOG1("%s", str.c_str());
             httpClient.close();
@@ -581,7 +577,7 @@ int CDownloadMgr::runHttpTask(CDownloadTask *pTask) {
             str += "\r\n";
             str += (cstr_t)ERROR2STR_LOCAL(nRet);
             if (pTask->taskType == DTT_LYRICS) {
-                MPlayerApp::getInstance()->dispatchLongErrorText(str.c_str(), getStrName(SN_HTTP_FAQ_INET));
+                MPlayerApp::getInstance()->dispatchLongErrorText(str.c_str());
             }
             DBG_LOG1("%s", str.c_str());
             httpClient.close();

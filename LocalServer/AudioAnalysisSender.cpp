@@ -25,6 +25,16 @@ std::string AudioAnalysisSender::encodeFrame(const AudioAnalysisFrame &frame) co
     w.Key("mid"); w.Double(frame.mid);
     w.Key("treble"); w.Double(frame.treble);
     w.Key("beat"); w.Double(frame.beat);
+    w.Key("onsetStrength"); w.Double(frame.onsetStrength);
+    w.Key("beatPulse"); w.Double(frame.beatPulse);
+    w.Key("beatStrength"); w.Double(frame.beatStrength);
+    w.Key("lowEnergy"); w.Double(frame.lowEnergy);
+    w.Key("lowOnsetStrength"); w.Double(frame.lowOnsetStrength);
+    w.Key("lowOnset"); w.Double(frame.lowOnset);
+    w.Key("bassPulse"); w.Double(frame.bassPulse);
+    w.Key("bassStrength"); w.Double(frame.bassStrength);
+    w.Key("bassRhythmRate"); w.Double(frame.bassRhythmRate);
+    w.Key("rhythmConfidence"); w.Double(frame.rhythmConfidence);
     w.Key("bands");
     w.StartArray();
     const uint16_t n = std::min<uint16_t>(frame.bandCount, (uint16_t)AudioAnalysisFrame::kMaxBands);

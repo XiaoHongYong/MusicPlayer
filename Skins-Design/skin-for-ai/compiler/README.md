@@ -9,14 +9,15 @@
 1. **只改 JSON，不要写 PIL。** 设计源文件：
    - `Skins-Design/skin-for-ai/glass.skin.json`
    - `Skins-Design/skin-for-ai/neon.skin.json`
-   - `Skins-Design/skin-for-ai/crystal.skin.json`
+   - `Skins-Design/skin-for-ai/orbit.skin.json`
+   - `Skins-Design/skin-for-ai/mini.skin.json`
 2. 改 tokens / components 后编译（已有皮肤默认只更新 PNG，保留手写 XML）：
 
 ```bash
 cd Skins-Design/skin-for-ai
-./compile.sh glass          # 或 neon、glass.skin.json、--all
+./compile.sh glass          # 或 neon、orbit、glass.skin.json、--all
 ./compile.sh --list
-./compile.sh crystal --xml  # 新皮肤 / 需要覆盖 XML
+./compile.sh orbit --xml    # 新皮肤 / 需要覆盖 XML
 ```
 
 3. 终端会打印每张图的 `Horz=/Vert=` 9-slice 点。若与 XML 里 `HorzExtendPos`/`VertExtendPos` 不一致，改 XML 或改 `chrome`/`radius`/`size` 后重编。

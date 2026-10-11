@@ -7,7 +7,7 @@
 #include "../MPFloatingLyrWnd.h"
 #include "../LyricShowObj.h"
 #include "../../Utils/App.h"
-#include "CrashRptDlg.h"
+#include "../../Utils/win32/MiniDump.h"
 #include "MPMsg.h"
 #include "ProcessEnum.h"
 
@@ -60,7 +60,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, WCHAR *lpCmdLi
 
     LOG1(LOG_LVL_INFO, "start %s.", getAppNameLong().c_str());
 
-    initMiniDumper();
+    MiniDumper::init(getAppDataFile(SZ_APP_NAME "_crash.dmp").c_str(), [](cstr_t dumpFileSaved) {
+        ERR_LOG0("Crash dump saved.");
+    });
 
     if (!MPlayerApp::getInstance()->init()) {
         ERR_LOG0("Failed to init MPlayerApp.");

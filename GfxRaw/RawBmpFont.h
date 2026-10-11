@@ -3,6 +3,8 @@
 #if !defined(_RAW_BMP_FONT_H_)
 #define _RAW_BMP_FONT_H_
 
+#include "FontInfoEx.h"
+#include "RawImage.h"
 
 class CRawGraph;
 class CRawImage;
