@@ -15,6 +15,9 @@ public:
 
 };
 
+// 从 vAllWnds 中找出与 pMainWnd 磁吸相连的整组窗口（含自身），结果写入 vStickedWnds
+void getStickedWindows(Window *pMainWnd, vector<Window *> &vAllWnds, vector<Window *> &vStickedWnds);
+
 class CSkinWndDrag : public WndDrag {
 public:
     CSkinWndDrag();

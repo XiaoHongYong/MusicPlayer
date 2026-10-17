@@ -1877,6 +1877,24 @@ void CSkinFactory::onSkinWndActivate(CSkinWnd *pWndActive) {
     EndDeferWindowPos(hWindowPosInfo);
 
     // DBG_LOG1("onSkinWndActivate: %s", pWndActive->getSkinWndName());
+#else
+    // macOS：磁吸在一起的窗口跟随到前台（setForeground = orderFront，不抢 key）
+    if (!pWndActive) {
+        return;
+    }
+
+    vector<Window *> vAllWnds, vStickedWnds;
+    getWndDragTrackMove(vAllWnds);
+    getStickedWindows(pWndActive, vAllWnds, vStickedWnds);
+
+    for (Window *pWnd : vStickedWnds) {
+        if (pWnd == pWndActive || !pWnd->isVisible() || pWnd->isIconic()) {
+            continue;
+        }
+        pWnd->setForeground();
+    }
+    // 保证被点击的窗口仍在磁吸组最前
+    pWndActive->setForeground();
 #endif
 }
 

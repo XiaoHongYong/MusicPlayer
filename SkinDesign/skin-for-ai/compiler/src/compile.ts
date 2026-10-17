@@ -1387,7 +1387,7 @@ function buildThemeXml(lyrics: Record<string, unknown>, tokens: Record<string, u
     <OutlineLyrText>0</OutlineLyrText>
     <HilightOBM>1</HilightOBM>
     <LowlightOBM>1</LowlightOBM>
-    <ThemeFont>, 16, normal, , , </ThemeFont>
+    <Font>, 20, 800, 0, 0, </Font>
     <LyrDrawOpt>fadein</LyrDrawOpt>
     <LyrDisplayStyle>LyricShowMultiRow</LyrDisplayStyle>
   </LyrDispaly>
@@ -1398,7 +1398,7 @@ function buildThemeXml(lyrics: Record<string, unknown>, tokens: Record<string, u
     <OutlineLyrText>1</OutlineLyrText>
     <HilightOBM>1</HilightOBM>
     <LowlightOBM>1</LowlightOBM>
-    <ThemeFont>, 16, bold, , , </ThemeFont>
+    <Font>, 20, 900, 0, 0, </Font>
     <LyrDrawOpt>fadeout</LyrDrawOpt>
     <LyrDisplayStyle>LyricShowMultiRow</LyrDisplayStyle>
   </FloatingLyr>

@@ -7,7 +7,7 @@
     <OutlineLyrText>0</OutlineLyrText>
     <HilightOBM>1</HilightOBM>
     <LowlightOBM>1</LowlightOBM>
-    <ThemeFont>, 16, normal, , , </ThemeFont>
+    <Font>, 20, 900, 0, 0, </Font>
     <LyrDrawOpt>fadein</LyrDrawOpt>
     <LyrDisplayStyle>LyricShowMultiRow</LyrDisplayStyle>
   </LyrDispaly>
@@ -18,7 +18,7 @@
     <OutlineLyrText>1</OutlineLyrText>
     <HilightOBM>1</HilightOBM>
     <LowlightOBM>1</LowlightOBM>
-    <ThemeFont>, 16, bold, , , </ThemeFont>
+    <Font>, 36, 900, 0, 0, </Font>
     <LyrDrawOpt>fadeout</LyrDrawOpt>
     <LyrDisplayStyle>LyricShowMultiRow</LyrDisplayStyle>
   </FloatingLyr>

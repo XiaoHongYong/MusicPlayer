@@ -121,6 +121,11 @@
     mBaseWnd->onKeyUp(code, modifierFlags);
 }
 
+// 失焦时第一次点击也派发到视图，避免只激活窗口、控件无响应
+- (BOOL)acceptsFirstMouse:(NSEvent *)theEvent {
+    return YES;
+}
+
 - (void) mouseDown:(NSEvent *)theEvent {
     if (mIsTextInputMode && [[self inputContext] handleEvent:theEvent]) {
         return;

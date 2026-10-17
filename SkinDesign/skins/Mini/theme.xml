@@ -9,7 +9,6 @@
     <HilightBorderColor>#000000</HilightBorderColor>
     <LowlightOBM>1</LowlightOBM>
     <LowlightBorderColor>#000000</LowlightBorderColor>
-    <ThemeFont>, 36, 900, , , </ThemeFont>
     <Font>, 36, 900, 0, 0, </Font>
     <LyrDrawOpt>fadein</LyrDrawOpt>
     <LyrDisplayStyle>LyricShowSingleRow</LyrDisplayStyle>
@@ -23,7 +22,6 @@
     <HilightBorderColor>#000000</HilightBorderColor>
     <LowlightOBM>1</LowlightOBM>
     <LowlightBorderColor>#000000</LowlightBorderColor>
-    <ThemeFont>, 36, 900, , , </ThemeFont>
     <Font>, 36, 900, 0, 0, </Font>
     <LyrDrawOpt>fadeout</LyrDrawOpt>
     <LyrDisplayStyle>LyricShowSingleRow</LyrDisplayStyle>
