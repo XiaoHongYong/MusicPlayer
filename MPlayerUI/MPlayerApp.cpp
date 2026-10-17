@@ -11,6 +11,7 @@
 #include "../version.h"
 #include "../LyricsLib/LyricsKeywordFilter.h"
 #include "../LocalServer/LocalServer.hpp"
+#include "../MPlayer/MediaScanner.h"
 #include "../MediaTags/LrcParser.h"
 #include "utils/unittest.h"
 #include "DlgSaveLyrPrompt.h"
@@ -164,10 +165,12 @@ void MPlayerApp::_quit() {
     // 后台线程仍调 getPlayPos()/getMediaLength() 访问已释放内存而崩溃(UAF)。
     LocalServer::getInstance()->stop();
 
-    // 因为网络原因会导致 线程卡住，不主动调用 quit.
+    // 网络相关：只发退出信号，绝不 join（否则 Dock Quit 会无响应）。
     // g_LyricSearch.quit();
     // g_LyricsDownloader.quit();
     g_OnlineSearch.quit();
+    g_albumArtDownloader.quit();
+    g_mediaScanner.quit();
 
     IEventHandler::unregisterHandler();
     m_pEventDispatcher->quit();
@@ -176,13 +179,14 @@ void MPlayerApp::_quit() {
 
     g_wndFloatingLyr.destroy();
     m_pSkinFactory->quit();
+
     g_player.onQuit();
 
     g_currentLyrics.close();
 
     g_profile.close();
     g_log.close();
-    g_LangTool.close();
+    // 不调用 g_LangTool.close()：clear 译文 map 会与仍在跑的后台 _TL() 并发挂死。
 
 #if defined(_DEBUG) && defined(_MEM_LEAK_CHECK)
     DeInitAllocCheck();

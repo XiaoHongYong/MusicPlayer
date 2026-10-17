@@ -43,11 +43,18 @@ void Server::run() {
 }
 
 void Server::stop() {
-    // 从工作线程外的调用方触发：io_context::stop() 线程安全，会使 run() 返回，
-    // 同时关掉 acceptor 与所有存活连接，让 HTTP 线程尽快退出。
-    m_acceptor.close();
-    m_connectionManager.stopAll();
-    m_ioContext.stop();
+    // acceptor / connection / signal_set 只能在 io_context 线程上操作。
+    // 主线程直接 close() 会与 doAccept/kqueue_reactor 竞态，退出时常见
+    // SIGSEGV @ null+offset（见 applicationShouldTerminate → LocalServer::stop）。
+    asio::post(m_ioContext, [this]() {
+        std::error_code ec;
+        if (m_acceptor.is_open()) {
+            m_acceptor.close(ec);
+        }
+        m_connectionManager.stopAll();
+        m_signals.cancel(ec);
+        m_ioContext.stop();
+    });
 }
 
 void Server::stopConnection(const ConnectionPtr &connection) {
@@ -71,17 +78,22 @@ void Server::registerRequestHandler(const IRequestHandlerPtr &handler) {
 void Server::doAccept() {
     m_acceptor.async_accept(
         [this](std::error_code ec, asio::ip::tcp::socket socket) {
-        // Check whether the Server was stopped by a signal before this
-        // completion handler had a chance to run.
+        // stop() 已 close acceptor：取消的 accept 回调到此后不再重新挂起，
+        // 避免对正在拆除的 kqueue_reactor 再 start_op。
         if (!m_acceptor.is_open()) {
             return;
         }
 
         if (!ec) {
             m_connectionManager.start(std::make_shared<Connection>(std::move(socket), this));
+            doAccept();
+            return;
         }
 
-        doAccept();
+        // 瞬时错误（非 shut down）继续听；operation_aborted 时通常 is_open()==false。
+        if (ec != asio::error::operation_aborted) {
+            doAccept();
+        }
     });
 }
 

@@ -172,6 +172,8 @@ public:
     void unsubscribeAudioAnalysis(IAudioAnalysisSink *sink);
     void setAudioAnalysisOptions(const AudioAnalysisOptions &options);
     bool supportsAudioAnalysis() const;
+    // 延迟拆除回调：仅当 generation 仍匹配且仍无订阅者时才真正关闭分析
+    void teardownAudioAnalysisIfStillEmpty(uint64_t generation);
 
     //
     // 通知事件
@@ -249,6 +251,9 @@ protected:
     std::mutex                  m_analysisSinksMutex;
     std::vector<IAudioAnalysisSink *> m_analysisSinks;
     AudioAnalysisOptions        m_analysisOptions;
+    // 无订阅者后延迟拆除，避免换肤短暂 unsubscribe 清空 PCM 队列导致频谱卡约 2 秒
+    static constexpr int        kAnalysisTeardownDelayMs = 10 * 1000;
+    uint64_t                    m_analysisTeardownGeneration = 0;
 
 };
 

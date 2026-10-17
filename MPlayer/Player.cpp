@@ -198,9 +198,17 @@ void CPlayer::onQuit() {
     // save latest playing song file
     g_profile.writeInt(SZ_SECT_PLAYER, "NowPlayingIdx", m_idxCurrentMedia);
 
+    // 取消延迟拆除，避免 delete core 后定时回调再碰 m_playerCore
+    {
+        std::lock_guard<std::mutex> lock(m_analysisSinksMutex);
+        ++m_analysisTeardownGeneration;
+        m_analysisSinks.clear();
+    }
+
     assert(m_playerCore);
     stop();
     delete m_playerCore;
+    m_playerCore = nullptr;
 }
 
 // control player
@@ -318,6 +326,9 @@ uint32_t CPlayer::getMediaLength() {
 }
 
 uint32_t CPlayer::getPlayPos() {
+    if (!m_playerCore) {
+        return 0;
+    }
     return m_playerCore->getPos();
 }
 
@@ -886,15 +897,25 @@ void CPlayer::setAudioAnalysisOptions(const AudioAnalysisOptions &options) {
 }
 
 void CPlayer::syncAudioAnalysisSinkToCore() {
-    if (!m_playerCore) {
+    // 调用方须已持有 m_analysisSinksMutex
+    if (!m_playerCore || m_analysisSinks.empty()) {
         return;
     }
-    if (m_analysisSinks.empty()) {
-        m_playerCore->setAudioAnalysisSink(nullptr);
-    } else {
-        m_playerCore->setAudioAnalysisOptions(m_analysisOptions);
-        m_playerCore->setAudioAnalysisSink(this);
+    // 有订阅者：取消待拆除，并确保 core 继续向本对象 fan-out
+    ++m_analysisTeardownGeneration;
+    m_playerCore->setAudioAnalysisOptions(m_analysisOptions);
+    m_playerCore->setAudioAnalysisSink(this);
+}
+
+void CPlayer::teardownAudioAnalysisIfStillEmpty(uint64_t generation) {
+    std::lock_guard<std::mutex> lock(m_analysisSinksMutex);
+    if (generation != m_analysisTeardownGeneration) {
+        return;
     }
+    if (!m_analysisSinks.empty() || !m_playerCore) {
+        return;
+    }
+    m_playerCore->setAudioAnalysisSink(nullptr);
 }
 
 void CPlayer::subscribeAudioAnalysis(IAudioAnalysisSink *sink) {
@@ -912,11 +933,31 @@ void CPlayer::unsubscribeAudioAnalysis(IAudioAnalysisSink *sink) {
     if (!sink) {
         return;
     }
-    std::lock_guard<std::mutex> lock(m_analysisSinksMutex);
-    m_analysisSinks.erase(
-        std::remove(m_analysisSinks.begin(), m_analysisSinks.end(), sink),
-        m_analysisSinks.end());
-    syncAudioAnalysisSinkToCore();
+    uint64_t teardownGen = 0;
+    bool scheduleTeardown = false;
+    {
+        std::lock_guard<std::mutex> lock(m_analysisSinksMutex);
+        const bool hadSinks = !m_analysisSinks.empty();
+        m_analysisSinks.erase(
+            std::remove(m_analysisSinks.begin(), m_analysisSinks.end(), sink),
+            m_analysisSinks.end());
+        // 刚变为无订阅者：不立刻清队列，延迟拆除以免换肤断订丢失播放头同步缓冲
+        if (hadSinks && m_analysisSinks.empty() && m_playerCore) {
+            teardownGen = ++m_analysisTeardownGeneration;
+            scheduleTeardown = true;
+        }
+    }
+    if (!scheduleTeardown) {
+        return;
+    }
+    auto *disp = MPlayerApp::getEventsDispatcher();
+    if (!disp) {
+        teardownAudioAnalysisIfStillEmpty(teardownGen);
+        return;
+    }
+    disp->postExecInUIThreadDelayed([teardownGen]() {
+        g_player.teardownAudioAnalysisIfStillEmpty(teardownGen);
+    }, kAnalysisTeardownDelayMs);
 }
 
 void CPlayer::onAudioAnalysisFrame(const AudioAnalysisFrame &frame) {

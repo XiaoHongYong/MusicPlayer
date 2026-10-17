@@ -61,7 +61,10 @@ const char *MediaScanner::rescanStatus() const {
 }
 
 void MediaScanner::quit() {
-    _quit = true;
+    {
+        std::lock_guard autolock(_mutex);
+        _quit = true;
+    }
     _cv.notify_one();
     if (_thread.joinable()) {
         _thread.join();
@@ -80,7 +83,10 @@ void MediaScanner::threadRun() {
 
         if (medias.empty()) {
             std::unique_lock lock(_mutex);
-            _cv.wait(lock);
+            _cv.wait(lock, [this]() { return _quit || !_medias.empty(); });
+            if (_quit) {
+                break;
+            }
             medias = _medias;
             _medias.clear();
         }

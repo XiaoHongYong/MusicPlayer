@@ -6,6 +6,7 @@
 //
 
 #import "AppDelegate.h"
+#include <unistd.h>
 
 void CallMenuCommand(int cmd);
 
@@ -327,53 +328,11 @@ void reloadMacApplicationMenu() {
 }
 
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
-
-    // Save changes in the application's managed object context before the application terminates.
-
+    // 同步 teardown 后强制结束进程。
+    // MPlayer 侧 teardown 可完成，但 AppKit 在 return NSTerminateNow
+    // 之后的收尾仍可能挂起（无响应）；_exit 跳过该路径。
     MPlayerApp::getInstance()->quit();
-
-    if (!__managedObjectContext) {
-        return NSTerminateNow;
-    }
-
-    if (![[self managedObjectContext] commitEditing]) {
-        NSLog(@"%@:%@ unable to commit editing to terminate", [self class], NSStringFromSelector(_cmd));
-        return NSTerminateCancel;
-    }
-
-    if (![[self managedObjectContext] hasChanges]) {
-        return NSTerminateNow;
-    }
-
-    NSError *error = nil;
-    if (![[self managedObjectContext] save:&error]) {
-
-        // Customize this code block to include application-specific recovery steps.
-        BOOL result = [sender presentError:error];
-        if (result) {
-            return NSTerminateCancel;
-        }
-
-        NSString *question = NSLocalizedString(@"Could not save changes while quitting. Quit anyway?", @"Quit without saves error question message");
-        NSString *info = NSLocalizedString(@"Quitting now will lose any changes you have made since the last successful save", @"Quit without saves error question info");
-        NSString *quitButton = NSLocalizedString(@"Quit anyway", @"Quit anyway button title");
-        NSString *cancelButton = NSLocalizedString(@"Cancel", @"Cancel button title");
-        NSAlert *alert = [[NSAlert alloc] init];
-        [alert setMessageText:question];
-        [alert setInformativeText:info];
-        [alert addButtonWithTitle:quitButton];
-        [alert addButtonWithTitle:cancelButton];
-
-        NSInteger answer = [alert runModal];
-        [alert release];
-        alert = nil;
-
-        if (answer == NSAlertSecondButtonReturn) {
-            return NSTerminateCancel;
-        }
-    }
-
-    return NSTerminateNow;
+    _exit(0);
 }
 
 - (IBAction)aboutWindow:(id)sender

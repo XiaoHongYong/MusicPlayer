@@ -31,7 +31,8 @@ void CAlbumArtDownloadMgr::quit() {
         m_listTasks.clear();
     }
     m_cv.notify_all();
-    m_threadDownload.join();
+    // 不 join：processTask 可能堵在网络 I/O，join 会卡住 Dock/Cmd+Q。
+    // 进程退出时由系统回收线程。
 }
 
 bool CAlbumArtDownloadMgr::autoDownloadEnabled() const {

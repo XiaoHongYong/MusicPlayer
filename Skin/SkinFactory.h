@@ -384,6 +384,9 @@ protected:
 
     CSkinApp                    *m_pApp;
 
+    // close(true)/quit 拆除窗口期间为 true，抑制 onMainSkinWndDestory→postQuitMessage
+    bool                        m_bClosingForQuit = false;
+
 };
 
 #endif // !defined(Skin_SkinFactory_h)

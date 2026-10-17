@@ -4,13 +4,12 @@
 class CPlayerEventDispatcher {
 public:
     CPlayerEventDispatcher();
-    ~CPlayerEventDispatcher() { }
+    ~CPlayerEventDispatcher();
 
     void init() {
     }
 
-    void quit() {
-    }
+    void quit();
 
     void startLyrDrawUpdate();
 

@@ -464,8 +464,8 @@ bool COnlineSearch::init() {
 }
 
 void COnlineSearch::quit() {
-    m_threadSearch.destroy();
-    m_threadSearch.join();
+    // 不 join：搜索线程可能堵在网络；destroy() 也只是清 pthread id，并不能取消 I/O。
+    m_bRunning = false;
     m_dbSearchResult.close();
     m_dbSearchResultMem.close();
 }

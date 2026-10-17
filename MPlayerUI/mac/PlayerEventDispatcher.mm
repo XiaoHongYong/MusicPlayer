@@ -1,4 +1,4 @@
-//
+﻿//
 //  PlayerEventDispatcher.m
 //
 //  Created by Xiao Hongyong on 8/1/13.
@@ -14,7 +14,10 @@
 {
     CADisplayLink *displayLink;
     CFAbsoluteTime lastTick;
+    BOOL active;  // 期望运行；用于取消尚未执行的 Start 异步块
 }
+
+- (void)invalidateDisplayLink;
 
 @end
 
@@ -23,8 +26,22 @@
 
 @implementation _PlayerEventDispatcherInternal
 
+- (void)invalidateDisplayLink {
+    if (displayLink != nil) {
+        [displayLink invalidate];
+        displayLink = nil;
+    }
+}
+
 -(void)StartLyrDrawUpdate {
-    dispatch_async(dispatch_get_main_queue(), ^{
+    active = YES;
+    void (^start)(void) = ^{
+        if (!active) {
+            return;
+        }
+        // 避免重复 Start 泄漏仍在回调的旧 link
+        [self invalidateDisplayLink];
+
         // 用 CADisplayLink 替代 NSTimer：回调与 vsync 对齐，削减与显示刷新不同步造成的
         // 参差 CA::commit。节流闸在 onDisplayLink 内保持平均 ~40ms（原有 25fps 观感）。
         displayLink = [NSScreen.mainScreen displayLinkWithTarget:self selector:@selector(onDisplayLink:)];
@@ -35,17 +52,32 @@
         [displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
         [displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSEventTrackingRunLoopMode];
         lastTick = 0;
-    });
+    };
+    if ([NSThread isMainThread]) {
+        start();
+    } else {
+        dispatch_async(dispatch_get_main_queue(), start);
+    }
 }
 
 -(void)StopLyrDrawUpdate {
-    if (displayLink != nil) {
-        [displayLink invalidate];
-        displayLink = nil;
+    active = NO;
+    void (^stop)(void) = ^{
+        [self invalidateDisplayLink];
+    };
+    if ([NSThread isMainThread]) {
+        stop();
+    } else {
+        // 必须同步：quit/onQuit 在 delete m_playerCore 前要确保回调已停
+        dispatch_sync(dispatch_get_main_queue(), stop);
     }
 }
 
 -(void)onDisplayLink:(CADisplayLink *)sender {
+    if (!active || sender != displayLink) {
+        return;
+    }
+
     // 40ms 节流：不升 fps，仅把每次 tick 对齐到 vsync 边界。
     CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
     if (now - lastTick < 0.040) {
@@ -72,10 +104,20 @@ CPlayerEventDispatcher::CPlayerEventDispatcher() {
     m_pInternal = [[_PlayerEventDispatcherInternal alloc] init];
 }
 
+CPlayerEventDispatcher::~CPlayerEventDispatcher() {
+    stopLyrDrawUpdate();
+}
+
+void CPlayerEventDispatcher::quit() {
+    stopLyrDrawUpdate();
+}
+
 void CPlayerEventDispatcher::startLyrDrawUpdate() {
     [(_PlayerEventDispatcherInternal*)m_pInternal StartLyrDrawUpdate];
 }
 
 void CPlayerEventDispatcher::stopLyrDrawUpdate() {
-    [(_PlayerEventDispatcherInternal*)m_pInternal StopLyrDrawUpdate];
+    if (m_pInternal) {
+        [(_PlayerEventDispatcherInternal*)m_pInternal StopLyrDrawUpdate];
+    }
 }

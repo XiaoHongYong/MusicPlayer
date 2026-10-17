@@ -771,7 +771,8 @@ int CSkinFactory::changeSkin(cstr_t szSkinName, cstr_t szSkinDir, cstr_t szExtra
     string strOpenedSkinWnds;
     SetICaseStr setOpenedSkinWnds;
 
-    strOpenedSkinWnds = g_profile.getString(getSkinFileName(), "LatestOpenedSkinWnds", "");
+    // 副窗列表按皮肤名分别记忆，避免切换皮肤时互相覆盖（例如 Orbit↔Neon）
+    strOpenedSkinWnds = g_profile.getString(getSkinName(), "LatestOpenedSkinWnds", "");
     strSkinWndDef = g_profile.getString(getSkinFileName(), "DefaultSkinWnd", "");
 
     VecStrings strs;
@@ -965,6 +966,13 @@ void CSkinFactory::close(bool bQuit) {
     m_dynamicCmds.free();
     m_skinFile.close();
 
+    // bQuit 时 destroy 主窗口会走到 onMainSkinWndDestory；勿再 postQuitMessage，
+    // 否则 Dock/Cmd+Q 已在 applicationShouldTerminate→quit 中时会嵌套 terminate。
+    const bool prevClosingForQuit = m_bClosingForQuit;
+    if (bQuit) {
+        m_bClosingForQuit = true;
+    }
+
     // save opened window name, and close it.
     string strOpenedSkinWnds;
     ListSkinWnds listSkinWnds = m_listSkinWnds;
@@ -991,8 +999,8 @@ void CSkinFactory::close(bool bQuit) {
             pSkin->closeSkin();
         }
     }
-    if (listSkinWnds.size() > 0) {
-        g_profile.writeString(getSkinFileName(), "LatestOpenedSkinWnds", strOpenedSkinWnds.c_str());
+    if (listSkinWnds.size() > 0 && getSkinName()[0]) {
+        g_profile.writeString(getSkinName(), "LatestOpenedSkinWnds", strOpenedSkinWnds.c_str());
     }
 
     // assert(m_listSkinWnds.size() <= 1);
@@ -1002,6 +1010,8 @@ void CSkinFactory::close(bool bQuit) {
     // Recover the original UIDs.
     m_userCmdIDNext = ID_ID_USER_BASE;
     m_mapUserUIDs.clear();
+
+    m_bClosingForQuit = prevClosingForQuit;
 }
 
 CSkinWnd *CSkinFactory::newSkinWnd(cstr_t szSkinWndName, bool bMainWnd) {
@@ -1111,7 +1121,9 @@ void CSkinFactory::onMainSkinWndDestory(CSkinWnd *pSkinWnd) {
             nMainAppWnd++;
         }
     }
-    if (nMainAppWnd <= 1) {
+    // 用户关掉最后一个主窗口时正常走 postQuitMessage；
+    // 若已在 quit()/close(true) 拆除窗口，则跳过，避免嵌套 terminate。
+    if (nMainAppWnd <= 1 && !m_bClosingForQuit) {
         m_pApp->postQuitMessage();
     }
 }

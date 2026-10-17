@@ -20,8 +20,9 @@ public:
 
     void run();
 
-    /// 主动停止：close acceptor、停掉所有连接并 stop io_context，使 run() 返回。
-    /// 主线程退出前调用，避免在全局对象(如 g_player)析构后 HTTP 工作线程仍访问它们。
+    /// 主动停止：把 close acceptor / stopAll / cancel signals / stop io_context
+    /// post 到 io 线程执行，使 run() 返回。须在持有 Server 的线程上 join 工作线程。
+    /// 不可从其它线程直接操作 acceptor（会与 doAccept 竞态）。
     void stop();
 
     IRequestHandlerPtr getRequestHandler(const std::string &url);
