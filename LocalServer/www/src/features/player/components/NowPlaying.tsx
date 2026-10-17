@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ChevronDown, Pause, Play, SkipBack, SkipForward } from 'lucide-react';
 import { CoverImage } from '@/components/CoverImage';
 import { formatDuration } from '@/lib/utils';
@@ -32,6 +33,17 @@ export function NowPlaying() {
   const next = usePlayerStore((s) => s.next);
   const prev = usePlayerStore((s) => s.prev);
   const seek = usePlayerStore((s) => s.seek);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      setOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open, setOpen]);
 
   if (!open) return null;
 
