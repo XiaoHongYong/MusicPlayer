@@ -26,7 +26,7 @@
 
 	<styles>
 		<style>
-			<OrbitMainFrame Extends="Window">
+			<OrbitMainFrame Extends="Window" EnableEdgeMerge="true">
 				<Property Name="WindowImage" Image="bg.png" HorzExtendPos="11,53" VertExtendPos="36,56"/>
 				<!-- 专用标题栏：无菜单栏；工具条与 Win 菜单按钮见 Styles OrbitMainCaption -->
 				<OrbitMainCaption Rect="0,0,w,36"/>
@@ -73,7 +73,7 @@
 
 			<OrbitSideFrame Extends="Window"
 				MinWidth="280" MinHeight="240" Width="360" Height="480"
-				BgColor="#000000">
+				BgColor="#000000" EnableEdgeMerge="true">
 				<Property Name="WindowImage" Image="bg-dialog.png" HorzExtendPos="11,53" VertExtendPos="33,53"/>
 				<DialogCaption Rect="2,2,w-4,31"/>
 				<ClientArea Rect="8,36,w-16,h-36-10" ClipChildren="true"/>

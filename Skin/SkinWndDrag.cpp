@@ -220,6 +220,10 @@ void CSkinWndDrag::onDrag(uint32_t fwKeys, CPoint pt) {
             // end drag
             // clear drag status
             m_vStickedWnds.clear();
+
+            if (m_pSkinWndDragHost) {
+                m_pSkinWndDragHost->onWndDragEnded();
+            }
         }
     }
 }
@@ -271,8 +275,9 @@ void CSkinWndResizer::autoCloseToWindows(int &nOffx, int &nOffy) {
 
     // close to display edge
     m_pWnd->getWindowRect(&rcWnd);
-    getMonitorRestrictRect(rcWnd, rc);
-    vRcToClosedTo.push_back(rc);
+    if (getMonitorRestrictRect(rcWnd, rc)) {
+        vRcToClosedTo.push_back(rc);
+    }
 
 #ifdef _WIN32
     // close to taskbar
@@ -293,12 +298,21 @@ void CSkinWndResizer::autoCloseToWindows(int &nOffx, int &nOffy) {
 
     if (m_ResizeDirection & (RD_BOTTOM | RD_TOP)) {
         // top or bottom line close to vWnds
+        // macOS: CRect.top 是视觉下边，CRect.bottom 是视觉上边，与 onSizing 一致
         int y;
 
         if (m_ResizeDirection & RD_TOP) {
+#ifdef _WIN32
             y = m_rcResizing.top;
-        } else {
+#else
             y = m_rcResizing.bottom;
+#endif
+        } else {
+#ifdef _WIN32
+            y = m_rcResizing.bottom;
+#else
+            y = m_rcResizing.top;
+#endif
         }
 
         for (i = 0; i < vRcToClosedTo.size(); i++) {
@@ -308,9 +322,17 @@ void CSkinWndResizer::autoCloseToWindows(int &nOffx, int &nOffy) {
             }
             if (nOffy != 0) {
                 if (m_ResizeDirection & RD_TOP) {
+#ifdef _WIN32
                     m_rcResizing.top += nOffy;
-                } else {
+#else
                     m_rcResizing.bottom += nOffy;
+#endif
+                } else {
+#ifdef _WIN32
+                    m_rcResizing.bottom += nOffy;
+#else
+                    m_rcResizing.top += nOffy;
+#endif
                 }
                 break;
             }

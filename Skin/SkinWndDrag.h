@@ -10,6 +10,8 @@ class ISkinWndDragHost {
 public:
     virtual void getWndDragAutoCloseTo(vector<Window *> &vWnd) = 0;
     virtual void getWndDragTrackMove(vector<Window *> &vWnd) = 0;
+    // 拖拽结束（吸附落稳后），用于刷新一体边框等
+    virtual void onWndDragEnded() { }
 
 };
 

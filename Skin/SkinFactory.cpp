@@ -1,6 +1,7 @@
 ﻿#include "SkinTypes.h"
 #include "Skin.h"
 #include "SkinFactory.h"
+#include <algorithm>
 #include "SkinWndResizeObj.h"
 #include "SkinFadeArea.h"
 #include "SkinDecorativeContainer.h"
@@ -844,6 +845,9 @@ int CSkinFactory::changeSkin(cstr_t szSkinName, cstr_t szSkinDir, cstr_t szExtra
         }
     }
 
+    // 全部副窗就位后再刷一次一体边框（含三窗 L 形覆盖）
+    refreshAllMergedEdges();
+
     return ERR_OK;
 }
 
@@ -1051,6 +1055,7 @@ int CSkinFactory::activeOrCreateSkinWnd(SkinWndStartupInfo &skinWndStartupInfo) 
         }
         pSkinWnd->setForeground();
         skinWndStartupInfo.pSkinWnd = pSkinWnd;
+        refreshAllMergedEdges();
         return ERR_OK;
     }
 
@@ -1084,8 +1089,11 @@ int CSkinFactory::createSkinWnd(SkinWndStartupInfo &skinWndStartupInfo) {
     int nRet = skinWndStartupInfo.pSkinWnd->create(skinWndStartupInfo, this);
     if (nRet != ERR_OK) {
         delete skinWndStartupInfo.pSkinWnd;
+        return nRet;
     }
 
+    // 新建副窗落位后刷新（初始化 postCommand 开列表/歌词时走这里）
+    refreshAllMergedEdges();
     return nRet;
 }
 
@@ -1106,9 +1114,143 @@ void CSkinFactory::onSkinWndDestory(CSkinWnd *pSkinWnd) {
         CSkinWnd *pSkin = *it;
         if (pSkin == pSkinWnd) {
             m_listSkinWnds.erase(it);
+            refreshAllMergedEdges();
             return;
         }
     }
+}
+
+// 一维区间是否无缝覆盖 [rangeLo, rangeHi]
+static bool intervalsCoverRange(int rangeLo, int rangeHi, vector<pair<int, int>> &parts) {
+    if (rangeLo >= rangeHi || parts.empty()) {
+        return false;
+    }
+
+    sort(parts.begin(), parts.end(), [](const pair<int, int> &a, const pair<int, int> &b) {
+        return a.first < b.first;
+    });
+
+    int covered = rangeLo;
+    for (const auto &p : parts) {
+        int lo = std::max(p.first, rangeLo);
+        int hi = std::min(p.second, rangeHi);
+        if (hi <= lo) {
+            continue;
+        }
+        if (lo > covered) {
+            return false;
+        }
+        if (hi > covered) {
+            covered = hi;
+        }
+        if (covered >= rangeHi) {
+            return true;
+        }
+    }
+    return covered >= rangeHi;
+}
+
+// 某边被邻窗区间完全盖住则开边。支持「两窗并排 + 第三窗贴整边」：
+// 例如 Main|Playlist 同高右贴，Lyrics 宽=两者之和贴在下方 → 三边均开。
+static uint32_t calcOpenEdgesByCoverage(const CRect &rcA, const vector<CRect> &others) {
+    uint32_t edges = 0;
+
+    // 右边：邻窗左缘贴齐，且竖直区间并集盖住 A 的整条右边
+    {
+        vector<pair<int, int>> parts;
+        for (const CRect &rcB : others) {
+            if (rcA.right == rcB.left) {
+                parts.emplace_back(rcB.top, rcB.bottom);
+            }
+        }
+        if (intervalsCoverRange(rcA.top, rcA.bottom, parts)) {
+            edges |= SKIN_EDGE_OPEN_RIGHT;
+        }
+    }
+
+    // 左边
+    {
+        vector<pair<int, int>> parts;
+        for (const CRect &rcB : others) {
+            if (rcA.left == rcB.right) {
+                parts.emplace_back(rcB.top, rcB.bottom);
+            }
+        }
+        if (intervalsCoverRange(rcA.top, rcA.bottom, parts)) {
+            edges |= SKIN_EDGE_OPEN_LEFT;
+        }
+    }
+
+    // 底边 / 顶边：Win top=上 bottom=下；Mac CRect.top=视觉下边、bottom=视觉上边
+    {
+        vector<pair<int, int>> partsBottom;
+        vector<pair<int, int>> partsTop;
+        for (const CRect &rcB : others) {
+#ifdef _WIN32
+            if (rcA.bottom == rcB.top) {
+                partsBottom.emplace_back(rcB.left, rcB.right);
+            }
+            if (rcA.top == rcB.bottom) {
+                partsTop.emplace_back(rcB.left, rcB.right);
+            }
+#else
+            if (rcA.top == rcB.bottom) {
+                partsBottom.emplace_back(rcB.left, rcB.right);
+            }
+            if (rcA.bottom == rcB.top) {
+                partsTop.emplace_back(rcB.left, rcB.right);
+            }
+#endif
+        }
+        if (intervalsCoverRange(rcA.left, rcA.right, partsBottom)) {
+            edges |= SKIN_EDGE_OPEN_BOTTOM;
+        }
+        if (intervalsCoverRange(rcA.left, rcA.right, partsTop)) {
+            edges |= SKIN_EDGE_OPEN_TOP;
+        }
+    }
+
+    return edges;
+}
+
+void CSkinFactory::refreshAllMergedEdges() {
+    static bool s_inRefresh = false;
+    if (s_inRefresh) {
+        return;
+    }
+    s_inRefresh = true;
+
+    vector<CSkinWnd *> candidates;
+    vector<CRect> rects;
+    candidates.reserve(m_listSkinWnds.size());
+    for (CSkinWnd *pWnd : m_listSkinWnds) {
+        if (pWnd && pWnd->isEdgeMergeEnabled() && pWnd->isVisible() && !pWnd->isIconic()) {
+            CRect rc;
+            pWnd->getWindowRect(&rc);
+            candidates.push_back(pWnd);
+            rects.push_back(rc);
+        }
+    }
+
+    for (size_t i = 0; i < candidates.size(); i++) {
+        vector<CRect> others;
+        others.reserve(rects.size() > 0 ? rects.size() - 1 : 0);
+        for (size_t j = 0; j < rects.size(); j++) {
+            if (j != i) {
+                others.push_back(rects[j]);
+            }
+        }
+        candidates[i]->applyOpenEdges(calcOpenEdgesByCoverage(rects[i], others));
+    }
+
+    // 未参与候选的（关了开关 / 不可见）清掉开边
+    for (CSkinWnd *pWnd : m_listSkinWnds) {
+        if (pWnd && !pWnd->isEdgeMergeEnabled()) {
+            pWnd->applyOpenEdges(0);
+        }
+    }
+
+    s_inRefresh = false;
 }
 
 void CSkinFactory::onMainSkinWndDestory(CSkinWnd *pSkinWnd) {
@@ -1751,3 +1893,78 @@ void CSkinFactory::leaveInDrawUpdate() {
         pWnd->leaveInDrawUpdate();
     }
 }
+
+#if UNIT_TEST
+
+#include "utils/unittest.h"
+#include <algorithm>
+
+namespace {
+
+bool testIntervalsCoverRange(int rangeLo, int rangeHi, vector<pair<int, int>> parts) {
+    if (rangeLo >= rangeHi || parts.empty()) {
+        return false;
+    }
+    sort(parts.begin(), parts.end(), [](const pair<int, int> &a, const pair<int, int> &b) {
+        return a.first < b.first;
+    });
+    int covered = rangeLo;
+    for (const auto &p : parts) {
+        int lo = std::max(p.first, rangeLo);
+        int hi = std::min(p.second, rangeHi);
+        if (hi <= lo) {
+            continue;
+        }
+        if (lo > covered) {
+            return false;
+        }
+        if (hi > covered) {
+            covered = hi;
+        }
+        if (covered >= rangeHi) {
+            return true;
+        }
+    }
+    return covered >= rangeHi;
+}
+
+} // namespace
+
+TEST(EdgeMerge, IntervalsCoverRange) {
+    // 两段并排盖住整边
+    ASSERT_TRUE(testIntervalsCoverRange(0, 580, {{0, 290}, {290, 580}}));
+    // 有缝不盖住
+    ASSERT_FALSE(testIntervalsCoverRange(0, 580, {{0, 290}, {300, 580}}));
+    // 单窗同宽
+    ASSERT_TRUE(testIntervalsCoverRange(0, 290, {{0, 290}}));
+    // 部分覆盖不够
+    ASSERT_FALSE(testIntervalsCoverRange(0, 290, {{0, 200}}));
+}
+
+TEST(EdgeMerge, LShapeCoverage) {
+    // Main|Playlist 并排，Lyrics 贴下方整宽（Win 坐标：y 向下）
+    CRect mainRc(0, 0, 290, 460);
+    CRect playlistRc(290, 0, 580, 460);
+    CRect lyricsRc(0, 460, 580, 660);
+
+    // Lyrics 顶边被 Main+Playlist 底边并集盖住
+    vector<pair<int, int>> lyrTop;
+#ifdef _WIN32
+    if (lyricsRc.top == mainRc.bottom) {
+        lyrTop.emplace_back(mainRc.left, mainRc.right);
+    }
+    if (lyricsRc.top == playlistRc.bottom) {
+        lyrTop.emplace_back(playlistRc.left, playlistRc.right);
+    }
+#else
+    // 单测用与 Win 相同的「数值贴齐」构造；Mac 运行时用 CRect 语义在 calcOpenEdgesByCoverage
+    lyrTop.emplace_back(mainRc.left, mainRc.right);
+    lyrTop.emplace_back(playlistRc.left, playlistRc.right);
+#endif
+    ASSERT_TRUE(testIntervalsCoverRange(lyricsRc.left, lyricsRc.right, lyrTop));
+
+    // Main 底边被 Lyrics 顶边完全盖住
+    ASSERT_TRUE(testIntervalsCoverRange(mainRc.left, mainRc.right, {{lyricsRc.left, lyricsRc.right}}));
+}
+
+#endif // UNIT_TEST

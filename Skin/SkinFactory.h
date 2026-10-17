@@ -266,6 +266,9 @@ public:
     virtual void onSkinWndCreate(CSkinWnd *pSkinWnd);
     virtual void onSkinWndDestory(CSkinWnd *pSkinWnd);
 
+    // 刷新所有 EnableEdgeMerge 窗口的开边状态
+    void refreshAllMergedEdges();
+
     virtual void onMainSkinWndDestory(CSkinWnd *pSkinWnd);
 
     virtual CSkinWnd *newSkinWnd(cstr_t szSkinWndName, bool bMainWnd);

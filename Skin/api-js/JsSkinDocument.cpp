@@ -261,6 +261,16 @@ void document_postCommand(VMContext *ctx, const JsValue &thiz, const Arguments &
     }
 }
 
+void document_refreshMergedEdges(VMContext *ctx, const JsValue &thiz, const Arguments &args) {
+    auto skinWnd = documentGetSkinWnd(ctx, thiz);
+    if (skinWnd == nullptr) {
+        return;
+    }
+
+    ctx->retValue = jsValueUndefined;
+    skinWnd->refreshMergedEdges();
+}
+
 void document_startAnimation(VMContext *ctx, const JsValue &thiz, const Arguments &args) {
     auto skinWnd = documentGetSkinWnd(ctx, thiz);
     if (skinWnd == nullptr) {
@@ -296,6 +306,7 @@ static JsLibProperty documentPrototypeFunctions[] = {
     { "getCommandID", document_getCommandID },
     { "moveWindow", document_moveWindow },
     { "postCommand", document_postCommand },
+    { "refreshMergedEdges", document_refreshMergedEdges },
     { "startAnimation", document_startAnimation },
     { "stopAnimation", document_stopAnimation },
 };

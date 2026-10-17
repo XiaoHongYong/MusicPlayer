@@ -357,6 +357,8 @@ void CSkinWnd::closeSkin() {
     m_nInRedrawUpdate = 0;
     m_needRedraw = false;
     m_bSkinOpened = false;
+    m_bEnableEdgeMerge = false;
+    m_openEdges = 0;
 
     m_listUnprocessedProperties.clear();
 
@@ -377,6 +379,10 @@ void CSkinWnd::closeSkin() {
 
     m_animateType = AT_UNKNOWN;
     m_animateDuration = 0;
+
+    if (m_pSkinFactory) {
+        m_pSkinFactory->refreshAllMergedEdges();
+    }
 }
 
 CUIObject *CSkinWnd::createUIObject(cstr_t className, CSkinContainer *container) {
@@ -957,6 +963,10 @@ void CSkinWnd::onPaint(CRawGraph *canvas, CRect *rcClip) {
         if (m_imageBg.isValid()) {
             // WindowImage 固定 copy：不透明区域画底座，圆角外透明像素覆盖画布，
             // 半透明窗口下角外即透出桌面，不必再叠 copy 模式的 Frame 打孔。
+            m_bgImagePainter.openLeft = (m_openEdges & SKIN_EDGE_OPEN_LEFT) != 0;
+            m_bgImagePainter.openRight = (m_openEdges & SKIN_EDGE_OPEN_RIGHT) != 0;
+            m_bgImagePainter.openTop = (m_openEdges & SKIN_EDGE_OPEN_TOP) != 0;
+            m_bgImagePainter.openBottom = (m_openEdges & SKIN_EDGE_OPEN_BOTTOM) != 0;
             CDrawImageFunMask funcDraw(canvas, &m_imageBg,
                 m_imageBgMask.isValid() ? &m_imageBgMask : nullptr, BPM_COPY);
             m_bgImagePainter.blt(0, 0, m_rcBoundBox.width(), m_rcBoundBox.height(), funcDraw);
@@ -1044,6 +1054,10 @@ void CSkinWnd::getWndDragTrackMove(vector<Window *> &vWnd) {
     }
 }
 
+void CSkinWnd::onWndDragEnded() {
+    refreshMergedEdges();
+}
+
 void CSkinWnd::setCaptureMouse(CUIObject *pUIObj) {
     assert(pUIObj);
 
@@ -1095,6 +1109,8 @@ void CSkinWnd::onMove(int x, int y) {
         rc.bottom = rc.top + m_rcBoundBox.height();
         m_rcBoundBox = rc;
     }
+
+    refreshMergedEdges();
 }
 
 void CSkinWnd::onSize(int cx, int cy) {
@@ -1120,7 +1136,25 @@ void CSkinWnd::onSize(int cx, int cy) {
                 callVMFunction(m_onSizeListener,
                     ArgumentsX(makeJsValueInt32(cx), makeJsValueInt32(cy)));
             }
+
+            refreshMergedEdges();
         }
+    }
+}
+
+void CSkinWnd::applyOpenEdges(uint32_t openEdges) {
+    if (m_openEdges == openEdges) {
+        return;
+    }
+    m_openEdges = openEdges;
+    if (m_bSkinOpened && isWindow()) {
+        invalidateRect();
+    }
+}
+
+void CSkinWnd::refreshMergedEdges() {
+    if (m_pSkinFactory) {
+        m_pSkinFactory->refreshAllMergedEdges();
     }
 }
 
@@ -1419,6 +1453,13 @@ bool CSkinWnd::setProperty(cstr_t szProperty, cstr_t szValue) {
         return true;
     } else if (isPropertyName(szProperty, "EnableClickThrough")) {
         m_bEnableClickThrough = isTRUE(szValue);
+    } else if (isPropertyName(szProperty, "EnableEdgeMerge")) {
+        m_bEnableEdgeMerge = isTRUE(szValue);
+        if (!m_bEnableEdgeMerge) {
+            applyOpenEdges(0);
+        } else if (m_bSkinOpened) {
+            refreshMergedEdges();
+        }
     }
     else if (isPropertyName(szProperty, "EnableTranslucency")) {
         m_bTranslucencyLayered = isTRUE(szValue);
@@ -1844,6 +1885,8 @@ void CSkinWnd::onSkinLoaded() {
             }
         }
     }
+
+    refreshMergedEdges();
 }
 
 void CSkinWnd::postCustomCommandMsg(int nId) {

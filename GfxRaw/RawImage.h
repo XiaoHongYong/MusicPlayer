@@ -285,6 +285,11 @@ public:
     int                         srcHorzExtendStart = 0, srcHorzExtendEnd = 0;
     int                         srcVertExtendStart = 0, srcVertExtendEnd = 0;
     bool                        bDrawCenterArea = true;
+    // 吸附一体边框：开边时跳过该侧九宫格边/角，中段铺到外缘
+    bool                        openLeft = false;
+    bool                        openRight = false;
+    bool                        openTop = false;
+    bool                        openBottom = false;
 
 public:
     template<class _DrawImageFun>
@@ -303,86 +308,86 @@ public:
         nDstVertExtendStart = nDstY + srcVertExtendStart;
         nDstVertExtendEnd = nDstY + nDstH - (srcHeight - (srcVertExtendEnd - srcY));
 
+        // 开边：该侧固定区宽度/高度置 0，中段目标矩形扩到外缘
+        const int leftW = openLeft ? 0 : (nDstHorzExtendStart - nDstX);
+        const int rightW = openRight ? 0 : (nDstX + nDstW - nDstHorzExtendEnd);
+        const int topH = openTop ? 0 : (srcVertExtendStart - srcY);
+        // 底边固定区高度（源图与目标 1:1）。旧代码误用标题高度 srcVertExtendStart
+        // 当底栏高于标题时会竖向平铺，把底栏顶部分隔线再画到栏中间（Neon 72 vs caption 36）。
+        const int bottomSrcH = srcHeight - (srcVertExtendEnd - srcY);
+        const int bottomDstH = openBottom ? 0 : (nDstY + nDstH - nDstVertExtendEnd);
+
+        const int midLeft = nDstX + leftW;
+        const int midRight = nDstX + nDstW - rightW;
+        const int midTop = nDstY + topH;
+        const int midBottom = nDstY + nDstH - bottomDstH;
+        const int midW = midRight - midLeft;
+        const int midH = midBottom - midTop;
+
         // draw area A
-        blter(nDstX, nDstY,
-            nDstHorzExtendStart - nDstX, srcVertExtendStart - srcY,
-            srcX, srcY);
+        if (leftW > 0 && topH > 0) {
+            blter(nDstX, nDstY, leftW, topH, srcX, srcY);
+        }
 
         // draw area B
-        if (nDstHorzExtendStart < nDstHorzExtendEnd) {
-            tileBltT(nDstHorzExtendStart, nDstY,
-                nDstHorzExtendEnd - nDstHorzExtendStart,
-                srcVertExtendStart - srcY,    // Destination cy
-                srcHorzExtendStart, srcY,        // Source x, y
+        if (topH > 0 && midW > 0) {
+            tileBltT(midLeft, nDstY,
+                midW, topH,
+                srcHorzExtendStart, srcY,
                 srcHorzExtendEnd - srcHorzExtendStart,
                 srcVertExtendStart - srcY, blter);
         }
 
         // draw area C
-        blter(nDstHorzExtendEnd, nDstY,
-            nDstX + nDstW - nDstHorzExtendEnd,
-            srcVertExtendStart - srcY,
-            srcHorzExtendEnd, srcY);
-
-        //
-        // Line 2
-        //
+        if (rightW > 0 && topH > 0) {
+            blter(midRight, nDstY, rightW, topH, srcHorzExtendEnd, srcY);
+        }
 
         // draw area D
-        tileBltT(nDstX, nDstVertExtendStart,
-            nDstHorzExtendStart - nDstX,
-            nDstVertExtendEnd - nDstVertExtendStart,
-            srcX, srcVertExtendStart,
-            srcHorzExtendStart - srcX,
-            srcVertExtendEnd - srcVertExtendStart, blter);
+        if (leftW > 0 && midH > 0) {
+            tileBltT(nDstX, midTop,
+                leftW, midH,
+                srcX, srcVertExtendStart,
+                srcHorzExtendStart - srcX,
+                srcVertExtendEnd - srcVertExtendStart, blter);
+        }
 
         // draw area E
-        if (bDrawCenterArea) {
-            tileBltT(nDstHorzExtendStart, nDstVertExtendStart,
-                nDstHorzExtendEnd - nDstHorzExtendStart,
-                nDstVertExtendEnd - nDstVertExtendStart,
+        if (bDrawCenterArea && midW > 0 && midH > 0) {
+            tileBltT(midLeft, midTop,
+                midW, midH,
                 srcHorzExtendStart, srcVertExtendStart,
                 srcHorzExtendEnd - srcHorzExtendStart,
                 srcVertExtendEnd - srcVertExtendStart, blter);
         }
 
         // draw area F
-        tileBltT(nDstHorzExtendEnd, nDstVertExtendStart,
-            nDstX + nDstW - nDstHorzExtendEnd,
-            nDstVertExtendEnd - nDstVertExtendStart,
-            srcHorzExtendEnd, srcVertExtendStart,
-            srcX + srcWidth - srcHorzExtendEnd,
-            srcVertExtendEnd - srcVertExtendStart, blter);
-
-        //
-        // Line 3
-        //
-
-        // 底边固定区高度（源图与目标 1:1）。旧代码误用标题高度 srcVertExtendStart
-        // 当底栏高于标题时会竖向平铺，把底栏顶部分隔线再画到栏中间（Neon 72 vs caption 36）。
-        const int bottomSrcH = srcHeight - (srcVertExtendEnd - srcY);
-        const int bottomDstH = nDstY + nDstH - nDstVertExtendEnd;
+        if (rightW > 0 && midH > 0) {
+            tileBltT(midRight, midTop,
+                rightW, midH,
+                srcHorzExtendEnd, srcVertExtendStart,
+                srcX + srcWidth - srcHorzExtendEnd,
+                srcVertExtendEnd - srcVertExtendStart, blter);
+        }
 
         // draw area G
-        blter(nDstX, nDstVertExtendEnd,
-            nDstHorzExtendStart - nDstX, bottomDstH,
-            srcX, srcVertExtendEnd);
+        if (leftW > 0 && bottomDstH > 0) {
+            blter(nDstX, midBottom, leftW, bottomDstH, srcX, srcVertExtendEnd);
+        }
 
         // draw area H
-        if (nDstHorzExtendStart < nDstHorzExtendEnd) {
-            tileBltT(nDstHorzExtendStart, nDstVertExtendEnd,
-                nDstHorzExtendEnd - nDstHorzExtendStart,
-                bottomDstH,
+        if (bottomDstH > 0 && midW > 0) {
+            tileBltT(midLeft, midBottom,
+                midW, bottomDstH,
                 srcHorzExtendStart, srcVertExtendEnd,
                 srcHorzExtendEnd - srcHorzExtendStart,
                 bottomSrcH, blter);
         }
 
         // draw area J
-        blter(nDstHorzExtendEnd, nDstVertExtendEnd,
-            nDstX + nDstW - nDstHorzExtendEnd,
-            bottomDstH,
-            srcHorzExtendEnd, srcVertExtendEnd);
+        if (rightW > 0 && bottomDstH > 0) {
+            blter(midRight, midBottom, rightW, bottomDstH, srcHorzExtendEnd, srcVertExtendEnd);
+        }
     }
 
 };

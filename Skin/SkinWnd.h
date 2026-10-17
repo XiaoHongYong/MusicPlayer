@@ -35,6 +35,14 @@ bool getRectValue(cstr_t szValue, CRect &rc);
 
 inline bool isPropertyName(cstr_t szName, cstr_t szStr) { return strcasecmp(szName, szStr) == 0; }
 
+// WindowImage 吸附一体边框：开边掩码（对应九宫格该侧不画边/角）
+enum SkinWndOpenEdge : uint32_t {
+    SKIN_EDGE_OPEN_LEFT         = 1,
+    SKIN_EDGE_OPEN_RIGHT        = 2,
+    SKIN_EDGE_OPEN_TOP          = 4,
+    SKIN_EDGE_OPEN_BOTTOM       = 8,
+};
+
 void preMultiplyRGBColr(CColor &clr, uint8_t alpha);
 
 string colorToStr(const CColor &clr);
@@ -186,6 +194,7 @@ public:
     // ISkinWndDragHost
     virtual void getWndDragAutoCloseTo(vector<Window *> &vWnd) override;
     virtual void getWndDragTrackMove(vector<Window *> &vWnd) override;
+    virtual void onWndDragEnded() override;
 
 public:
     // IUICheckStatus interface
@@ -241,6 +250,11 @@ public:
 
     // messages to process
     virtual void onSkinLoaded();
+
+    // EnableEdgeMerge：整边完全重合时去掉邻边描边/圆角（依赖 WindowImage 九宫格）
+    bool isEdgeMergeEnabled() const { return m_bEnableEdgeMerge && m_imageBg.isValid(); }
+    void applyOpenEdges(uint32_t openEdges);
+    void refreshMergedEdges();
 
     virtual bool moveWindow(int X, int Y, int nWidth, int nHeight, bool bRepaint = true);
     virtual bool moveWindow(CRect &rc, bool bRepaint = true);
@@ -483,6 +497,8 @@ protected:
     // WindowImage：copy 铺满整窗底座（圆角外透明一并写入，一般不必再叠 Frame）
     CScaleImagePainter          m_bgImagePainter;
     CSFImage                    m_imageBg, m_imageBgMask;
+    bool                        m_bEnableEdgeMerge = false;
+    uint32_t                    m_openEdges = 0;
 
     // Unprocessed properties
     SXNode::ListProperties      m_listUnprocessedProperties;
