@@ -27,7 +27,7 @@
         │           │                │
         └───────────┼────────────────┘
                     ↓
-        Skins-Design/skins/<SkinName>/   ← 引擎直接加载
+        SkinDesign/skins/<SkinName>/   ← 引擎直接加载
                     ↓
                 MusicPlayer App
 ```
@@ -39,7 +39,7 @@ App 加载的仍是现有格式的皮肤目录（`main.xml` + `Styles.xml` + PNG
 与「运行时动态 Skin」区分开：本方案把不确定性全部留在编译期，
 运行时行为与手写皮肤完全一致，可用 skin-authoring.md 第 8 节的方法调试。
 
-当前源文件在 `Skins-Design/skin-for-ai/`：`glass`、`neon`、`orbit` 全量由
+当前源文件在 `SkinDesign/skin-for-ai/`：`glass`、`neon`、`orbit` 全量由
 compiler 产出控件 PNG；`mini` 只出主条专有图，其余通过
 `ExtraResouceFolder="Glass"` 复用。编译：`./compile.sh glass`。
 
@@ -89,7 +89,7 @@ TypeScript 在 JSON/文件/模板/CLI 上开发效率最高；Sharp 底层的 li
 ## 4. 输出产物
 
 ```
-Skins-Design/skins/<SkinName>/
+SkinDesign/skins/<SkinName>/
 ├── main.xml            ← 由 layout 节生成（或 AI 手写，引用生成的样式）
 ├── Styles.xml          ← 由 components 生成，<include StyleBase.xml> + 覆盖
 ├── theme.xml           ← 由 lyrics 节生成（可选）
@@ -619,4 +619,4 @@ Compiler 写出的 XML/INI 键必须跟引擎一致：
 - **增量**：以组件解析后的 hash 为缓存键，未变化的组件不重渲染。
 - **自检**：编译后可用 skin-authoring.md 第 8 节的日志告警
   （`Unknown property` 等）做冒烟验证。
-- **代码位置**：`Skins-Design/skin-for-ai/compiler/`（Node.js + TypeScript）。
+- **代码位置**：`SkinDesign/skin-for-ai/compiler/`（Node.js + TypeScript）。

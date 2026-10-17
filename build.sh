@@ -20,7 +20,7 @@ function create_music_player_ini() {
         echo "Creating ${file_ini} ..."
 
         echo "[MusicPlayer]
-SkinRootDir=${CUR_DIR}/Skins-Design/skins
+SkinRootDir=${CUR_DIR}/SkinDesign/skins
 LocalWWW=${CUR_DIR}/LocalServer/www/dist" > ${file_ini}
         exit_if_err "Failed to create ${file_ini}."
         echo "OK"

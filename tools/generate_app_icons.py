@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 """从母版生成各平台应用图标。
 
-母版: Skins-Design/raw/app-icon-master-1024.png
+母版: SkinDesign/raw/app-icon-master-1024.png
 产物（已在 .gitignore）:
   - MusicPlayer/MusicPlayer.icns
   - MusicPlayer/Assets.xcassets/AppIcon.appiconset/icon_*.png
   - MusicPlayer/win32/player.ico
   - MusicPlayer/tray-icons/menu-logo{,@2x}.png
-  - Skins-Design/skins/assets/logo.png
+  - SkinDesign/skins/assets/logo.png
   - LocalServer/www/public/favicon.ico
   - LocalServer/www/public/favicon-16.png
   - LocalServer/www/public/favicon-32.png
@@ -34,12 +34,12 @@ except ImportError:
     sys.exit(1)
 
 ROOT = Path(__file__).resolve().parents[1]
-MASTER = ROOT / "Skins-Design" / "raw" / "app-icon-master-1024.png"
+MASTER = ROOT / "SkinDesign" / "raw" / "app-icon-master-1024.png"
 
 ICNS_OUT = ROOT / "MusicPlayer" / "MusicPlayer.icns"
 APPICONSET = ROOT / "MusicPlayer" / "Assets.xcassets" / "AppIcon.appiconset"
 ICO_OUT = ROOT / "MusicPlayer" / "win32" / "player.ico"
-LOGO_OUT = ROOT / "Skins-Design" / "skins" / "assets" / "logo.png"
+LOGO_OUT = ROOT / "SkinDesign" / "skins" / "assets" / "logo.png"
 MENU_LOGO = ROOT / "MusicPlayer" / "tray-icons" / "menu-logo.png"
 MENU_LOGO_2X = ROOT / "MusicPlayer" / "tray-icons" / "menu-logo@2x.png"
 WWW_PUBLIC = ROOT / "LocalServer" / "www" / "public"

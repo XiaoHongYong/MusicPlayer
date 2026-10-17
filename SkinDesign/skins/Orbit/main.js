@@ -62,7 +62,31 @@ document.onpointerup = function(target) {
     return true;
 };
 
+// 首次打开：主窗 + 列表并排 290×460，歌词 580×200 贴在下方
 if (profile.getInt('Orbit-AutoOpened', 0) == 0) {
+    var W = 290;
+    var H = 460;
+    var lyrW = 580;
+    var lyrH = 200;
+    var x = 100;
+    var y = 100;
+
+    document.moveWindow(x, y, W, H);
+    profile.writeInt('Orbit.MainWnd', 'wnd_left', x);
+    profile.writeInt('Orbit.MainWnd', 'wnd_top', y);
+    profile.writeInt('Orbit.MainWnd', 'wnd_width', W);
+    profile.writeInt('Orbit.MainWnd', 'wnd_height', H);
+
+    profile.writeInt('Orbit.PlaylistWnd', 'wnd_left', x + W);
+    profile.writeInt('Orbit.PlaylistWnd', 'wnd_top', y);
+    profile.writeInt('Orbit.PlaylistWnd', 'wnd_width', W);
+    profile.writeInt('Orbit.PlaylistWnd', 'wnd_height', H);
+
+    profile.writeInt('Orbit.LyricsWnd', 'wnd_left', x);
+    profile.writeInt('Orbit.LyricsWnd', 'wnd_top', y + H);
+    profile.writeInt('Orbit.LyricsWnd', 'wnd_width', lyrW);
+    profile.writeInt('Orbit.LyricsWnd', 'wnd_height', lyrH);
+
     document.postCommand(CID_OPEN_PLAYLIST);
     document.postCommand(CID_OPEN_LYRICS);
     profile.writeInt('Orbit-AutoOpened', 1);

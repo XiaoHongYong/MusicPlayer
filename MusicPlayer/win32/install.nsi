@@ -59,13 +59,13 @@ Section "MusicPlayer (required)"
   File ..\..\build\Release\MusicPlayer.exe
 
   SetOutPath $INSTDIR
-  File /r ..\..\Skins-Design\skins
+  File /r ..\..\SkinDesign\skins
 
   SetOutPath $INSTDIR\patterns
-  File /r ..\..\Skins-Design\patterns
+  File /r ..\..\SkinDesign\patterns
 
   SetOutPath $INSTDIR\skin-creator
-  File /r ..\..\Skins-Design\skin-creator\*.*
+  File /r ..\..\SkinDesign\skin-creator\*.*
 
   SetOutPath $INSTDIR\local-server
   File /r ..\..\LocalServer\www\dist\spa\*.*

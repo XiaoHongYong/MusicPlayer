@@ -9,7 +9,7 @@ function printHelp(): void {
 用法:
   pnpm exec tsx src/cli.ts compile <skin.json> [--out <目录>] [--force] [--png-only]
 
---out       皮肤父目录（默认 Skins-Design/skins），实际写到 <out>/<meta.name>/
+--out       皮肤父目录（默认 SkinDesign/skins），实际写到 <out>/<meta.name>/
 --force     忽略缓存，全部重渲
 --png-only  只写 PNG，不覆盖 Styles.xml / main.xml / theme.xml（给已有手写皮肤换图）
 

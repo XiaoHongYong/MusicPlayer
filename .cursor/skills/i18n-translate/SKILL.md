@@ -39,7 +39,7 @@ python3 tools/i18n_extract.py
 
 C++: `_TL("...")` / `_TLT("...")` / `_TLM("...")` string literals (concatenated literals included).
 Web: `t("...")` / `t('...')` first argument. Dynamic `t(item.label)` is **not** extracted — use `t('Home')` literals (or `(t) => t('Home')`).
-Skin: `Skins-Design/skins/assets/menu.json` item titles; XML `Text` / `ToolTip` / `PlaceHolder`. Write English in those attributes (the same keys `_TL` uses at runtime).
+Skin: `SkinDesign/skins/assets/menu.json` item titles; XML `Text` / `ToolTip` / `PlaceHolder`. Write English in those attributes (the same keys `_TL` uses at runtime).
 
 **2. Translate missing keys** in `i18n/locales/zh-CN.json` (and any new locale).
 

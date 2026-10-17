@@ -3,7 +3,7 @@
 
 C++ macros: _TL / _TLT / _TLM (see Utils/LocalizeTool.h)
 Web calls:  t("...") / t('...')  (first argument only)
-Skin menus: Skins-Design/skins/assets/menu.json item titles
+Skin menus: SkinDesign/skins/assets/menu.json item titles
 Skin XML:  Text / ToolTip / PlaceHolder attributes
 
 Source of truth for translations: i18n/locales/<locale>.json
@@ -44,8 +44,8 @@ SKIP_DIR_NAMES = {
 CPP_MACROS = ("_TLT", "_TLM", "_TL")  # longer first
 WEB_T_NAME = "t"
 
-MENU_JSON = ROOT / "Skins-Design" / "skins" / "assets" / "menu.json"
-SKIN_ROOT = ROOT / "Skins-Design" / "skins"
+MENU_JSON = ROOT / "SkinDesign" / "skins" / "assets" / "menu.json"
+SKIN_ROOT = ROOT / "SkinDesign" / "skins"
 SKIN_ATTR_RE = re.compile(r'\b(Text|ToolTip|PlaceHolder)="([^"]*)"', re.IGNORECASE)
 SKIP_SKIN_VALUE_RE = re.compile(
     r"^(TRUE|FALSE|#?[0-9A-Fa-f]{3,8}|[\d.,\s/%+-]*)$",

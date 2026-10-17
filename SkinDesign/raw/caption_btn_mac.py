@@ -6,8 +6,8 @@
   0 留空, 1=最小化, 2=最大化, 3=还原, 4=关闭。
 行 = normal / hover / pressed。mac 布局里 XML 按钮顺序为 关闭、最小化、最大化。
 
-用法: python3 Skins-Design/raw/caption_btn_mac.py
-输出: Skins-Design/skins/assets/caption_btn_mac.png (+ @2x)
+用法: python3 SkinDesign/raw/caption_btn_mac.py
+输出: SkinDesign/skins/assets/caption_btn_mac.png (+ @2x)
 """
 import os
 from PIL import Image, ImageDraw

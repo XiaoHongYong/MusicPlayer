@@ -116,7 +116,7 @@
 	</skinwnd>
 
 	<skinwnd Extends="OrbitSideFrame" Name="LyricsWnd" Caption="Lyrics"
-		MinWidth="280" MinHeight="240" Width="380" Height="480"
+		MinWidth="280" MinHeight="200" Width="380" Height="480"
 		CmdHandler="ch_common" ContextMenu="LyricsMenu" Script="lyrics.js">
 
 		<DecorativeContainer ID="CID_LYRICS" Name="LyricsArea" Rect="0,0,w,h">

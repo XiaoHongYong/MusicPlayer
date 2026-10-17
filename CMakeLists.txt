@@ -184,8 +184,8 @@ if(APPLE)
     file(GLOB RESOURCES "${PROJECT_SOURCE_DIR}/MusicPlayer/tray-icons/*.png")
     set(RESOURCES ${RESOURCES}
         ${PROJECT_SOURCE_DIR}/MusicPlayer/Base.lproj/MainMenu.xib
-        ${PROJECT_SOURCE_DIR}/Skins-Design/skins
-        ${PROJECT_SOURCE_DIR}/Skins-Design/patterns
+        ${PROJECT_SOURCE_DIR}/SkinDesign/skins
+        ${PROJECT_SOURCE_DIR}/SkinDesign/patterns
         ${PROJECT_SOURCE_DIR}/MusicPlayer/MusicPlayer.icns
         ${PROJECT_SOURCE_DIR}/MetadataInference/config/metadata_words.json
     )

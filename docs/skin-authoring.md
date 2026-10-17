@@ -1,7 +1,7 @@
 # 皮肤制作指南
 
 本文档介绍如何为 MusicPlayer 制作皮肤。皮肤引擎位于 `Skin/`（TinyJS + Agg 自绘），
-本文以 **Neon** 皮肤（`Skins-Design/skins/Neon/`）为参考实例，它是按本文档制作的完整样板。
+本文以 **Neon** 皮肤（`SkinDesign/skins/Neon/`）为参考实例，它是按本文档制作的完整样板。
 
 ## 1. 皮肤目录与发现机制
 
@@ -11,9 +11,9 @@
 皮肤根目录按优先级（`CSkinFactory::getSkinRootDir()`）：
 
 1. 配置文件中 `SkinRootDir`（开发时 `build.sh` 会写入 `build/Debug/MusicPlayer.ini`，
-   指向 `Skins-Design/skins`）；
-2. App 包内 `<Resources>/skins`（CMake 将 `Skins-Design/skins` 整目录打包）；
-3. 开发兜底：`<Resources>/../../Skins-Design/skins`。
+   指向 `SkinDesign/skins`）；
+2. App 包内 `<Resources>/skins`（CMake 将 `SkinDesign/skins` 整目录打包）；
+3. 开发兜底：`<Resources>/../../SkinDesign/skins`。
 
 **资源查找顺序**（打开任意图片/XML 时，`CSkinFactory::openSkin`）：
 
@@ -75,7 +75,7 @@
 
 专有歌词配色仍用本皮肤 `theme.xml`（查找时本目录优先）。
 
-参考实现：`Skins-Design/skins/Mini/`。
+参考实现：`SkinDesign/skins/Mini/`。
 
 `<skinwnd>` 关键属性：
 
@@ -340,9 +340,9 @@ profile.writeInt('Neon-ShowLyrics', 1);
 
 ## 7. 图片与 @2x
 
-- 皮肤 PNG 由 Skin Compiler 从 `Skins-Design/skin-for-ai/<name>.skin.json` 生成：
-  `cd Skins-Design/skin-for-ai && ./compile.sh glass`（或 `neon` / `orbit` / `mini`）。
-  格式见 `docs/skin-compiler.md`。不要再写 `Skins-Design/raw/*_gen_assets.py`。
+- 皮肤 PNG 由 Skin Compiler 从 `SkinDesign/skin-for-ai/<name>.skin.json` 生成：
+  `cd SkinDesign/skin-for-ai && ./compile.sh glass`（或 `neon` / `orbit` / `mini`）。
+  格式见 `docs/skin-compiler.md`。不要再写 `SkinDesign/raw/*_gen_assets.py`。
 
 ## 8. 调试技巧
 

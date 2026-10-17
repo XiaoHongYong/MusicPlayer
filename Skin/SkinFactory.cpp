@@ -1256,7 +1256,7 @@ cstr_t CSkinFactory::getSkinRootDir() {
         // 可能在编译输出目录 build/debug
         if (!isFileExist(m_strSkinRootDir.c_str())) {
             m_strSkinRootDir = getAppResourceDir();
-            m_strSkinRootDir += "../../Skins-Design/skins";
+            m_strSkinRootDir += "../../SkinDesign/skins";
             strrep(m_strSkinRootDir, '/', PATH_SEP_CHAR);
         }
 

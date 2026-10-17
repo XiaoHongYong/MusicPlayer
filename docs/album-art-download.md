@@ -25,8 +25,8 @@
 | `MPlayerUI/MusicBrainzAlbumArtSource.*` | 首选：MusicBrainz 搜 release/recording，Cover Art Archive 下 `front-500` |
 | `MPlayerUI/ChinaAlbumArtSource.*` | 国内兜底：网易云 `/api/cloudsearch/pc`（专辑 type=10 / 单曲 type=1，兼容 `al`/`ar`），旧 `/api/search/get/web` 作回退；再 iTunes `hk/tw/us`（中国区目录已空） |
 | `MPlayerUI/AlbumArtDownloadMgr.*` | 下载线程、5 秒/张限速、多来源失败回退、落盘、完成后 `ET_PLAYER_CUR_MEDIA_INFO_CHANGED`；`downloadNow()` 给手动下载对话框用 |
-| `MPlayerUI/DlgAlbumArtDownload.*`、`Skins-Design/skins/assets/DlgAlbumArtDownload.xml` | 封面菜单「Download Album Art...」：实时日志（候选、搜索结果、HTTP 错误、保存路径） |
-| `MPlayerUI/PreferPageAlbumArt.*`、`Skins-Design/skins/assets/Pf_AlbumArt.xml` | 偏好设置顶栏 Album Art（与 Lyrics 平级） |
+| `MPlayerUI/DlgAlbumArtDownload.*`、`SkinDesign/skins/assets/DlgAlbumArtDownload.xml` | 封面菜单「Download Album Art...」：实时日志（候选、搜索结果、HTTP 错误、保存路径） |
+| `MPlayerUI/PreferPageAlbumArt.*`、`SkinDesign/skins/assets/Pf_AlbumArt.xml` | 偏好设置顶栏 Album Art（与 Lyrics 平级） |
 | `MPlayerUI/AlbumArtSearchHistory.*` | 一个月内搜过的查询不再搜（失败也记） |
 | `MPlayerUI/CurMediaAlbumArt.cpp` | 加载顺序：内嵌 → 歌曲目录（专辑名 / `Artist - Album` / `Folder`）→ 应用数据缓存 |
 | `Utils/HttpsGet.*`、`Utils/mac/HttpsGet.mm` | HTTPS GET（macOS 用 NSURL；其它平台 mbedtls） |

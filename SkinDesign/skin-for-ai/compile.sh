@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 调用 Skin Compiler，按指定 skin.json 生成或更新 Skins-Design/skins/<Name>/ 资源。
+# 调用 Skin Compiler，按指定 skin.json 生成或更新 SkinDesign/skins/<Name>/ 资源。
 #
 # 用法:
 #   ./compile.sh glass
@@ -19,7 +19,7 @@ usage() {
       ./compile.sh --list
 
 根据 skin-for-ai 下的 <name>.skin.json 调用 Skin Compiler，
-输出到 Skins-Design/skins/<meta.name>/。
+输出到 SkinDesign/skins/<meta.name>/。
 
 文件名可以是 stem（glass）、完整文件名（glass.skin.json）或路径。
 

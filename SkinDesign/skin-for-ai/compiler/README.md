@@ -7,14 +7,14 @@
 ## 给 AI agent
 
 1. **只改 JSON，不要写 PIL。** 设计源文件：
-   - `Skins-Design/skin-for-ai/glass.skin.json`
-   - `Skins-Design/skin-for-ai/neon.skin.json`
-   - `Skins-Design/skin-for-ai/orbit.skin.json`
-   - `Skins-Design/skin-for-ai/mini.skin.json`
+   - `SkinDesign/skin-for-ai/glass.skin.json`
+   - `SkinDesign/skin-for-ai/neon.skin.json`
+   - `SkinDesign/skin-for-ai/orbit.skin.json`
+   - `SkinDesign/skin-for-ai/mini.skin.json`
 2. 改 tokens / components 后编译（已有皮肤默认只更新 PNG，保留手写 XML）：
 
 ```bash
-cd Skins-Design/skin-for-ai
+cd SkinDesign/skin-for-ai
 ./compile.sh glass          # 或 neon、orbit、glass.skin.json、--all
 ./compile.sh --list
 ./compile.sh orbit --xml    # 新皮肤 / 需要覆盖 XML
@@ -29,7 +29,7 @@ cd Skins-Design/skin-for-ai
 - Node.js ≥ 18，**pnpm** ≥ 9（不要用 npm / yarn）
 
 ```bash
-cd Skins-Design/skin-for-ai/compiler
+cd SkinDesign/skin-for-ai/compiler
 pnpm install
 ```
 

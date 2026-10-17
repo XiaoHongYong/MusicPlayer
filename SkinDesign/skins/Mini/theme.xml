@@ -6,9 +6,9 @@
     <FgLowColor>#5B6372</FgLowColor>
     <OutlineLyrText>1</OutlineLyrText>
     <HilightOBM>1</HilightOBM>
-    <HilightBorderColor>#FFFFFF</HilightBorderColor>
+    <HilightBorderColor>#000000</HilightBorderColor>
     <LowlightOBM>1</LowlightOBM>
-    <LowlightBorderColor>#FFFFFF</LowlightBorderColor>
+    <LowlightBorderColor>#000000</LowlightBorderColor>
     <ThemeFont>, 36, 900, , , </ThemeFont>
     <Font>, 36, 900, 0, 0, </Font>
     <LyrDrawOpt>fadein</LyrDrawOpt>
@@ -20,9 +20,9 @@
     <FgLowColor>#5B6372</FgLowColor>
     <OutlineLyrText>1</OutlineLyrText>
     <HilightOBM>1</HilightOBM>
-    <HilightBorderColor>#FFFFFF</HilightBorderColor>
+    <HilightBorderColor>#000000</HilightBorderColor>
     <LowlightOBM>1</LowlightOBM>
-    <LowlightBorderColor>#FFFFFF</LowlightBorderColor>
+    <LowlightBorderColor>#000000</LowlightBorderColor>
     <ThemeFont>, 36, 900, , , </ThemeFont>
     <Font>, 36, 900, 0, 0, </Font>
     <LyrDrawOpt>fadeout</LyrDrawOpt>
