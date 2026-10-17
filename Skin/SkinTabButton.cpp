@@ -41,7 +41,7 @@ void CSkinTabButton::drawButton(CRawGraph *canvas, int nButton, BT_DRAW_STATE bt
     }
 
     if (bt.nCurStatus == Button::STATUS_CHECKED) {
-        nBtImageTop += m_nImageHeight * ROW_MAX;
+        nBtImageTop += m_nImageHeight * ROW_INTERACTIVE_COUNT;
     }
 
     // draw button left border

@@ -63,6 +63,7 @@ public:
     bool onMouseMove(CPoint point) override;
     bool onLButtonUp(uint32_t nFlags, CPoint point) override;
     bool onLButtonDown(uint32_t nFlags, CPoint point) override;
+    bool onLButtonClick(uint32_t nFlags, CPoint point) override;
 
     bool onCommand(uint32_t nId) override;
 
@@ -105,11 +106,14 @@ protected:
     void addTooltip();
     void delTooltip();
 
+    // FullStatusImage 精灵图行序：normal / hover / pressed / [inactive]
+    // inactive 行为窗口失焦灰态（与系统标题栏一致）；图高不足 4 行时忽略。
     enum BT_DRAW_STATE {
-        ROW_NORMAL,
-        ROW_HOVER,
-        ROW_DOWN,
-        ROW_MAX,
+        ROW_NORMAL = 0,
+        ROW_HOVER = 1,
+        ROW_DOWN = 2,
+        ROW_INTERACTIVE_COUNT = 3, // normal/hover/pressed 行数；TabButton 选中组行偏移
+        ROW_INACTIVE = 3,         // 第 4 行（失焦灰态）
     };
 
     void calculateBtWidth(CRawGraph *canvas, Button &bt);
@@ -117,6 +121,9 @@ protected:
     virtual void drawButton(CRawGraph *canvas, int nButton, BT_DRAW_STATE btDrawState, int x, int y, int nHeight, int nBtImageLeft);
 
     void drawCurButtonFadein(CRawGraph *canvas, int nButton, BT_DRAW_STATE btDrawState, int x, int y, int nHeight, int nBtImageLeft);
+
+    // 精灵图是否含失焦灰态行（第 4 行）
+    bool hasInactiveImageRow() const;
 
 protected:
     string                      m_strImageFile;

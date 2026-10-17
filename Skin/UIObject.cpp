@@ -860,9 +860,16 @@ void CUIObject::setText(cstr_t szText) {
     m_strText = _TL(m_strTextEnglish.c_str());
 }
 
-void CUIObject::setFocus() {
-    assert(needMsgKey() && isVisible() && isParentVisible());
+void CUIObject::onKillFocus() {
+    if (m_onKillFocusListener.isFunction() && m_pSkin) {
+        m_pSkin->callVMFunction(m_onKillFocusListener);
+    }
+}
 
+void CUIObject::setFocus() {
+    if (!needMsgKey() || !isVisible() || !isParentVisible() || !m_pSkin) {
+        return;
+    }
     m_pSkin->setFocusUIObj(this);
 }
 

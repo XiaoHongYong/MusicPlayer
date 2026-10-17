@@ -250,9 +250,11 @@ public:
 
     bool onLButtonUp(uint32_t nFlags, CPoint point) override;
     bool onLButtonDown(uint32_t nFlags, CPoint point) override;
+    bool onLButtonClick(uint32_t nFlags, CPoint point) override;
     bool onLButtonDblClk(uint32_t nFlags, CPoint point) override;
     bool onRButtonDown(uint32_t nFlags, CPoint point) override;
     bool onRButtonUp(uint32_t nFlags, CPoint point) override;
+    bool onRButtonClick(uint32_t nFlags, CPoint point) override;
     bool onMouseDrag(CPoint point) override;
     bool onMouseMove(CPoint point) override;
 
@@ -300,7 +302,7 @@ protected:
     vector<CColor>              m_vColorsOrg;
     CSkinFontProperty           m_font;
     int                         m_nBegSelRow, m_nEndSelRow;
-    bool                        m_bClickBtDown;
+    bool                        m_bSkipClick = false; // 列宽拖拽等非点击手势时抑制 Click
 
     int                         m_nowPlayingRow;
 

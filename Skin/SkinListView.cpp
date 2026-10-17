@@ -50,7 +50,6 @@ CSkinListView::CSkinListView() {
     m_nBorderWidth = 0;
 
     m_bHoverMouseSel = false;
-    m_bClickBtDown = false;
 
     m_nFirstVisibleRow = 0;
     m_nBegSelRow = -1;
@@ -1000,11 +999,12 @@ bool CSkinListView::onLButtonDown(uint32_t nFlags, CPoint point) {
         m_nResizingCol = nColumnIndex;
         m_ptStartDrag = point;
         m_bAdjustColWidth = true;
+        m_bSkipClick = true;
         setCursor(m_curResizeCol);
         return true;
     }
 
-    m_bClickBtDown = true;
+    m_bSkipClick = false;
 
     CPaintUpdater updater(this);
     CSelChangedCheck selChecher(this);
@@ -1074,7 +1074,7 @@ bool CSkinListView::onRButtonDown(uint32_t nFlags, CPoint point) {
         sendNotifyEvent(CSkinListCtrlEventNotify::C_SEL_CHANGED, nClickedRow, nClickedCol);
     }
 
-    return false;
+    return true;
 }
 
 
@@ -1083,9 +1083,12 @@ bool CSkinListView::onRButtonUp(uint32_t nFlags, CPoint point) {
         return true;
     }
 
-    sendNotifyEvent(CSkinListCtrlEventNotify::C_RBTN_CLICK);
-
     return false;
+}
+
+bool CSkinListView::onRButtonClick(uint32_t nFlags, CPoint point) {
+    sendNotifyEvent(CSkinListCtrlEventNotify::C_RBTN_CLICK);
+    return true;
 }
 
 
@@ -1331,22 +1334,27 @@ bool CSkinListView::onLButtonUp(uint32_t nFlags, CPoint point) {
 
     invalidate();
 
-    if (m_bClickBtDown) {
-        m_bClickBtDown = false;
+    return true;
+}
 
-        CPoint ptAtItemCell;
-        int nClickedRow = -1, nClickedCol = -1;
-        bool bItemClickable;
-        getRowColAtPoint(point, nClickedRow, nClickedCol, &ptAtItemCell, &bItemClickable);
-        if (bItemClickable) {
-            setClickCursor();
+bool CSkinListView::onLButtonClick(uint32_t nFlags, CPoint point) {
+    if (m_bSkipClick) {
+        m_bSkipClick = false;
+        return false;
+    }
 
-            CSkinListCtrlEventNotify event(this, nClickedRow, nClickedCol);
-            event.cmd = CSkinListCtrlEventNotify::C_CLICK_CMD;
-            m_pSkin->dispatchUIObjNotify(&event);
-        } else {
-            sendNotifyEvent(CSkinListCtrlEventNotify::C_CLICK, nClickedRow, nClickedCol);
-        }
+    CPoint ptAtItemCell;
+    int nClickedRow = -1, nClickedCol = -1;
+    bool bItemClickable;
+    getRowColAtPoint(point, nClickedRow, nClickedCol, &ptAtItemCell, &bItemClickable);
+    if (bItemClickable) {
+        setClickCursor();
+
+        CSkinListCtrlEventNotify event(this, nClickedRow, nClickedCol);
+        event.cmd = CSkinListCtrlEventNotify::C_CLICK_CMD;
+        m_pSkin->dispatchUIObjNotify(&event);
+    } else {
+        sendNotifyEvent(CSkinListCtrlEventNotify::C_CLICK, nClickedRow, nClickedCol);
     }
 
     return true;

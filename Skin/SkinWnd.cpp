@@ -295,6 +295,8 @@ void CSkinWnd::closeSkin() {
     m_onDestoryListener = jsValueEmpty;
     m_onCommandListener = jsValueEmpty;
     m_onMouseActivateListener = jsValueEmpty;
+    m_onPointerDownListener = jsValueEmpty;
+    m_onPointerUpListener = jsValueEmpty;
 
     if (m_onDestoryListener.isFunction()) {
         callVMFunction(m_onDestoryListener);
@@ -444,6 +446,20 @@ void CSkinWnd::onMouseDrag(uint32_t nFlags, CPoint point) {
         }
     }
 
+    // Down 落在可点击但未 capture 的控件上（如封面）：位移超阈值则改拖窗口，Up 时不再发 Click
+    if (m_pUIObjLButtonDown && (nFlags & MK_LBUTTON)
+        && !m_pUIObjLButtonDown->needMsgMouseMove()) {
+        const int dx = point.x - m_ptLButtonDown.x;
+        const int dy = point.y - m_ptLButtonDown.y;
+        if (dx * dx + dy * dy > kClickMoveTolerance * kClickMoveTolerance) {
+            CPoint ptScreen = getCursorPos();
+            m_WndDrag.onDrag(nFlags, ptScreen);
+            if (m_WndDrag.isDragging()) {
+                return;
+            }
+        }
+    }
+
     // then let root container to process it
     if (!m_rootConainter.onMouseDrag(point)) {
         // else, should set mouse resizing cursor
@@ -478,16 +494,58 @@ void CSkinWnd::onMouseMove(CPoint point) {
     }
 }
 
+bool CSkinWnd::notifyPointerDown() {
+    if (!m_onPointerDownListener.isFunction() || !m_vm) {
+        return false;
+    }
+
+    auto ctx = m_vm->defaultRuntime()->mainCtx();
+    JsValue target = jsValueEmpty;
+    if (m_pUIObjLButtonDown) {
+        target = m_pUIObjLButtonDown->getJsObject(ctx);
+    }
+    callVMFunction(m_onPointerDownListener, ArgumentsX(target));
+    if (ctx->error != JE_OK) {
+        return false;
+    }
+    return ctx->retValue.type == JDT_BOOL && getJsValueBool(ctx->retValue);
+}
+
+bool CSkinWnd::notifyPointerUp() {
+    if (!m_onPointerUpListener.isFunction() || !m_vm) {
+        return false;
+    }
+
+    auto ctx = m_vm->defaultRuntime()->mainCtx();
+    JsValue target = jsValueEmpty;
+    if (m_pUIObjLButtonDown) {
+        target = m_pUIObjLButtonDown->getJsObject(ctx);
+    }
+    callVMFunction(m_onPointerUpListener, ArgumentsX(target));
+    if (ctx->error != JE_OK) {
+        return false;
+    }
+    return ctx->retValue.type == JDT_BOOL && getJsValueBool(ctx->retValue);
+}
+
 void CSkinWnd::onLButtonDown(uint32_t nFlags, CPoint point) {
     onMouseActiveMsg();
     m_skinToolTip.onLButtonDown(nFlags, point);
 
     setFocus();
 
+    m_pUIObjLButtonDown = nullptr;
+    m_ptLButtonDown = point;
+
     // first send message to ui objects that captured the mouse!
     if (m_pUIObjCapMouse) {
         if (isMouseCaptured()) {
             if (m_pUIObjCapMouse->onLButtonDown(nFlags, point)) {
+                m_pUIObjLButtonDown = m_pUIObjCapMouse;
+                if (notifyPointerDown()) {
+                    // 吃掉：不记 down，后续不派发 Click；真正 mouseup 仍会清理控件状态
+                    m_pUIObjLButtonDown = nullptr;
+                }
                 return;
             }
         } else {
@@ -502,6 +560,16 @@ void CSkinWnd::onLButtonDown(uint32_t nFlags, CPoint point) {
         if (!m_wndResizer.isSizing()) {
             point = getCursorPos();
             m_WndDrag.onDrag(nFlags, point);
+        }
+    }
+
+    // 命中控件（或空，表示点在空白/拖窗区）通知脚本
+    if (notifyPointerDown()) {
+        m_pUIObjLButtonDown = nullptr;
+        // 若已开始拖窗，立即结束，避免吃掉 down 后窗口仍跟着鼠标走
+        if (m_WndDrag.isDragging()) {
+            CPoint ptScreen = getCursorPos();
+            m_WndDrag.onDrag(0, ptScreen);
         }
     }
 }
@@ -559,39 +627,67 @@ void CSkinWnd::onLButtonUp(uint32_t nFlags, CPoint point) {
     if (m_wndResizer.isSizing()) {
         m_wndResizer.onMouseMessage(nFlags, point);
         //        bMsgProceed = true;
+        m_pUIObjLButtonDown = nullptr;
         return;
     }
 
-    if (m_WndDrag.isDragging()) {
+    // 脚本可在松手时处理并 return true 吃掉后续 Click（控件仍会收到 onLButtonUp 做清理）
+    const bool bPointerUpEaten = notifyPointerUp();
+
+    // 拖过窗口则不发 Click；onDrag(Up) 会清 isDragging，先记下
+    const bool bWndDragged = m_WndDrag.isDragging();
+    if (bWndDragged) {
         CPoint ptTemp = getCursorPos();
         m_WndDrag.onDrag(nFlags, ptTemp);
-        //        return;
     }
+
+    CUIObject *pDown = m_pUIObjLButtonDown;
+    m_pUIObjLButtonDown = nullptr;
 
     // first send message to ui objects that captured the mouse!
     if (m_pUIObjCapMouse) {
         if (isMouseCaptured()) {
             if (m_pUIObjCapMouse->onLButtonUp(nFlags, point)) {
-                return;
+                // fall through to click dispatch
+            } else {
+                m_rootConainter.onLButtonUp(nFlags, point);
             }
         } else {
             m_pUIObjCapMouse = nullptr;
             // capture lost!
+            m_rootConainter.onLButtonUp(nFlags, point);
         }
+    } else {
+        // then let root container to process it
+        m_rootConainter.onLButtonUp(nFlags, point);
     }
 
-    // then let root container to process it
-    m_rootConainter.onLButtonUp(nFlags, point);
+    // 拖过窗口 / 脚本吃掉：不发 Click
+    if (bWndDragged || bPointerUpEaten) {
+        return;
+    }
+
+    if (pDown && pDown->isVisible() && pDown->isEnable() && pDown->isPtIn(point)) {
+        const int dx = point.x - m_ptLButtonDown.x;
+        const int dy = point.y - m_ptLButtonDown.y;
+        if (dx * dx + dy * dy <= kClickMoveTolerance * kClickMoveTolerance) {
+            pDown->onLButtonClick(nFlags, point);
+        }
+    }
 }
 
 void CSkinWnd::onRButtonDown(uint32_t nFlags, CPoint point) {
     onMouseActiveMsg();
     m_skinToolTip.onRButtonDown(nFlags, point);
 
+    m_pUIObjRButtonDown = nullptr;
+    m_ptRButtonDown = point;
+
     // first send message to ui objects that captured the mouse!
     if (m_pUIObjCapMouse) {
         if (isMouseCaptured() && m_pUIObjCapMouse->needMsgRButton()) {
             if (m_pUIObjCapMouse->onRButtonDown(nFlags, point)) {
+                m_pUIObjRButtonDown = m_pUIObjCapMouse;
                 return;
             }
         } else {
@@ -605,20 +701,34 @@ void CSkinWnd::onRButtonDown(uint32_t nFlags, CPoint point) {
 }
 
 void CSkinWnd::onRButtonUp(uint32_t nFlags, CPoint point) {
+    CUIObject *pDown = m_pUIObjRButtonDown;
+    m_pUIObjRButtonDown = nullptr;
+
     // first send message to ui objects that captured the mouse!
     if (m_pUIObjCapMouse) {
         if (isMouseCaptured() && m_pUIObjCapMouse->needMsgRButton()) {
             if (m_pUIObjCapMouse->onRButtonUp(nFlags, point)) {
-                return;
+                // fall through to click dispatch
+            } else {
+                m_rootConainter.onRButtonUp(nFlags, point);
             }
         } else {
             // capture lost!
             m_pUIObjCapMouse = nullptr;
+            m_rootConainter.onRButtonUp(nFlags, point);
         }
+    } else {
+        // then let root container to process it
+        m_rootConainter.onRButtonUp(nFlags, point);
     }
 
-    // then let root container to process it
-    m_rootConainter.onRButtonUp(nFlags, point);
+    if (pDown && pDown->isVisible() && pDown->isEnable() && pDown->isPtIn(point)) {
+        const int dx = point.x - m_ptRButtonDown.x;
+        const int dy = point.y - m_ptRButtonDown.y;
+        if (dx * dx + dy * dy <= kClickMoveTolerance * kClickMoveTolerance) {
+            pDown->onRButtonClick(nFlags, point);
+        }
+    }
 }
 
 bool CSkinWnd::onKeyDown(uint32_t nChar, uint32_t nFlags) {
@@ -765,7 +875,10 @@ void CSkinWnd::onCommand(uint32_t id) {
         }
         break;
     case ID_MENU:
-        {
+        // 优先弹出窗口 Menu= 指定的主菜单（标题栏菜单按钮）；否则回落到右键 ContextMenu
+        if (!m_strMenuName.empty()) {
+            getSkinFactory()->showPopupMenu(this, m_strMenuName.c_str());
+        } else {
             CPoint pt = getCursorPos();
             onContexMenu(pt.x, pt.y);
         }
@@ -950,6 +1063,18 @@ void CSkinWnd::releaseCaptureMouse(CUIObject *pUIObj) {
         m_pUIObjCapMouse = nullptr;
     } else {
         DBG_LOG2("NOT captured mouse, m_pUIObjCapMouse: %lx, pUIObj: %lx", m_pUIObjCapMouse, pUIObj);
+    }
+}
+
+void CSkinWnd::setLButtonDownObj(CUIObject *pObj) {
+    if (!m_pUIObjLButtonDown) {
+        m_pUIObjLButtonDown = pObj;
+    }
+}
+
+void CSkinWnd::setRButtonDownObj(CUIObject *pObj) {
+    if (!m_pUIObjRButtonDown) {
+        m_pUIObjRButtonDown = pObj;
     }
 }
 
@@ -1528,6 +1653,7 @@ bool CSkinWnd::isWndActive() {
 void CSkinWnd::onActivate(bool bActived) {
     CAutoRedrawLock redrawLock(this);
 
+    const bool changed = (m_bActived != bActived);
     m_bActived = bActived;
 
     if (!m_bOnDestroy) {
@@ -1556,6 +1682,11 @@ void CSkinWnd::onActivate(bool bActived) {
         if (m_onActivateListener.isFunction()) {
             callVMFunction(m_onActivateListener,
                 ArgumentsX(makeJsValueBool(bActived)));
+        }
+
+        // Caption / ActiveImage / Toolbar inactive 行依赖 isWndActive()，需强制刷新
+        if (changed) {
+            invalidateRect();
         }
     }
 
@@ -1760,6 +1891,13 @@ void CSkinWnd::onAddUIObj(CUIObject *obj) {
 void CSkinWnd::onUIObjectHidden(CUIObject *obj) {
     if (obj == m_pUIObjCapMouse) {
         releaseCaptureMouse(obj);
+    }
+
+    if (obj == m_pUIObjLButtonDown) {
+        m_pUIObjLButtonDown = nullptr;
+    }
+    if (obj == m_pUIObjRButtonDown) {
+        m_pUIObjRButtonDown = nullptr;
     }
 
     if (obj == m_pUIObjHandleContextMenuCmd) {

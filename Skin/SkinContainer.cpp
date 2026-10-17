@@ -229,6 +229,8 @@ bool CSkinContainer::onLButtonDown(uint32_t nFlags, CPoint point) {
                 }
             }
             if (pObj->onLButtonDown(nFlags, point)) {
+                // 嵌套 container 已记过更深层目标时不覆盖
+                m_pSkin->setLButtonDownObj(pObj);
                 return true;
             }
         }
@@ -287,6 +289,8 @@ bool CSkinContainer::onRButtonDown(uint32_t nFlags, CPoint point) {
         if ((pObj->needMsgRButton() || pObj->isContainer()) && pObj->isVisible()
             && pObj->isEnable() && pObj->isPtIn(point)) {
             if (pObj->onRButtonDown(nFlags, point)) {
+                // 嵌套 container 已记过更深层目标时不覆盖
+                m_pSkin->setRButtonDownObj(pObj);
                 bMsgProceed = true;
                 break;
             }

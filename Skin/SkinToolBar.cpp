@@ -256,26 +256,34 @@ bool CSkinToolbar::onLButtonUp(uint32_t nFlags, CPoint point) {
     // 释放鼠标输入
     m_pSkin->releaseCaptureMouse(this);
 
-    // 转换按钮的状态
-    if (m_nCurButton != -1) {
-        assert(m_nCurButton >= 0 && m_nCurButton <= (int)m_vButtons.size());
-        Button &bt = m_vButtons[m_nCurButton];
-        if (!(bt.nGroup != -1 && bt.nCurStatus == Button::STATUS_CHECKED)) {
-            if (bt.nCurStatus < bt.nStatusMax) {
-                bt.nCurStatus++;
-            } else if (bt.nCurStatus > 0) {
-                bt.nCurStatus = 0;
-            }
+    invalidate();
 
-            if (bt.nGroup != -1) {
-                groupButtonUncheckOld(bt.nGroup, m_nCurButton);
-            }
+    return true;
+}
 
-            invalidateButton(m_nCurButton);
+bool CSkinToolbar::onLButtonClick(uint32_t nFlags, CPoint point) {
+    int nButton = getCurButton(point);
+    if (nButton == -1) {
+        return false;
+    }
 
-            if (bt.nID != ID_INVALID) {
-                m_pSkin->postCustomCommandMsg(bt.nID);
-            }
+    assert(nButton >= 0 && nButton <= (int)m_vButtons.size());
+    Button &bt = m_vButtons[nButton];
+    if (!(bt.nGroup != -1 && bt.nCurStatus == Button::STATUS_CHECKED)) {
+        if (bt.nCurStatus < bt.nStatusMax) {
+            bt.nCurStatus++;
+        } else if (bt.nCurStatus > 0) {
+            bt.nCurStatus = 0;
+        }
+
+        if (bt.nGroup != -1) {
+            groupButtonUncheckOld(bt.nGroup, nButton);
+        }
+
+        invalidateButton(nButton);
+
+        if (bt.nID != ID_INVALID) {
+            m_pSkin->postCustomCommandMsg(bt.nID);
         }
     }
 
@@ -417,6 +425,12 @@ void drawSeperator(CRawGraph *canvas, CRect &rc, CColor &clrHigh, CColor &clrLow
     canvas->line(x, rc.top, x, rc.bottom);
 }
 
+bool CSkinToolbar::hasInactiveImageRow() const {
+    // FullStatusImage：行高 = m_nImageHeight；含 inactive 时逻辑高度至少 4 行
+    return m_bFullStatusImage && m_image.isValid() && m_nImageHeight > 0
+        && m_image.m_cy >= m_nImageHeight * (ROW_INACTIVE + 1);
+}
+
 void CSkinToolbar::draw(CRawGraph *canvas) {
     BT_DRAW_STATE btDrawState = ROW_NORMAL;
 
@@ -425,6 +439,9 @@ void CSkinToolbar::draw(CRawGraph *canvas) {
 
     int x, y;
     int nHeight = m_rcObj.height();
+
+    // 失焦用灰态行；悬停/按下仍用彩色（与 macOS 红绿灯一致）
+    const bool wndInactive = m_pSkin && !m_pSkin->isWndActive() && hasInactiveImageRow();
 
     if (m_bDrawBtText && m_font.isGood()) {
         canvas->setFont(m_font.getFont());
@@ -455,9 +472,13 @@ void CSkinToolbar::draw(CRawGraph *canvas) {
                     btDrawState = ROW_DOWN;
                 } else if (m_bHover) {
                     btDrawState = ROW_HOVER;
+                } else if (wndInactive) {
+                    btDrawState = ROW_INACTIVE;
                 } else {
                     btDrawState = ROW_NORMAL;
                 }
+            } else if (wndInactive) {
+                btDrawState = ROW_INACTIVE;
             } else {
                 btDrawState = ROW_NORMAL;
             }
@@ -467,7 +488,7 @@ void CSkinToolbar::draw(CRawGraph *canvas) {
         }
 
         if (bt.bSeperator) {
-            btDrawState = ROW_NORMAL;
+            btDrawState = wndInactive ? ROW_INACTIVE : ROW_NORMAL;
         }
 
         if (i == m_nCurButton && m_timeBeginFadein != 0) {

@@ -151,6 +151,12 @@ public:
     CUIObject *getCaptureMouse();
     void releaseCaptureMouse(CUIObject *pUIObj);
 
+    // Down 目标：由 Container 在子控件处理成功时记录；嵌套时只记最深一层。
+    void setLButtonDownObj(CUIObject *pObj);
+    void setRButtonDownObj(CUIObject *pObj);
+    CUIObject *getLButtonDownObj() const { return m_pUIObjLButtonDown; }
+    CUIObject *getRButtonDownObj() const { return m_pUIObjRButtonDown; }
+
     void unregisterTimerObject(CUIObject *pObj);
     void unregisterTimerObject(CUIObject *pObj, int nTimerId);
     int registerTimerObject(CUIObject *pObj, int nTimeDuration);
@@ -372,6 +378,10 @@ public:
     JsVirtualMachine *getVM() { return m_vm; }
 
     void callVMFunction(const JsValue &memberFunc, const Arguments &args = Arguments(), const JsValue &thiz = jsValueGlobalThis);
+    // 返回 true 表示脚本吃掉该指针事件：down 时清除 down 标记并取消拖窗（仍保留控件已收到的 down，mouseup 正常清理）；
+    // up 时仍通知控件 onLButtonUp，但不派发 Click
+    bool notifyPointerDown();
+    bool notifyPointerUp();
 
 protected:
     virtual int fromXML(SXNode *pXmlNode);
@@ -500,6 +510,13 @@ protected:
     // only one ui object can capture the mouse at any time
     CUIObject                   *m_pUIObjCapMouse;
 
+    // Down 成功的控件；Up 时若仍在其上且位移 ≤5px 则派发 onLButtonClick / onRButtonClick
+    CUIObject                   *m_pUIObjLButtonDown = nullptr;
+    CUIObject                   *m_pUIObjRButtonDown = nullptr;
+    CPoint                      m_ptLButtonDown;
+    CPoint                      m_ptRButtonDown;
+    static constexpr int        kClickMoveTolerance = 5;
+
     // The UIObject registered to handle context menu command.
     CUIObject                   *m_pUIObjHandleContextMenuCmd;
 
@@ -546,6 +563,8 @@ protected:
     JsValue                     m_onDestoryListener;
     JsValue                     m_onCommandListener;
     JsValue                     m_onMouseActivateListener;
+    JsValue                     m_onPointerDownListener;
+    JsValue                     m_onPointerUpListener;
 
     //
     // Skin animation object

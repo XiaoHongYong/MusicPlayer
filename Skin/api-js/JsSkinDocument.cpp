@@ -36,6 +36,18 @@ bool JsSkinDocument::onSetValue(VMContext *ctx, const StringView &name, const Js
                 _skinWnd->moveWindow(rc.left, rc.top, w, rc.height());
             }
         }
+    } else if (name.equal(SS_LEFT)) {
+        auto x = (int32_t)ctx->runtime->toNumber(ctx, value);
+        CRect rc;
+        if (_skinWnd->getWindowRect(&rc)) {
+            _skinWnd->setWindowPosSafely(x, rc.top);
+        }
+    } else if (name.equal(SS_TOP)) {
+        auto y = (int32_t)ctx->runtime->toNumber(ctx, value);
+        CRect rc;
+        if (_skinWnd->getWindowRect(&rc)) {
+            _skinWnd->setWindowPosSafely(rc.left, y);
+        }
     } else if (name.equal(SS_ON_COMMAND)) {
         _skinWnd->m_onCommandListener = value;
     } else if (name.equal(SS_ON_MOUSE_MOVE)) {
@@ -48,6 +60,10 @@ bool JsSkinDocument::onSetValue(VMContext *ctx, const StringView &name, const Js
         _skinWnd->m_onDestoryListener = value;
     } else if (name.equal(SS_ON_MOUSE_ACTIVATE)) {
         _skinWnd->m_onMouseActivateListener = value;
+    } else if (name.equal(SS_ON_POINTER_DOWN)) {
+        _skinWnd->m_onPointerDownListener = value;
+    } else if (name.equal(SS_ON_POINTER_UP)) {
+        _skinWnd->m_onPointerUpListener = value;
     }
 
     return false;
@@ -64,6 +80,16 @@ JsValue JsSkinDocument::onGetValue(VMContext *ctx, const StringView &name) {
         if (_skinWnd->getWindowRect(&rc)) {
             return makeJsValueInt32(rc.width());
         }
+    } else if (name.equal(SS_LEFT)) {
+        CRect rc;
+        if (_skinWnd->getWindowRect(&rc)) {
+            return makeJsValueInt32(rc.left);
+        }
+    } else if (name.equal(SS_TOP)) {
+        CRect rc;
+        if (_skinWnd->getWindowRect(&rc)) {
+            return makeJsValueInt32(rc.top);
+        }
     } else if (name.equal(SS_ON_COMMAND)) {
         return _skinWnd->m_onCommandListener;
     } else if (name.equal(SS_ON_MOUSE_MOVE)) {
@@ -76,6 +102,10 @@ JsValue JsSkinDocument::onGetValue(VMContext *ctx, const StringView &name) {
         return _skinWnd->m_onDestoryListener;
     } else if (name.equal(SS_ON_MOUSE_ACTIVATE)) {
         return _skinWnd->m_onMouseActivateListener;
+    } else if (name.equal(SS_ON_POINTER_DOWN)) {
+        return _skinWnd->m_onPointerDownListener;
+    } else if (name.equal(SS_ON_POINTER_UP)) {
+        return _skinWnd->m_onPointerUpListener;
     }
 
     return jsValueEmpty;
@@ -84,6 +114,10 @@ JsValue JsSkinDocument::onGetValue(VMContext *ctx, const StringView &name) {
 void JsSkinDocument::onEnumAllProperties(VMContext *ctx, VecStringViews &names, VecJsValues &values) {
     CRect rc;
     if (_skinWnd->getWindowRect(&rc)) {
+        names.push_back(SS_LEFT);
+        values.push_back(makeJsValueInt32(rc.left));
+        names.push_back(SS_TOP);
+        values.push_back(makeJsValueInt32(rc.top));
         names.push_back(SS_WIDTH);
         values.push_back(makeJsValueInt32(rc.width()));
         names.push_back(SS_HEIGHT);
@@ -107,6 +141,12 @@ void JsSkinDocument::onEnumAllProperties(VMContext *ctx, VecStringViews &names, 
 
     names.push_back(SS_ON_MOUSE_ACTIVATE);
     values.push_back(_skinWnd->m_onMouseActivateListener);
+
+    names.push_back(SS_ON_POINTER_DOWN);
+    values.push_back(_skinWnd->m_onPointerDownListener);
+
+    names.push_back(SS_ON_POINTER_UP);
+    values.push_back(_skinWnd->m_onPointerUpListener);
 }
 
 void JsSkinDocument::markReferIdx(VMRuntime *rt) {
@@ -116,6 +156,8 @@ void JsSkinDocument::markReferIdx(VMRuntime *rt) {
     rt->markReferIdx(_skinWnd->m_onDestoryListener);
     rt->markReferIdx(_skinWnd->m_onCommandListener);
     rt->markReferIdx(_skinWnd->m_onMouseActivateListener);
+    rt->markReferIdx(_skinWnd->m_onPointerDownListener);
+    rt->markReferIdx(_skinWnd->m_onPointerUpListener);
 }
 
 CSkinWnd *documentGetSkinWnd(VMContext *ctx, const JsValue &thiz) {

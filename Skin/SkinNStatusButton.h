@@ -19,6 +19,7 @@ public:
     void onMouseLeave(CPoint point) override;
     bool onLButtonUp(uint32_t nFlags, CPoint point) override;
     bool onLButtonDown(uint32_t nFlags, CPoint point) override;
+    bool onLButtonClick(uint32_t nFlags, CPoint point) override;
 
     virtual bool onKeyUp(uint32_t nChar, uint32_t nFlags) override;
     virtual bool onKeyDown(uint32_t nChar, uint32_t nFlags) override;

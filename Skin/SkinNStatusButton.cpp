@@ -86,12 +86,16 @@ void CSkinNStatusButton::onTimer(int nId) {
 }
 
 bool CSkinNStatusButton::onLButtonUp(uint32_t nFlags, CPoint point) {
-    if (m_btnState != BS_PRESSED) {
-        return true;
+    // 点击动作由 SkinWnd 派发的 onLButtonClick → buttonUpAction 处理
+    if (m_bContinuousCmd && m_btnState == BS_PRESSED) {
+        m_pSkin->unregisterTimerObject(this, m_nTimerIdContinuous);
+        m_nTimerIdContinuous = 0;
     }
+    return true;
+}
 
+bool CSkinNStatusButton::onLButtonClick(uint32_t nFlags, CPoint point) {
     buttonUpAction();
-
     return true;
 }
 

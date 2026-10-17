@@ -275,8 +275,10 @@ public:
     virtual void onChar(uint32_t nChar) { }
     virtual bool onRButtonUp(uint32_t nFlags, CPoint point) { return false; }
     virtual bool onRButtonDown(uint32_t nFlags, CPoint point) { return false; }
+    virtual bool onRButtonClick(uint32_t nFlags, CPoint point) { return false; }
     virtual bool onLButtonUp(uint32_t nFlags, CPoint point) { return false; }
     virtual bool onLButtonDown(uint32_t nFlags, CPoint point) { return false; }
+    virtual bool onLButtonClick(uint32_t nFlags, CPoint point) { return false; }
     virtual bool onLButtonDblClk(uint32_t nFlags, CPoint point) { return false; }
     virtual bool onMouseDrag(CPoint point) { return false; }
     virtual bool onMouseMove(CPoint point) { return false; }
@@ -300,7 +302,7 @@ public:
 
     int getOpacity();
 
-    virtual void onKillFocus() { }
+    virtual void onKillFocus();
     virtual void onSetFocus() { }
 
     virtual void onTimer(int nId) { }
@@ -427,6 +429,7 @@ public:
 
     JsValue                     m_onMouseEnterListener;
     JsValue                     m_onMouseLeaveListener;
+    JsValue                     m_onKillFocusListener;
 
     /**
      * Background related properties.
