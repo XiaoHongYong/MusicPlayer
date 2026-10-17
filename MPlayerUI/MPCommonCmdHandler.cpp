@@ -270,7 +270,15 @@ bool CMPCommonCmdHandler::onCommand(uint32_t nID) {
         {
             CSkinSeekCtrl *pCtrl = (CSkinSeekCtrl*)m_pSkinWnd->getUIObjectById(ID_SEEK, CSkinSeekCtrl::className());
             if (pCtrl) {
-                g_player.seekTo(pCtrl->getScrollPos());
+                // 优先用抬起/滚轮时缓存的目标；seekTo 完成前保持 pending，挡住 POS 定时器覆盖
+                int pos = pCtrl->getPendingSeekPos();
+                if (pos < 0) {
+                    pos = pCtrl->getScrollPos();
+                }
+                g_player.seekTo((uint32_t)pos);
+                pCtrl->takePendingSeekPos();
+                // END_DRAG 不再立刻关保护；等真正 seek 后再关，堵住 DisplayLink 竞态窗口
+                g_player.setUseSeekTimeAsPlayingTime(false);
             }
         }
         break;
@@ -661,12 +669,12 @@ bool CMPCommonCmdHandler::onUIObjNotify(IUIObjNotify *pNotify) {
         if (pNotify->pUIObject->isKindOf(CSkinSeekCtrl::className())) {
             CSkinSeekCtrlEventNotify *pListCtrlNotify = (CSkinSeekCtrlEventNotify *)pNotify;
             if (pListCtrlNotify->cmd == CSkinSeekCtrlEventNotify::C_BEG_DRAG) {
-                // Use seek time instead of playing time.
+                // 拖动期间用进度条位置当播放时间，避免 POS 定时器把 thumb 拽回
                 g_player.setUseSeekTimeAsPlayingTime(true);
-            } else if (pListCtrlNotify->cmd == CSkinSeekCtrlEventNotify::C_END_DRAG) {
-                // Use seek time instead of playing time.
-                g_player.setUseSeekTimeAsPlayingTime(false);
             }
+            // C_END_DRAG 不再关掉 useSeekTime：ID_SEEK 异步到达前若关掉，
+            // DisplayLink 会用旧 getPlayPos 覆盖进度条，随后 seekTo(旧位置)。
+            // 保护改在 ID_SEEK 里 seekTo 之后清除。
         }
     } else {
         return false;

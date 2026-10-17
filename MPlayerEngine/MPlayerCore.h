@@ -73,6 +73,7 @@ protected:
     void analysisThreadRun();
 
     Command waitForCommand();
+    void postCommand(Command cmd);
 
     IMediaDecoderPtr newMediaDecoder(IMediaInput *input);
     IMediaInputPtr newMediaInput(cstr_t mediaUrl);
@@ -97,6 +98,8 @@ protected:
     int                         _seekPos = 0;
     int                         _mediaDuration = 0;
     bool                        _isSeekable = false;
+    // seek() 已写入目标，但 decoder/flush 尚未完成：此期间 getPos 只回报目标，避免旧输出时钟把 UI 拉回
+    bool                        _seekInProgress = false;
 
     IMediaOutputPtr             _output = nullptr;
 

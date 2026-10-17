@@ -31,6 +31,12 @@ CSkinSeekCtrl::CSkinSeekCtrl() {
 CSkinSeekCtrl::~CSkinSeekCtrl() {
 }
 
+int CSkinSeekCtrl::takePendingSeekPos() {
+    int pos = m_pendingSeekPos;
+    m_pendingSeekPos = -1;
+    return pos;
+}
+
 bool CSkinSeekCtrl::onKeyDown(uint32_t nChar, uint32_t nFlags) {
     if (nChar == VK_UP) {
         setScrollPos(getScrollPos() - m_nVirtualLine);
@@ -121,6 +127,8 @@ bool CSkinSeekCtrl::onLButtonUp(uint32_t nFlags, CPoint point) {
             m_pSkin->releaseCaptureMouse(this);
 
             onVScroll(SB_THUMBPOSITION);
+            // 先缓存目标，再异步 post：避免 ID_SEEK 执行前被 POS 定时器写回旧位置
+            setPendingSeekPos(m_nVirtualCurPos);
             m_pSkin->postCustomCommandMsg(m_id);
 
             notifyEvent(CSkinSeekCtrlEventNotify::C_END_DRAG);
@@ -168,6 +176,7 @@ void CSkinSeekCtrl::onMouseWheel(int nWheelDistance, int nMkeys, CPoint pt) {
         onVScroll(nWheelDistance > 0 ? SB_LINEDOWN : SB_LINEUP);
         invalidate();
 
+        setPendingSeekPos(m_nVirtualCurPos);
         m_pSkin->postCustomCommandMsg(m_id);
     }
 }
@@ -336,7 +345,8 @@ void CSkinSeekCtrl::enumProperties(CUIObjProperties &listProperties) {
 int CSkinSeekCtrl::setScrollPos(int nPos, bool bRedraw) {
     int nPosOld, nPosThumbOld;
 
-    if (m_pushDownPos == PUSH_DOWN_THUMB) {
+    // 拖动中或已缓存待 seek 目标时，拒绝外部（POS 定时器）覆盖
+    if (m_pushDownPos == PUSH_DOWN_THUMB || m_pendingSeekPos >= 0) {
         return m_nVirtualCurPos;
     }
 

@@ -210,7 +210,7 @@ public:
     CPlayerSeekEventHandler(CSkinSeekCtrl *pSeekCtrl) {
         m_pSeekCtrl = pSeekCtrl;
         pSeekCtrl->setScrollInfo(0, g_player.getMediaLength(), 0, 0);
-        registerHandler(MPlayerApp::getEventsDispatcher(), ET_PLAYER_CUR_MEDIA_CHANGED, ET_PLAYER_POS_UPDATE, ET_PLAYER_STATUS_CHANGED);
+        registerHandler(MPlayerApp::getEventsDispatcher(), ET_PLAYER_CUR_MEDIA_CHANGED, ET_PLAYER_POS_UPDATE, ET_PLAYER_STATUS_CHANGED, ET_PLAYER_SEEK);
     }
 
     virtual void onEvent(const IEvent *pEvent) {

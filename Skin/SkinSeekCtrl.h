@@ -39,6 +39,12 @@ public:
     int getMax() const override;
     int getID() const override { return m_id; }
 
+    // 异步 ID_SEEK 到达前缓存目标位置，避免进度定时器用旧 getPlayPos 覆盖后再 seek 回去
+    void setPendingSeekPos(int nPos) { m_pendingSeekPos = nPos; }
+    int getPendingSeekPos() const { return m_pendingSeekPos; }
+    // 取出并清除 pending；无 pending 时返回 -1
+    int takePendingSeekPos();
+
     void setScrollNotify(IScrollNotify *pNofity) override;
 
     virtual bool isEnabled() const override { return m_enable; }
@@ -97,6 +103,7 @@ protected:
     int                         m_nXCursorToThumbBeg; // 鼠标点下位置距拖动ThumbBox 距离: point.y - m_rcObj.top - m_nHeightEnd;
     PUSH_DOWN_POS               m_pushDownPos;      // 鼠标按下的位置
     PUSH_DOWN_POS               m_cursorPosLatest;  // 鼠标按下的位置
+    int                         m_pendingSeekPos = -1; // >=0 表示有待处理的 seek 目标
 
     CSFImage                    m_imgTrackNormal, m_imgTrackPlayed;
     CSFImage                    m_imgThumb;

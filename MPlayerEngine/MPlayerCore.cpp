@@ -30,7 +30,11 @@ MPlayerCore::~MPlayerCore() {
 }
 
 void MPlayerCore::quit() {
-    _isQuit = true;
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        _isQuit = true;
+        _command = CMD_QUIT;
+    }
     _cv.notify_one();
     _analysisCv.notify_all();
     if (_thread.joinable()) {
@@ -57,28 +61,24 @@ bool MPlayerCore::play(const char *mediaUrl, IMediaInfo *mediaTagsOut)  {
     {
         std::lock_guard<std::mutex> autolock(_mutex);
         _curMediaUrl = mediaUrl;
+        _command = CMD_PLAY;
     }
-
-    _command = CMD_PLAY;
     _cv.notify_one();
     return true;
 }
 
 bool MPlayerCore::pause()  {
-    _command = CMD_PAUSE;
-    _cv.notify_one();
+    postCommand(CMD_PAUSE);
     return true;
 }
 
 bool MPlayerCore::unpause()  {
-    _command = CMD_UNPAUSE;
-    _cv.notify_one();
+    postCommand(CMD_UNPAUSE);
     return true;
 }
 
 bool MPlayerCore::stop()  {
-    _command = CMD_STOP;
-    _cv.notify_one();
+    postCommand(CMD_STOP);
     return true;
 }
 
@@ -88,15 +88,27 @@ bool MPlayerCore::isSeekable()  {
 }
 
 bool MPlayerCore::seek(int pos)  {
-    if (_isSeekable && _command == CMD_NONE) {
-        _seekPos = pos;
+    std::lock_guard<std::mutex> autolock(_mutex);
+    if (!_isSeekable) {
+        return false;
+    }
+
+    _seekPos = pos;
+    _seekInProgress = true;
+
+    // 合并连续 seek；其它命令在忙时只记下目标，解码循环空闲后会补发 CMD_SEEK
+    if (_command == CMD_NONE || _command == CMD_SEEK) {
         _command = CMD_SEEK;
     }
+    _cv.notify_one();
     return true;
 }
 
 uint32_t MPlayerCore::getPos() {
     std::lock_guard<std::mutex> autolock(_mutex);
+    if (!_output || _seekInProgress) {
+        return (uint32_t)_seekPos;
+    }
     return _seekPos + _output->getPos();
 }
 
@@ -347,21 +359,22 @@ void MPlayerCore::threadRun() {
     _output = newMediaOutput();
 
     while (!_isQuit) {
-        if (_command != CMD_PLAY) {
-            notifyEndOfPlaying();
-        }
-
         auto cmd = waitForCommand();
-        if (cmd == CMD_QUIT) {
+        if (cmd == CMD_QUIT || _isQuit) {
             return;
         }
-        assert(cmd == CMD_PLAY || _isQuit);
+        // 空闲等待被非 PLAY 命令唤醒时不要当成播完，否则会误触发 autoplay
         if (cmd != CMD_PLAY) {
             continue;
         }
 
-        auto input = newMediaInput(_curMediaUrl.c_str());
-        if (input->open(_curMediaUrl.c_str()) != ERR_OK) {
+        string mediaUrl;
+        {
+            std::lock_guard<std::mutex> lock(_mutex);
+            mediaUrl = _curMediaUrl;
+        }
+        auto input = newMediaInput(mediaUrl.c_str());
+        if (input->open(mediaUrl.c_str()) != ERR_OK) {
             notifyEndOfPlaying();
             continue;
         }
@@ -384,7 +397,11 @@ void MPlayerCore::threadRun() {
         _isSeekable = decoder->isSeekable();
 
         _mediaDuration = decoder->getDuration();
-        _seekPos = 0;
+        {
+            std::lock_guard<std::mutex> lock(_mutex);
+            _seekPos = 0;
+            _seekInProgress = false;
+        }
         _state = PS_PLAYING;
         beginAnalysisSession();
         _output->stop();
@@ -400,7 +417,8 @@ void MPlayerCore::threadRun() {
                         _output = newMediaOutput();
                         break;
                     case CMD_PLAY:
-                        _command = cmd;
+                        // 换曲/重播：把 CMD_PLAY 写回，外层 wait 再取一次后重新 open
+                        postCommand(CMD_PLAY);
                         _stop();
                         break;
                     case CMD_UNPAUSE:
@@ -415,11 +433,30 @@ void MPlayerCore::threadRun() {
                         break;
                     case CMD_STOP:
                         _stop();
+                        {
+                            std::lock_guard<std::mutex> lock(_mutex);
+                            _seekInProgress = false;
+                        }
                         break;
                     case CMD_SEEK: {
                         assert(decoder->isSeekable());
-                        decoder->seek(_seekPos);
+                        int seekTarget;
+                        {
+                            std::lock_guard<std::mutex> lock(_mutex);
+                            seekTarget = _seekPos;
+                        }
+                        decoder->seek(seekTarget);
                         _output->flush();
+                        {
+                            std::lock_guard<std::mutex> lock(_mutex);
+                            // flush 后输出时钟归零；若期间又有新的 seek 目标，保持 in-progress
+                            if (_seekPos == seekTarget) {
+                                _seekInProgress = false;
+                            } else {
+                                // 目标已更新：再发一次 CMD_SEEK
+                                _command = CMD_SEEK;
+                            }
+                        }
                         {
                             uint32_t sr = 0;
                             {
@@ -430,7 +467,7 @@ void MPlayerCore::threadRun() {
                                 sr = 44100;
                             }
                             const uint64_t samplePos =
-                                (uint64_t)_seekPos * (uint64_t)sr / 1000ull;
+                                (uint64_t)seekTarget * (uint64_t)sr / 1000ull;
                             seekAnalysis(samplePos);
                         }
                         break;
@@ -443,8 +480,15 @@ void MPlayerCore::threadRun() {
             int emptyBufCount = 0;
             while (_state == PS_PLAYING && !_isQuit) {
                 bool canWrite = _output->waitForWrite(100) == ERR_OK;
-                if (_command != CMD_NONE) {
-                    break;
+                {
+                    std::lock_guard<std::mutex> lock(_mutex);
+                    // 其它命令占用期间发起的 seek：空闲后补发
+                    if (_seekInProgress && _command == CMD_NONE) {
+                        _command = CMD_SEEK;
+                    }
+                    if (_command != CMD_NONE) {
+                        break;
+                    }
                 }
 
                 if (canWrite) {
@@ -473,14 +517,23 @@ void MPlayerCore::threadRun() {
 }
 
 MPlayerCore::Command MPlayerCore::waitForCommand() {
-    if (_command == CMD_NONE) {
-        std::unique_lock<std::mutex> lock(_mutex);
-        _cv.wait(lock);
+    std::unique_lock<std::mutex> lock(_mutex);
+    // 带谓词等待，避免 play() 的 notify 落在「已读到 NONE、尚未 wait」窗口时丢失唤醒
+    _cv.wait(lock, [this] { return _command != CMD_NONE || _isQuit; });
+    if (_isQuit && _command == CMD_NONE) {
+        return CMD_QUIT;
     }
-
     auto cmd = _command;
     _command = CMD_NONE;
     return cmd;
+}
+
+void MPlayerCore::postCommand(Command cmd) {
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        _command = cmd;
+    }
+    _cv.notify_one();
 }
 
 IMediaDecoderPtr MPlayerCore::newMediaDecoder(IMediaInput *input) {
