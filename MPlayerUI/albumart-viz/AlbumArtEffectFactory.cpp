@@ -1,5 +1,6 @@
 ﻿#include "AlbumArtEffectFactory.h"
 #include "effects/SonicHaloEffect.h"
+#include "effects/PlainCoverEffect.h"
 #include "effects/LivingCoverEffect.h"
 #include "effects/AudioReactorEffect.h"
 #include "effects/DebugMetersEffect.h"
@@ -11,6 +12,7 @@ namespace {
 
 const std::vector<cstr_t> kEffectIds = {
     "sonic-halo",
+    "plain-cover",
     "living-cover",
     "audio-reactor",
     "debug-meters",
@@ -31,6 +33,9 @@ const std::vector<cstr_t> &albumArtEffectIds() {
 }
 
 std::unique_ptr<IAlbumArtEffect> createAlbumArtEffect(cstr_t id) {
+    if (id && strcasecmp(id, "plain-cover") == 0) {
+        return std::make_unique<PlainCoverEffect>();
+    }
     if (id && strcasecmp(id, "living-cover") == 0) {
         return std::make_unique<LivingCoverEffect>();
     }

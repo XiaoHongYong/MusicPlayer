@@ -19,6 +19,25 @@ constexpr float kGlowGap = 3.f;          // 内反应环紧贴封面外侧
 constexpr float kOuterRingScale = 1.85f; // 外环基准；厚度再 ×0.7
 constexpr float kRingBandThicknessScale = 0.70f; // 内环带厚度减少 30%
 constexpr float kParticleSpeedScale = 3.f;
+// 喷射数量参考面积（约 Orbit-mini 主窗最小）；×2/3 后再 ×0.7（再减 30%）
+constexpr float kSparkRefArea = 252.f * 403.f;
+constexpr float kSparkMinDensity = (2.f / 3.f) * 0.7f;
+// 粒子/微粒视觉尺寸再缩小 30%（速度仍只用 linearScale）
+constexpr float kVizSizeScale = 0.7f;
+
+/** 数量 ∝ 面积；速度/尺寸 ∝ √面积；拖尾数量另乘线性比抵消 traveled∝尺寸 */
+void sparkEmitScales(const CRect &bounds, float &sprayScale, float &trailScale,
+                     float &linearScale) {
+    const float area =
+        std::max(1.f, (float)bounds.width() * (float)bounds.height());
+    const float areaRatio = area / kSparkRefArea;
+    const float linearRatio = std::sqrt(std::max(1e-4f, areaRatio));
+    sprayScale = std::clamp(areaRatio * kSparkMinDensity, 0.3f, 1.f);
+    // traveled∝S，再 ×density·S → 总量 ∝ 面积
+    trailScale = std::clamp(linearRatio * kSparkMinDensity, 0.3f, 1.f);
+    // 发射速度随窗口线性尺寸缩放
+    linearScale = std::clamp(linearRatio, 0.6f, 1.0f);
+}
 
 float bandAtAngle(const AlbumArtVizContext &ctx, float angle01) {
     if (!ctx.displayLevels || ctx.bandCount <= 0) {
@@ -99,6 +118,10 @@ CColor AudioReactorEffect::neonRay(const AlbumArtVizContext &ctx, int bandIndex,
 
 CColor AudioReactorEffect::particleColor(const AlbumArtVizContext &ctx, int colorSlot, float hueT,
                                          uint8_t alpha) const {
+    // 优先用封面提取的高差异粒子色盘（每粒子一色）
+    if (ctx.particleColors && ctx.particleColorCount > 0) {
+        return softNeon(albumart_viz::particlePaletteColor(ctx, colorSlot, 255), alpha, 0.22f);
+    }
     if (colorSlot == 1) {
         return softNeon(albumart_viz::paletteRole(ctx, albumart_viz::AlbumPaletteRole::Accent, 255),
                         alpha, 0.35f);
@@ -296,8 +319,7 @@ void AudioReactorEffect::integrateParticle(Particle &p, float cx, float cy, floa
 
 void AudioReactorEffect::emitSparks(Particle &p, const AlbumArtVizContext &ctx, float dt,
                                     float traveled, float fromX, float fromY) {
-    const float level = segmentLevel(ctx, p.segment);
-    // 按粒子绑定通道喷射：3×bassPulse×bassStrength / 2×beatPulse×beatStrength
+    // 烟花由绑定通道触发：3×bassPulse×bassStrength / 2×beatPulse×beatStrength
     const bool useBass = (p.beatDrive == BeatDrive::Bass);
     const float drivePulse =
         std::clamp(useBass ? ctx.bassPulse : ctx.beatPulse, 0.f, 1.f);
@@ -306,6 +328,11 @@ void AudioReactorEffect::emitSparks(Particle &p, const AlbumArtVizContext &ctx, 
     const float burst =
         std::clamp(drivePulse * (0.55f + driveStrength * 0.45f), 0.f, 1.f);
 
+    float sprayScale = 1.f;
+    float trailScale = 1.f;
+    float speedScale = 1.f;
+    sparkEmitScales(ctx.bounds, sprayScale, trailScale, speedScale);
+
     auto pushSpark = [&](bool isTrail, float x, float y, float vx, float vy, float lifeScale) {
         if ((int)m_sparks.size() >= kSparkMax) {
             return;
@@ -313,7 +340,7 @@ void AudioReactorEffect::emitSparks(Particle &p, const AlbumArtVizContext &ctx, 
         Spark s;
         const float jitter = hash01(p.seed + (int)(m_time * 80.f) + (int)m_sparks.size());
         const float ja = jitter * (float)(2.0 * M_PI);
-        const float jR = isTrail ? (2.5f + p.size * 0.8f) : p.size * 0.15f;
+        const float jR = isTrail ? (2.5f + p.size * 0.8f) : p.size * 0.08f;
         s.x = x + std::cos(ja) * jR * jitter;
         s.y = y + std::sin(ja) * jR * (1.f - jitter);
         s.vx = vx;
@@ -322,27 +349,36 @@ void AudioReactorEffect::emitSparks(Particle &p, const AlbumArtVizContext &ctx, 
         s.life = (kSparkLifeMin + hash01(p.seed + 51 + (int)m_sparks.size()) *
                                       (kSparkLifeMax - kSparkLifeMin)) *
                  lifeScale;
-        s.size0 = isTrail ? (1.0f + hash01(p.seed + 61) * 1.6f)
-                          : (1.2f + hash01(p.seed + 61) * 2.2f);
-        s.size1 = s.size0 * (isTrail ? (2.2f + hash01(p.seed + 67) * 2.0f)
-                                     : (3.8f + hash01(p.seed + 67) * 4.0f));
+        const float sz = std::max(0.8f, p.size);
+        if (isTrail) {
+            // 拖尾：缓慢外散变大
+            s.size0 = sz * (0.20f + hash01(p.seed + 61) * 0.32f);
+            s.size1 = s.size0 * (2.2f + hash01(p.seed + 67) * 2.0f);
+        } else {
+            // 烟花：存活约 3 秒；飞出后收束变小
+            (void)lifeScale;
+            s.size0 = sz * (0.45f + hash01(p.seed + 61) * 0.35f);
+            s.size1 = s.size0 * (0.25f + hash01(p.seed + 67) * 0.2f);
+            s.life = 2.85f + hash01(p.seed + 71) * 0.30f; // ≈3s
+        }
         s.hueT = p.hueT;
         s.colorSlot = p.colorSlot;
         s.isTrail = isTrail;
         m_sparks.push_back(s);
     };
 
-    // 1) 按路程稀疏撒点（非每帧固定数量）；沿本帧位移线段分布，避免叠在同一点成团
-    if (traveled > 0.01f && level > 0.02f) {
-        // 路程累计：数量 ×5；沿位移线段分布，每帧最多 10 个
-        p.trailEmitAcc += traveled * (0.35f + level * 1.4f) * 5.f;
-        const float spacing = std::max(2.5f, 6.f / (0.45f + level * 2.2f));
-        int n = (int)(p.trailEmitAcc / spacing);
-        if (n > 10) {
-            n = 10;
+    // 1) 拖尾：固定密度/速度，仅随路程与窗口面积，不跟 beat/level
+    if (traveled > 0.01f) {
+        constexpr float kTrailEmitPerPx = 1.15f;
+        constexpr float kTrailSpacing = 7.f;
+        p.trailEmitAcc += traveled * kTrailEmitPerPx * trailScale;
+        const int trailCap = std::max(1, (int)std::lround(6.f * trailScale));
+        int n = (int)(p.trailEmitAcc / kTrailSpacing);
+        if (n > trailCap) {
+            n = trailCap;
         }
         if (n > 0) {
-            p.trailEmitAcc -= (float)n * spacing;
+            p.trailEmitAcc -= (float)n * kTrailSpacing;
             const float cx = ((float)ctx.bounds.left + (float)ctx.bounds.right) * 0.5f;
             const float cy = ((float)ctx.bounds.top + (float)ctx.bounds.bottom) * 0.5f;
             const float pathDx = p.x - fromX;
@@ -358,7 +394,7 @@ void AudioReactorEffect::emitSparks(Particle &p, const AlbumArtVizContext &ctx, 
                 const float sx = fromX + pathDx * t;
                 const float sy = fromY + pathDy * t;
                 const float side = (hash01(p.seed + i * 19 + (int)(m_time * 50.f)) - 0.5f) * 2.f;
-                const float lat = side * (3.f + level * 5.f);
+                const float lat = side * 3.2f;
 
                 float ox = sx - cx;
                 float oy = sy - cy;
@@ -372,52 +408,82 @@ void AudioReactorEffect::emitSparks(Particle &p, const AlbumArtVizContext &ctx, 
                     ox /= olen;
                     oy /= olen;
                 }
-                // 径向 + 较宽切向扇形，减少共线成团
-                const float tang = (hash01(p.seed + i + 29) - 0.5f) * 1.5f;
+                const float tang = (hash01(p.seed + i + 29) - 0.5f) * 1.2f;
                 float dx = ox - oy * tang;
                 float dy = oy + ox * tang;
                 const float dlen = std::sqrt(dx * dx + dy * dy);
                 const float inv = dlen > 1e-4f ? 1.f / dlen : 1.f;
-                // 轨迹外散速度 ×3（约 15–54 px/s）
                 const float spd =
-                    (5.f + level * 8.f + hash01(p.seed + i + 41) * 5.f) * 3.f;
-                pushSpark(true, sx + nx * lat, sy + ny * lat, dx * inv * spd, dy * inv * spd,
-                          0.85f + level * 0.4f);
+                    (12.f + hash01(p.seed + i + 41) * 10.f) * speedScale;
+                pushSpark(true, sx + nx * lat, sy + ny * lat, dx * inv * spd, dy * inv * spd, 1.f);
             }
         }
-        if (p.trailEmitAcc > spacing * 10.f) {
-            p.trailEmitAcc = spacing * 10.f;
+        if (p.trailEmitAcc > kTrailSpacing * (float)trailCap) {
+            p.trailEmitAcc = kTrailSpacing * (float)trailCap;
         }
     }
 
-    // 2) 绑定通道的 pulse 触发时向四周喷射（强度用对应 strength）
-    if (burst > 0.2f) {
-        const float weight = useBass ? 1.15f : 0.85f;
-        p.beatSprayAcc += burst * burst * (14.f + level * 10.f) * 20.f * weight;
-        int n = (int)p.beatSprayAcc;
-        if (n > 960) {
-            n = 960;
-        }
-        p.beatSprayAcc -= (float)n;
-        const float speedBase = 40.f + burst * 120.f + drivePulse * 40.f;
+    // 2) 烟花：pulse 达阈后整圈环射（×5）+ 闪光中心再喷一层 + 中心闪光
+    p.fireworkCooldown = std::max(0.f, p.fireworkCooldown - dt);
+    if (burst > 0.28f && p.fireworkCooldown <= 0.f) {
+        const float weight = useBass ? 1.15f : 0.9f;
+        // 外环数量 ×5
+        const int n = std::max(
+            90, (int)std::lround((42.f + burst * 36.f) * 5.f * sprayScale * weight));
+        // 喷射距离缩小 30%
+        const float speedBase =
+            (95.f + burst * 160.f + drivePulse * 50.f) * speedScale * 0.7f;
+        const float ang0 = hash01(p.seed + (int)(m_time * 37.f)) * (float)(2.0 * M_PI);
         for (int i = 0; i < n && (int)m_sparks.size() < kSparkMax; ++i) {
+            // 近似均匀铺满一周，再加一点抖动 → 烟花环
             const float a =
-                hash01(p.seed + i * 17 + (int)(m_time * 90.f)) * (float)(2.0 * M_PI);
-            const float spd = speedBase * (0.55f + hash01(p.seed + i + 3) * 0.7f);
+                ang0 + ((float)i + hash01(p.seed + i * 17) * 0.35f) / (float)n *
+                           (float)(2.0 * M_PI);
+            const float spd = speedBase * (0.65f + hash01(p.seed + i + 3) * 0.55f);
             pushSpark(false, p.x, p.y, std::cos(a) * spd, std::sin(a) * spd,
-                      0.7f + burst * 0.5f);
+                      0.85f + burst * 0.35f);
         }
-    } else {
-        p.beatSprayAcc *= 0.85f;
+
+        // 闪光中心再喷一层：更密、稍慢、寿命更短，贴着闪光炸开
+        const int nFlash = std::max(
+            40, (int)std::lround((28.f + burst * 24.f) * 5.f * sprayScale * weight));
+        const float flashSpdBase = speedBase * 0.45f;
+        const float ang1 = ang0 + 0.37f;
+        for (int i = 0; i < nFlash && (int)m_sparks.size() < kSparkMax; ++i) {
+            const float a =
+                ang1 + ((float)i + hash01(p.seed + i * 23 + 7) * 0.5f) / (float)nFlash *
+                           (float)(2.0 * M_PI);
+            const float spd = flashSpdBase * (0.4f + hash01(p.seed + i + 11) * 0.9f);
+            pushSpark(false, p.x, p.y, std::cos(a) * spd, std::sin(a) * spd, 0.55f + burst * 0.25f);
+        }
+
+        FireworkFlash flash;
+        flash.x = p.x;
+        flash.y = p.y;
+        flash.age = 0.f;
+        flash.life = 0.16f + burst * 0.10f;
+        // 闪光圆盘缩小 30%
+        flash.size0 = p.size * (1.2f + burst * 0.8f) * 0.7f;
+        flash.size1 = p.size * (5.5f + burst * 4.0f) * speedScale * 0.7f;
+        // 白芯：1080p 满喷 = 9px，随窗口短边与喷射强度缩放
+        {
+            const float minDim =
+                (float)std::min(ctx.bounds.width(), ctx.bounds.height());
+            const float screenScale = std::clamp(minDim / 1080.f, 0.25f, 2.5f);
+            flash.coreRadius = 9.f * screenScale * std::clamp(0.35f + burst * 0.65f, 0.35f, 1.f);
+        }
+        flash.colorSlot = p.colorSlot;
+        m_flashes.push_back(flash);
+
+        p.fireworkCooldown = useBass ? 0.14f : 0.11f;
     }
-    (void)dt;
 }
 
 void AudioReactorEffect::updateSparks(float dt) {
     for (auto &s : m_sparks) {
         s.age += dt;
-        // 拖尾：弱阻尼慢飘；beat 喷射：强阻尼快散
-        const float damp = s.isTrail ? 0.55f : 1.8f;
+        // 拖尾：弱阻尼慢飘；烟花：中等阻尼，飞出后减速
+        const float damp = s.isTrail ? 0.55f : 1.35f;
         s.vx *= (1.f - std::min(1.f, damp * dt));
         s.vy *= (1.f - std::min(1.f, damp * dt));
         s.x += s.vx * dt;
@@ -426,6 +492,15 @@ void AudioReactorEffect::updateSparks(float dt) {
     m_sparks.erase(std::remove_if(m_sparks.begin(), m_sparks.end(),
                                   [](const Spark &s) { return s.age >= s.life; }),
                    m_sparks.end());
+}
+
+void AudioReactorEffect::updateFireworkFlashes(float dt) {
+    for (auto &f : m_flashes) {
+        f.age += dt;
+    }
+    m_flashes.erase(std::remove_if(m_flashes.begin(), m_flashes.end(),
+                                   [](const FireworkFlash &f) { return f.age >= f.life; }),
+                    m_flashes.end());
 }
 
 void AudioReactorEffect::ensureFixedParticles(const CRect &bounds) {
@@ -441,9 +516,14 @@ void AudioReactorEffect::ensureFixedParticles(const CRect &bounds) {
     const float cx = (float)(bounds.left + bounds.right) * 0.5f;
     const float cy = (float)(bounds.top + bounds.bottom) * 0.5f;
     const float minDim = std::min(w, h);
+    float sprayScale = 1.f, trailScale = 1.f, sizeScale = 1.f;
+    sparkEmitScales(bounds, sprayScale, trailScale, sizeScale);
+    (void)sprayScale;
+    (void)trailScale;
     const float artHalf = minDim * kArtScale;
     const float orbitR = std::max(artHalf * 1.55f, minDim * kInitOrbitScale);
     const float speed = minDim * kInitSpeedScale;
+    const float particleSize = kParticleSizePx * sizeScale * kVizSizeScale;
 
     m_sparks.clear();
     m_sparks.reserve(kSparkMax);
@@ -457,17 +537,19 @@ void AudioReactorEffect::ensureFixedParticles(const CRect &bounds) {
                         hash01(p.seed) * 0.55f;
         p.x = cx + std::cos(a) * orbitR;
         p.y = cy + std::sin(a) * orbitR;
-        p.size = kParticleSizePx;
-        p.prevSize = kParticleSizePx;
+        p.size = particleSize;
+        p.prevSize = particleSize;
         p.hueT = (float)i / (float)std::max(1, kSegmentCount - 1);
-        p.colorSlot = i % 3;
+        // 与 particleColors[i] 一一对应，五粒子五色
+        p.colorSlot = i;
         p.asymAngle = hash01(p.seed + 17) * (float)(2.0 * M_PI);
         p.trailEmitAcc = 0.f;
-        p.beatSprayAcc = 0.f;
+        p.fireworkCooldown = 0.f;
         p.trail.clear();
         p.trail.reserve(kTrailMaxPoints);
         initParticleVelocity(p, speed);
     }
+    m_flashes.clear();
     m_particlesInited = true;
 }
 
@@ -511,6 +593,11 @@ void AudioReactorEffect::update(const AlbumArtVizContext &ctx, float dtSec) {
     const float innerRingR = artHalf + kGlowGap;
     const float artExcludeR = artHalf;
 
+    float sprayScale = 1.f, trailScale = 1.f, sizeScale = 1.f;
+    sparkEmitScales(ctx.bounds, sprayScale, trailScale, sizeScale);
+    (void)sprayScale;
+    (void)trailScale;
+    const float particleSize = kParticleSizePx * sizeScale * kVizSizeScale;
 
     m_trailSampleAcc += dt;
     const bool sampleTrail = m_trailSampleAcc >= (1.f / kTrailSampleHz);
@@ -521,7 +608,7 @@ void AudioReactorEffect::update(const AlbumArtVizContext &ctx, float dtSec) {
     for (int i = 0; i < kSegmentCount; ++i) {
         Particle &p = m_particles[i];
         p.beatDrive = (i < kBassParticleCount) ? BeatDrive::Bass : BeatDrive::Pulse;
-        p.size = kParticleSizePx;
+        p.size = particleSize;
         const float sizeNorm = 0.5f;
 
         const float ox = p.x;
@@ -552,6 +639,7 @@ void AudioReactorEffect::update(const AlbumArtVizContext &ctx, float dtSec) {
     }
 
     updateSparks(dt);
+    updateFireworkFlashes(dt);
 }
 
 void AudioReactorEffect::drawParticleBody(const AlbumArtVizContext &ctx, const Particle &p,
@@ -559,10 +647,12 @@ void AudioReactorEffect::drawParticleBody(const AlbumArtVizContext &ctx, const P
     if (!ctx.canvas) {
         return;
     }
+    // RGB 只算一次，各层只改 Alpha
+    const CColor particleRgb = particleColor(ctx, p.colorSlot, p.hueT, 255);
     // 外晕：偏心 + 多层幂次衰减，形成非均匀径向渐变（不是平均晕）
     const float ox = std::cos(p.asymAngle) * p.size * 0.22f;
     const float oy = std::sin(p.asymAngle) * p.size * 0.22f;
-    constexpr int kGlowLayers = 8;
+    constexpr int kGlowLayers = 4;
     for (int i = kGlowLayers; i >= 1; --i) {
         const float t = (float)i / (float)kGlowLayers; // 1=外 → 内
         const float falloff = std::pow(1.f - t * 0.92f, 2.4f); // 外淡内亮
@@ -575,13 +665,16 @@ void AudioReactorEffect::drawParticleBody(const AlbumArtVizContext &ctx, const P
         const float gx = p.x + ox * bias;
         const float gy = p.y + oy * bias;
         const float r = p.size * (0.35f + t * 1.55f);
-        CColor glow = particleColor(ctx, p.colorSlot, p.hueT, a);
+        CColor glow = particleRgb;
+        glow.setAlpha(a);
         albumart_viz::fillSoftDisc(ctx.canvas, gx, gy, r, glow, 14);
     }
     // 亮核
-    CColor core = particleColor(ctx, p.colorSlot, p.hueT, headA);
+    CColor core = particleRgb;
+    core.setAlpha(headA);
     albumart_viz::fillSoftDisc(ctx.canvas, p.x, p.y, p.size * 0.42f, core, 12);
-    CColor hot = particleColor(ctx, p.colorSlot, p.hueT, (uint8_t)std::min(255, (int)headA + 40));
+    CColor hot = particleRgb;
+    hot.setAlpha((uint8_t)std::min(255, (int)headA + 40));
     albumart_viz::fillSoftDisc(ctx.canvas, p.x - ox * 0.15f, p.y - oy * 0.15f, p.size * 0.2f, hot,
                                10);
 }
@@ -592,17 +685,43 @@ void AudioReactorEffect::drawSparks(const AlbumArtVizContext &ctx) {
     }
     for (const auto &s : m_sparks) {
         const float u = std::clamp(s.age / s.life, 0.f, 1.f);
-        // 扩散变大，透明度按 smoothstep 淡出
         const float fade = (1.f - u) * (1.f - u);
         const float r = s.size0 + (s.size1 - s.size0) * u;
-        const uint8_t a = (uint8_t)std::clamp(200.f * fade, 0.f, 200.f);
+        // 烟花更亮、拖尾稍淡
+        const float aMax = s.isTrail ? 180.f : 230.f;
+        const uint8_t a = (uint8_t)std::clamp(aMax * fade, 0.f, aMax);
         if (a < 8) {
             continue;
         }
-        CColor outer = particleColor(ctx, s.colorSlot, s.hueT, (uint8_t)(a / 3));
-        albumart_viz::fillSoftDisc(ctx.canvas, s.x, s.y, r, outer, 10);
-        CColor inner = particleColor(ctx, s.colorSlot, s.hueT, a);
-        albumart_viz::fillSoftDisc(ctx.canvas, s.x, s.y, r * 0.35f, inner, 8);
+        CColor rgb = particleColor(ctx, s.colorSlot, s.hueT, 255);
+        rgb.setAlpha(a);
+        albumart_viz::fillSoftDisc(ctx.canvas, s.x, s.y, r, rgb, s.isTrail ? 8 : 10);
+    }
+}
+
+void AudioReactorEffect::drawFireworkFlashes(const AlbumArtVizContext &ctx) {
+    if (!ctx.canvas || m_flashes.empty()) {
+        return;
+    }
+    for (const auto &f : m_flashes) {
+        const float u = std::clamp(f.age / f.life, 0.f, 1.f);
+        // 闪光：快速撑开后骤灭
+        const float bloom = std::sin((1.f - u) * (float)M_PI);
+        const float r = f.size0 + (f.size1 - f.size0) * (1.f - (1.f - u) * (1.f - u));
+        CColor rgb = particleColor(ctx, f.colorSlot, 0.5f, 255);
+        // 外晕：提亮
+        CColor glow = rgb;
+        glow.setAlpha((uint8_t)std::clamp(230.f * bloom, 0.f, 255.f));
+        albumart_viz::fillSoftDisc(ctx.canvas, f.x, f.y, r, glow, 16);
+        // 中层更亮
+        CColor mid = rgb;
+        mid.setAlpha((uint8_t)std::clamp(255.f * bloom, 0.f, 255.f));
+        albumart_viz::fillSoftDisc(ctx.canvas, f.x, f.y, r * 0.55f, mid, 12);
+        // 白芯：半径随喷射强度 / 相对 1080p 缩放（满喷约 9px）
+        CColor core;
+        core.set(255, 255, 255);
+        core.setAlpha((uint8_t)std::clamp(255.f * bloom, 0.f, 255.f));
+        albumart_viz::fillSoftDisc(ctx.canvas, f.x, f.y, f.coreRadius, core, 10);
     }
 }
 
@@ -611,13 +730,15 @@ void AudioReactorEffect::drawEnergyCloud(const AlbumArtVizContext &ctx) {
         return;
     }
 
-    // 先画微粒（在主粒子下面，形成尾迹尘埃感）
+    // 微粒 → 闪光 → 主粒子
     drawSparks(ctx);
+    drawFireworkFlashes(ctx);
 
     for (const auto &p : m_particles) {
         const float level = segmentLevel(ctx, p.segment);
         const uint8_t headA = (uint8_t)std::clamp(
             180.f + level * 75.f + ctx.beatPulse * 35.f + ctx.onsetStrength * 25.f, 0.f, 255.f);
+        const CColor particleRgb = particleColor(ctx, p.colorSlot, p.hueT, 255);
 
         if (p.trail.size() >= 2) {
             for (size_t i = 1; i < p.trail.size(); ++i) {
@@ -627,7 +748,8 @@ void AudioReactorEffect::drawEnergyCloud(const AlbumArtVizContext &ctx) {
                 if (a < 8) {
                     continue;
                 }
-                CColor trailClr = particleColor(ctx, p.colorSlot, p.hueT, a);
+                CColor trailClr = particleRgb;
+                trailClr.setAlpha(a);
                 const float trailSize = (p.trail[i - 1].size + p.trail[i].size) * 0.5f;
                 const int penW =
                     std::max(1, (int)std::lround(trailSize * 0.42f * (0.35f + life * 0.65f)));
@@ -683,13 +805,17 @@ void AudioReactorEffect::drawVinylGrooves(const AlbumArtVizContext &ctx, float c
     }
     const float inner = artHalf * 1.06f;
     const int grooves = 14;
+    // RGB 只转换一次，各槽只改 Alpha；圆周采样降至 40
+    const CColor grooveRgb =
+        neonRole(ctx, albumart_viz::AlbumPaletteRole::BgMid, 255, 0.2f);
     for (int i = 0; i < grooves; ++i) {
         const float t = (float)i / (float)(grooves - 1);
         const float r = inner + (vinylOuter - inner) * t;
         const uint8_t a = (uint8_t)(24 + (1.f - std::fabs(t - 0.5f) * 2.f) * 36);
-        CColor clr = neonRole(ctx, albumart_viz::AlbumPaletteRole::BgMid, a, 0.2f);
+        CColor clr = grooveRgb;
+        clr.setAlpha(a);
         m_pen.createSolidPen(1, clr);
-        albumart_viz::strokeCircle(ctx.canvas, m_pen, cx, cy, r, 72, m_spin);
+        albumart_viz::strokeCircle(ctx.canvas, m_pen, cx, cy, r, 40, m_spin);
     }
 }
 
@@ -699,46 +825,40 @@ void AudioReactorEffect::drawReactorRing(const AlbumArtVizContext &ctx, float cx
         return;
     }
     const auto role = albumart_viz::AlbumPaletteRole::Light;
-    // 幅度固定（innerR→outerR），只随频谱改强度；角向细分做条间渐变
+    // 48 段、每段画一次；复用路径对象，避免循环内堆分配
     const int segs = 48;
-    constexpr int kSub = 4;
+    CColor fillRgb = neonRole(ctx, role, 255, 0.45f);
+    CColor coreRgb = neonRole(ctx, role, 255, 0.65f);
+    VecPoints poly;
+    poly.reserve(4);
 
     for (int i = 0; i < segs; ++i) {
         const float t0 = (float)i / (float)segs;
         const float t1 = (float)(i + 1) / (float)segs;
-        const float level0 = bandAtAngle(ctx, t0);
-        const float level1 = bandAtAngle(ctx, t1);
-        for (int s = 0; s < kSub; ++s) {
-            const float u0 = (float)s / (float)kSub;
-            const float u1 = (float)(s + 1) / (float)kSub;
-            const float um = (u0 + u1) * 0.5f;
-            const float level = level0 * (1.f - um) + level1 * um;
-            const float a0 =
-                spin + (t0 + (t1 - t0) * u0) * (float)(2.0 * M_PI) - (float)(M_PI * 0.5);
-            const float a1 =
-                spin + (t0 + (t1 - t0) * u1) * (float)(2.0 * M_PI) - (float)(M_PI * 0.5);
-            const uint8_t a = (uint8_t)std::clamp(
-                35.f + level * 150.f + ctx.beatPulse * 25.f + ctx.bassPulse * 20.f, 0.f, 200.f);
-            if (a < 10) {
-                continue;
-            }
-            const float cos0 = std::cos(a0);
-            const float sin0 = std::sin(a0);
-            const float cos1 = std::cos(a1);
-            const float sin1 = std::sin(a1);
-            VecPoints poly;
-            poly.reserve(4);
-            poly.push_back(
-                CPoint((int)std::lround(cx + cos0 * innerR), (int)std::lround(cy + sin0 * innerR)));
-            poly.push_back(
-                CPoint((int)std::lround(cx + cos1 * innerR), (int)std::lround(cy + sin1 * innerR)));
-            poly.push_back(
-                CPoint((int)std::lround(cx + cos1 * outerR), (int)std::lround(cy + sin1 * outerR)));
-            poly.push_back(
-                CPoint((int)std::lround(cx + cos0 * outerR), (int)std::lround(cy + sin0 * outerR)));
-            CColor fill = neonRole(ctx, role, a, 0.45f);
-            ctx.canvas->fillPath(poly, fill);
+        const float level = (bandAtAngle(ctx, t0) + bandAtAngle(ctx, t1)) * 0.5f;
+        const float a0 = spin + t0 * (float)(2.0 * M_PI) - (float)(M_PI * 0.5);
+        const float a1 = spin + t1 * (float)(2.0 * M_PI) - (float)(M_PI * 0.5);
+        const uint8_t a = (uint8_t)std::clamp(
+            35.f + level * 150.f + ctx.beatPulse * 25.f + ctx.bassPulse * 20.f, 0.f, 200.f);
+        if (a < 10) {
+            continue;
         }
+        const float cos0 = std::cos(a0);
+        const float sin0 = std::sin(a0);
+        const float cos1 = std::cos(a1);
+        const float sin1 = std::sin(a1);
+        poly.clear();
+        poly.push_back(
+            CPoint((int)std::lround(cx + cos0 * innerR), (int)std::lround(cy + sin0 * innerR)));
+        poly.push_back(
+            CPoint((int)std::lround(cx + cos1 * innerR), (int)std::lround(cy + sin1 * innerR)));
+        poly.push_back(
+            CPoint((int)std::lround(cx + cos1 * outerR), (int)std::lround(cy + sin1 * outerR)));
+        poly.push_back(
+            CPoint((int)std::lround(cx + cos0 * outerR), (int)std::lround(cy + sin0 * outerR)));
+        CColor fill = fillRgb;
+        fill.setAlpha(a);
+        ctx.canvas->fillPath(poly, fill);
     }
 
     // 内环亮边：线宽固定，只改亮度
@@ -746,25 +866,17 @@ void AudioReactorEffect::drawReactorRing(const AlbumArtVizContext &ctx, float cx
     for (int i = 0; i < segs; ++i) {
         const float t0 = (float)i / (float)segs;
         const float t1 = (float)(i + 1) / (float)segs;
-        const float level0 = bandAtAngle(ctx, t0);
-        const float level1 = bandAtAngle(ctx, t1);
-        for (int s = 0; s < kSub; ++s) {
-            const float u0 = (float)s / (float)kSub;
-            const float u1 = (float)(s + 1) / (float)kSub;
-            const float um = (u0 + u1) * 0.5f;
-            const float level = level0 * (1.f - um) + level1 * um;
-            const float a0 =
-                spin + (t0 + (t1 - t0) * u0) * (float)(2.0 * M_PI) - (float)(M_PI * 0.5);
-            const float a1 =
-                spin + (t0 + (t1 - t0) * u1) * (float)(2.0 * M_PI) - (float)(M_PI * 0.5);
-            const uint8_t coreA = (uint8_t)std::clamp(
-                110.f + level * 145.f + ctx.beatPulse * 35.f + ctx.bassPulse * 25.f, 0.f, 255.f);
-            CColor core = neonRole(ctx, role, coreA, 0.65f);
-            m_pen.createSolidPen(kInnerPenW, core);
-            ctx.canvas->setPen(m_pen);
-            ctx.canvas->line(cx + std::cos(a0) * innerR, cy + std::sin(a0) * innerR,
-                             cx + std::cos(a1) * innerR, cy + std::sin(a1) * innerR);
-        }
+        const float level = (bandAtAngle(ctx, t0) + bandAtAngle(ctx, t1)) * 0.5f;
+        const float a0 = spin + t0 * (float)(2.0 * M_PI) - (float)(M_PI * 0.5);
+        const float a1 = spin + t1 * (float)(2.0 * M_PI) - (float)(M_PI * 0.5);
+        const uint8_t coreA = (uint8_t)std::clamp(
+            110.f + level * 145.f + ctx.beatPulse * 35.f + ctx.bassPulse * 25.f, 0.f, 255.f);
+        CColor core = coreRgb;
+        core.setAlpha(coreA);
+        m_pen.createSolidPen(kInnerPenW, core);
+        ctx.canvas->setPen(m_pen);
+        ctx.canvas->line(cx + std::cos(a0) * innerR, cy + std::sin(a0) * innerR,
+                         cx + std::cos(a1) * innerR, cy + std::sin(a1) * innerR);
     }
 
     // 外环不再画辉光描边，外侧只保留频谱条
@@ -801,8 +913,9 @@ void AudioReactorEffect::drawWingMarkers(const AlbumArtVizContext &ctx, float cx
         return;
     }
     const float sides[2] = {0.f, (float)M_PI};
-    CColor clr = neonRole(ctx, albumart_viz::AlbumPaletteRole::Accent,
-                          (uint8_t)(200 + ctx.beatPulse * 45 + ctx.bassPulse * 25), 0.4f);
+    CColor clr = neonRole(
+        ctx, albumart_viz::AlbumPaletteRole::Accent,
+        (uint8_t)std::clamp(200.f + ctx.beatPulse * 45.f + ctx.bassPulse * 25.f, 0.f, 255.f), 0.4f);
     m_pen.createSolidPen(std::max(1, (int)std::lround(1.5f + m_breath * 3.f)), clr);
     ctx.canvas->setPen(m_pen);
 
@@ -829,8 +942,9 @@ void AudioReactorEffect::drawCoreRim(const AlbumArtVizContext &ctx, float cx, fl
     if (!ctx.canvas) {
         return;
     }
-    CColor rim = neonRole(ctx, albumart_viz::AlbumPaletteRole::Accent,
-                          (uint8_t)(170 + ctx.beatPulse * 55 + ctx.bassPulse * 40), 0.4f);
+    CColor rim = neonRole(
+        ctx, albumart_viz::AlbumPaletteRole::Accent,
+        (uint8_t)std::clamp(170.f + ctx.beatPulse * 55.f + ctx.bassPulse * 40.f, 0.f, 255.f), 0.4f);
     m_pen.createSolidPen(
         std::max(1, (int)std::lround(1.5f + m_breath * 5.f + ctx.bassPulse * 3.f)), rim);
     albumart_viz::strokeCircle(ctx.canvas, m_pen, cx, cy, artHalf * 1.01f, 64, m_spin);

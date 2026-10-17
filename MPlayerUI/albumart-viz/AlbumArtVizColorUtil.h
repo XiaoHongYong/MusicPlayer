@@ -8,13 +8,14 @@
 namespace albumart_viz {
 
 /**
- * 封面调色板角色（宿主 extractPalette 写入的 4 阶 + 边缘色环）。
+ * 封面调色板角色（宿主 extractPalette 写入的 4 阶 + 边缘色环 + 粒子色）。
  *
  * palette[0] BgDark   底色1 — 最暗，氛围/背景
  * palette[1] BgMid    底色2 — 中间调，次级背景
  * palette[2] Accent   亮色1 — 强调色（高饱和）
  * palette[3] Light    亮色2 — 高光/第二亮色
  * rayColors[N]        色环 — 沿封面边缘采色，按角度映射
+ * particleColors[N]   粒子 — 色相尽量拉开的强调色（AudioReactor 等）
  */
 enum class AlbumPaletteRole {
     BgDark = 0,
@@ -86,6 +87,20 @@ inline CColor rayColor(const AlbumArtVizContext &ctx, int bandIndex, int bandCou
     const int i0 = ((int)idxF) % ctx.rayColorCount;
     const int i1 = (i0 + 1) % ctx.rayColorCount;
     return lerpColor(ctx.rayColors[i0], ctx.rayColors[i1], idxF - (float)(int)idxF, alpha);
+}
+
+/** 粒子色盘：按 index 取色（循环）；无粒子色时回退 Accent */
+inline CColor particlePaletteColor(const AlbumArtVizContext &ctx, int index, uint8_t alpha) {
+    if (!ctx.particleColors || ctx.particleColorCount <= 0) {
+        return paletteRole(ctx, AlbumPaletteRole::Accent, alpha);
+    }
+    int idx = index % ctx.particleColorCount;
+    if (idx < 0) {
+        idx += ctx.particleColorCount;
+    }
+    CColor c = ctx.particleColors[idx];
+    c.setAlpha(alpha);
+    return c;
 }
 
 } // namespace albumart_viz

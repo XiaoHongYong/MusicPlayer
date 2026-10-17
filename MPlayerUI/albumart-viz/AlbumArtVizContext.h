@@ -18,12 +18,25 @@ struct AlbumArtVizContext {
     float scaleFactor = 1.f;
 
     const CSFImage *albumArt = nullptr;
+    /** 多封面切换时的上一张（与 artCrossfade 配合做交叉淡入） */
+    const CSFImage *albumArtPrev = nullptr;
+    /** 未做圆形裁剪的原图（plain-cover 等按比例适配控件用） */
+    const CSFImage *albumArtOrg = nullptr;
+    const CSFImage *albumArtOrgPrev = nullptr;
+    /**
+     * 封面交叉淡入进度：0=全显示 albumArtPrev，1=全显示 albumArt。
+     * >= 1 或 albumArtPrev 为空时视为无转场。
+     */
+    float artCrossfade = 1.f;
     bool hasAlbumArt = false;
 
     const CColor *palette = nullptr;
     int paletteSize = 0;
     const CColor *rayColors = nullptr;
     int rayColorCount = 0;
+    /** AudioReactor 等粒子用：色相尽量拉开的一组强调色 */
+    const CColor *particleColors = nullptr;
+    int particleColorCount = 0;
 
     const AudioAnalysisFrame *frame = nullptr;
     bool hasFrame = false;

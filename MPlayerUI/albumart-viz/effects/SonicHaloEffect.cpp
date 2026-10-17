@@ -1,6 +1,6 @@
 ﻿#include "SonicHaloEffect.h"
 #include "../AlbumArtVizColorUtil.h"
-#include "../../../ImageLib/RawImageData.h"
+#include "../AlbumArtVizDrawUtil.h"
 
 #include <algorithm>
 #include <cmath>
@@ -14,90 +14,10 @@ namespace {
 constexpr float kPeakFall = 0.018f;
 constexpr float kSpinSpeed = 0.004f;
 
-RawImageDataPtr rotateCircularArt(const RawImageDataPtr &src, float angleRad) {
-    if (!src || src->width <= 0 || src->height <= 0 || src->bitCount != 32) {
-        return nullptr;
-    }
-    const int size = src->width;
-    if (src->height != size) {
-        return nullptr;
-    }
-
-    auto dst = createRawImageData(size, size, 32);
-    if (!dst) {
-        return nullptr;
-    }
-    rawImageBGRA32Set(dst.get(), 0, 0, 0, 0);
-
-    const float cx = (size - 1) * 0.5f;
-    const float cy = (size - 1) * 0.5f;
-    const float radius2 = (size * 0.5f) * (size * 0.5f);
-    const float c = std::cos(angleRad);
-    const float s = std::sin(angleRad);
-
-    for (int y = 0; y < size; ++y) {
-        uint8_t *drow = dst->rowPtr(y);
-        const float dy = y - cy;
-        for (int x = 0; x < size; ++x) {
-            const float dx = x - cx;
-            if (dx * dx + dy * dy > radius2) {
-                continue;
-            }
-            const float sx = c * dx + s * dy + cx;
-            const float sy = -s * dx + c * dy + cy;
-            const int ix = (int)std::lround(sx);
-            const int iy = (int)std::lround(sy);
-            if ((unsigned)ix >= (unsigned)size || (unsigned)iy >= (unsigned)size) {
-                continue;
-            }
-            const uint8_t *sp = src->pixPtr(ix, iy);
-            uint8_t *dp = drow + x * 4;
-            dp[0] = sp[0];
-            dp[1] = sp[1];
-            dp[2] = sp[2];
-            dp[3] = sp[3];
-        }
-    }
-    return dst;
-}
-
 } // namespace
 
-SonicHaloEffect::RotateMode SonicHaloEffect::rotateModeFromString(cstr_t s) {
-    if (!s) {
-        return RotateMode::SyncAll;
-    }
-    if (strcasecmp(s, "none") == 0 || strcasecmp(s, "off") == 0) {
-        return RotateMode::None;
-    }
-    if (strcasecmp(s, "bars-only") == 0) {
-        return RotateMode::BarsOnly;
-    }
-    return RotateMode::BarsOnly;
-}
-
-cstr_t SonicHaloEffect::rotateModeToString(RotateMode mode) {
-    switch (mode) {
-    case RotateMode::SyncAll:
-        return "sync";
-    case RotateMode::None:
-        return "none";
-    case RotateMode::BarsOnly:
-    default:
-        return "bars";
-    }
-}
-
-bool SonicHaloEffect::setProperty(cstr_t name, cstr_t value) {
-    if (strcasecmp(name, "RotateMode") == 0) {
-        m_rotateMode = rotateModeFromString(value);
-        return true;
-    }
-    return false;
-}
-
 float SonicHaloEffect::spinAngle(const AlbumArtVizContext &ctx) const {
-    if (!ctx.hasFrame || !ctx.frame || m_rotateMode == RotateMode::None) {
+    if (!ctx.hasFrame || !ctx.frame) {
         return 0.f;
     }
     return (float)ctx.frame->sequence * kSpinSpeed;
@@ -124,6 +44,13 @@ void SonicHaloEffect::updatePeakLevels(const AlbumArtVizContext &ctx) {
 
 void SonicHaloEffect::update(const AlbumArtVizContext &ctx, float /*dtSec*/) {
     updatePeakLevels(ctx);
+
+    // 与 AudioReactor 相同：lowEnergy 呼吸 + bassPulse kick
+    const float rms = (ctx.hasFrame && ctx.frame) ? ctx.frame->rms : 0.f;
+    const float target =
+        ctx.lowEnergy * 0.09f + ctx.bassPulse * 0.04f * std::max(ctx.bassStrength, 0.35f) +
+        rms * 0.015f;
+    m_breath += (target - m_breath) * 0.2f;
 }
 
 void SonicHaloEffect::drawHaloRings(const AlbumArtVizContext &ctx, float cx, float cy, float artHalf,
@@ -245,52 +172,6 @@ void SonicHaloEffect::drawSpectrumRing(const AlbumArtVizContext &ctx, float cx, 
     }
 }
 
-void SonicHaloEffect::drawAlbumArt(const AlbumArtVizContext &ctx, float cx, float cy, float artHalf,
-                                   float artSpin) {
-    if (!ctx.canvas) {
-        return;
-    }
-    CRawGraph *canvas = ctx.canvas;
-    const float drawSize = artHalf * 2.f;
-    const float x = cx - artHalf;
-    const float y = cy - artHalf;
-
-    if (!ctx.albumArt || !ctx.albumArt->isValid() || ctx.albumArt->m_cx <= 0 ||
-        ctx.albumArt->m_cy <= 0) {
-        CColor disc = albumart_viz::paletteColor(ctx, 0.35f, 200);
-        const int segs = 36;
-        VecPoints poly;
-        poly.reserve(segs);
-        for (int i = 0; i < segs; ++i) {
-            const float a = (float)(2.0 * M_PI * i / segs);
-            poly.push_back(CPoint((int)std::lround(cx + std::cos(a) * artHalf),
-                                  (int)std::lround(cy + std::sin(a) * artHalf)));
-        }
-        canvas->fillPath(poly, disc);
-        return;
-    }
-
-    const int ix = (int)std::lround(x);
-    const int iy = (int)std::lround(y);
-    const int isize = (int)std::lround(drawSize);
-
-    const CSFImage *drawImg = ctx.albumArt;
-    CSFImage rotatedImg;
-    if (std::fabs(artSpin) > 1e-4f) {
-        auto rotated = rotateCircularArt(ctx.albumArt->getHandle(), artSpin);
-        if (rotated) {
-            rotatedImg.attach(rotated, ctx.scaleFactor);
-            drawImg = &rotatedImg;
-        }
-    }
-
-    if (drawImg->m_cx == isize && drawImg->m_cy == isize) {
-        const_cast<CSFImage *>(drawImg)->blt(canvas, ix, iy, BPM_BLEND);
-    } else {
-        const_cast<CSFImage *>(drawImg)->stretchBlt(canvas, ix, iy, isize, isize, BPM_BLEND);
-    }
-}
-
 void SonicHaloEffect::draw(const AlbumArtVizContext &ctx) {
     if (!ctx.canvas) {
         return;
@@ -304,7 +185,8 @@ void SonicHaloEffect::draw(const AlbumArtVizContext &ctx) {
     const float cx = (float)(rc.left + rc.right) * 0.5f;
     const float cy = (float)(rc.top + rc.bottom) * 0.5f;
     const float minDim = (float)std::min(rc.width(), rc.height());
-    const float artHalf = minDim * ctx.artRatio * 0.5f;
+    // 封面尺寸随 m_breath 缩放（与 AudioReactor 一致）；与频谱/光环同步旋转
+    const float artHalf = minDim * ctx.artRatio * 0.5f * (1.f + m_breath * 0.45f);
     const float baseR = artHalf * 1.08f;
     const float maxR = minDim * 0.48f;
     const float maxLen = std::max(6.f, maxR - baseR);
@@ -323,9 +205,8 @@ void SonicHaloEffect::draw(const AlbumArtVizContext &ctx) {
     }
 
     const float spin = spinAngle(ctx);
-    const float artSpin = (m_rotateMode == RotateMode::SyncAll) ? spin : 0.f;
 
     drawSpectrumRing(ctx, cx, cy, baseR, maxLen, spin);
     drawHaloRings(ctx, cx, cy, artHalf, maxR, spin);
-    drawAlbumArt(ctx, cx, cy, artHalf, artSpin);
+    albumart_viz::drawCircularAlbumArt(ctx, cx, cy, artHalf, 0.35f, spin);
 }

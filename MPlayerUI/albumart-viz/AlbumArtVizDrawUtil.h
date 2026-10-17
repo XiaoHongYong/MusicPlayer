@@ -3,6 +3,7 @@
 #include "AlbumArtVizColorUtil.h"
 #include "../../ImageLib/RawImageData.h"
 
+#include <algorithm>
 #include <cmath>
 
 #ifndef M_PI
@@ -55,26 +56,9 @@ inline RawImageDataPtr rotateCircularArt(const RawImageDataPtr &src, float angle
     return dst;
 }
 
-/** 绘制圆形封面；artSpinRad 非 0 时绕中心旋转。 */
-inline void drawCircularAlbumArt(const AlbumArtVizContext &ctx, float cx, float cy, float artHalf,
-                                 float paletteT = 0.4f, float artSpinRad = 0.f) {
-    if (!ctx.canvas) {
-        return;
-    }
-    CRawGraph *canvas = ctx.canvas;
-
-    if (!ctx.albumArt || !ctx.albumArt->isValid() || ctx.albumArt->m_cx <= 0 ||
-        ctx.albumArt->m_cy <= 0) {
-        CColor disc = paletteColor(ctx, paletteT, 210);
-        const int segs = 40;
-        VecPoints poly;
-        poly.reserve(segs);
-        for (int i = 0; i < segs; ++i) {
-            const float a = artSpinRad + (float)(2.0 * M_PI * i / segs);
-            poly.push_back(CPoint((int)std::lround(cx + std::cos(a) * artHalf),
-                                  (int)std::lround(cy + std::sin(a) * artHalf)));
-        }
-        canvas->fillPath(poly, disc);
+inline void blitCircularAlbumArt(CRawGraph *canvas, const CSFImage *art, float scaleFactor,
+                                 float cx, float cy, float artHalf, float artSpinRad) {
+    if (!canvas || !art || !art->isValid() || art->m_cx <= 0 || art->m_cy <= 0) {
         return;
     }
 
@@ -82,12 +66,12 @@ inline void drawCircularAlbumArt(const AlbumArtVizContext &ctx, float cx, float 
     const int iy = (int)std::lround(cy - artHalf);
     const int isize = (int)std::lround(artHalf * 2.f);
 
-    const CSFImage *drawImg = ctx.albumArt;
+    const CSFImage *drawImg = art;
     CSFImage rotatedImg;
     if (std::fabs(artSpinRad) > 1e-4f) {
-        auto rotated = rotateCircularArt(ctx.albumArt->getHandle(), artSpinRad);
+        auto rotated = rotateCircularArt(art->getHandle(), artSpinRad);
         if (rotated) {
-            rotatedImg.attach(rotated, ctx.scaleFactor);
+            rotatedImg.attach(rotated, scaleFactor);
             drawImg = &rotatedImg;
         }
     }
@@ -97,6 +81,64 @@ inline void drawCircularAlbumArt(const AlbumArtVizContext &ctx, float cx, float 
         img->blt(canvas, ix, iy, BPM_BLEND);
     } else {
         img->stretchBlt(canvas, ix, iy, isize, isize, BPM_BLEND);
+    }
+}
+
+inline void fillAlbumArtPlaceholder(CRawGraph *canvas, const AlbumArtVizContext &ctx, float cx,
+                                    float cy, float artHalf, float paletteT, float artSpinRad) {
+    CColor disc = paletteColor(ctx, paletteT, 210);
+    const int segs = 40;
+    VecPoints poly;
+    poly.reserve(segs);
+    for (int i = 0; i < segs; ++i) {
+        const float a = artSpinRad + (float)(2.0 * M_PI * i / segs);
+        poly.push_back(CPoint((int)std::lround(cx + std::cos(a) * artHalf),
+                              (int)std::lround(cy + std::sin(a) * artHalf)));
+    }
+    canvas->fillPath(poly, disc);
+}
+
+/** 绘制圆形封面；artSpinRad 非 0 时绕中心旋转。支持多封面交叉淡入。 */
+inline void drawCircularAlbumArt(const AlbumArtVizContext &ctx, float cx, float cy, float artHalf,
+                                 float paletteT = 0.4f, float artSpinRad = 0.f) {
+    if (!ctx.canvas) {
+        return;
+    }
+    CRawGraph *canvas = ctx.canvas;
+
+    const bool hasCur = ctx.albumArt && ctx.albumArt->isValid() && ctx.albumArt->m_cx > 0 &&
+                        ctx.albumArt->m_cy > 0;
+    const bool hasPrev = ctx.albumArtPrev && ctx.albumArtPrev->isValid() &&
+                         ctx.albumArtPrev->m_cx > 0 && ctx.albumArtPrev->m_cy > 0;
+    const float t = std::clamp(ctx.artCrossfade, 0.f, 1.f);
+    const bool crossfading = hasPrev && t < 1.f;
+
+    if (!hasCur && !hasPrev) {
+        fillAlbumArtPlaceholder(canvas, ctx, cx, cy, artHalf, paletteT, artSpinRad);
+        return;
+    }
+
+    if (!crossfading) {
+        if (hasCur) {
+            blitCircularAlbumArt(canvas, ctx.albumArt, ctx.scaleFactor, cx, cy, artHalf, artSpinRad);
+        } else {
+            fillAlbumArtPlaceholder(canvas, ctx, cx, cy, artHalf, paletteT, artSpinRad);
+        }
+        return;
+    }
+
+    const int fromOpacity = (int)std::lround((1.f - t) * 255.f);
+    const int toOpacity = (int)std::lround(t * 255.f);
+    if (fromOpacity > 0) {
+        CRawGraph::COpacityBlendAutoRecovery op(canvas, fromOpacity);
+        blitCircularAlbumArt(canvas, ctx.albumArtPrev, ctx.scaleFactor, cx, cy, artHalf, artSpinRad);
+    }
+    if (toOpacity > 0 && hasCur) {
+        CRawGraph::COpacityBlendAutoRecovery op(canvas, toOpacity);
+        blitCircularAlbumArt(canvas, ctx.albumArt, ctx.scaleFactor, cx, cy, artHalf, artSpinRad);
+    } else if (toOpacity > 0 && !hasCur) {
+        CRawGraph::COpacityBlendAutoRecovery op(canvas, toOpacity);
+        fillAlbumArtPlaceholder(canvas, ctx, cx, cy, artHalf, paletteT, artSpinRad);
     }
 }
 

@@ -19,7 +19,7 @@ public:
     virtual void onSize(const CRect &bounds) { (void)bounds; }
     virtual void onAlbumArtChanged(const AlbumArtVizContext &ctx) { (void)ctx; }
 
-    /** 特效私有参数（如 RotateMode）；未识别返回 false。 */
+    /** 特效私有参数；未识别返回 false。 */
     virtual bool setProperty(cstr_t name, cstr_t value) {
         (void)name;
         (void)value;

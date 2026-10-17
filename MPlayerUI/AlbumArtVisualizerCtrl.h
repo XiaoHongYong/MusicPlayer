@@ -20,7 +20,8 @@
  * 负责：音频订阅、封面/取色、平滑、特效调度与转场。
  * 具体画面由 IAlbumArtEffect 绘制；特效切换走 IAlbumArtEffectTransition。
  *
- * 点击：循环切换特效（带 crossfade 转场）。
+ * 单击：循环切换特效（跳过 debug）。
+ * 双击：切换到 debug-meters。
  *
  * 属性：
  *   Image          无封面时的占位图
@@ -28,8 +29,7 @@
  *   BandCount      径向频谱条数（默认 64，最大 96）
  *   Palette        无封面时的 4 阶色板，逗号分隔 dark,mid,accent,light
  *   FallbackColor  无封面主色（便捷项：据此派生 Palette；有 Palette 时以 Palette 为准）
- *   Effect         特效 id：sonic-halo / living-cover / audio-reactor / debug-meters
- *   RotateMode     bars / sync / none（转发给 sonic-halo）
+ *   Effect         特效 id：sonic-halo / plain-cover / living-cover / audio-reactor / debug-meters
  *   Transition     转场 id（默认 crossfade）
  */
 class CAlbumArtVisualizerCtrl : public CUIObject,
@@ -46,7 +46,9 @@ public:
     void onTimer(int nId) override;
     void draw(CRawGraph *canvas) override;
     bool setProperty(cstr_t szProperty, cstr_t szValue) override;
-    bool onLButtonUp(uint32_t nFlags, CPoint point) override;
+    bool onLButtonDown(uint32_t nFlags, CPoint point) override;
+    bool onLButtonClick(uint32_t nFlags, CPoint point) override;
+    bool onLButtonDblClk(uint32_t nFlags, CPoint point) override;
 
     void onEvent(const IEvent *pEvent) override;
     void onAudioAnalysisFrame(const AudioAnalysisFrame &frame) override;
@@ -73,15 +75,19 @@ protected:
     void cycleEffect();
     void finishTransition();
     void notifyEffectsAlbumArtChanged();
-    void forwardRotateModeToEffect();
+    void beginArtCrossfade();
+    void finishArtCrossfade();
+    void updateArtCrossfade(float dtSec);
+    bool isArtCrossfading() const {
+        return m_artCrossfadeProgress < 1.f &&
+               (m_imgArtPrev.isValid() || m_imgArtOrgPrev.isValid());
+    }
     AlbumArtVizContext buildContext(CRawGraph *canvas, const AudioAnalysisFrame *frame,
                                     bool hasFrame);
     float consumeDtSec();
 
     void loadEffectId();
     void saveEffectId() const;
-    void loadRotateMode();
-    void saveRotateMode() const;
 
     std::mutex m_frameMutex;
     AudioAnalysisFrame m_frame;
@@ -105,20 +111,24 @@ protected:
     string m_strImgFile;
     CSFImage m_imgArt;
     CSFImage m_imgArtOrg;
+    CSFImage m_imgArtPrev; // 多封面切换交叉淡入时的上一张（圆形）
+    CSFImage m_imgArtOrgPrev; // 交叉淡入时的上一张原图
+    float m_artCrossfadeProgress = 1.f; // 0→1；>=1 表示无转场
     bool m_hasAlbumArt = false;
 
     static constexpr int kPaletteSize = 4;
     static constexpr int kRayColorCount = 96;
+    static constexpr int kParticlePaletteSize = 5; // 与 AudioReactor 固定粒子数对齐
     CColor m_palette[kPaletteSize];
     CColor m_defaultPalette[kPaletteSize];
     CColor m_rayColors[kRayColorCount];
+    CColor m_particleColors[kParticlePaletteSize];
     CColor m_fallbackColor;
     bool m_paletteFromXml = false;
 
     float m_artRatio = 0.64f;
     int m_bandCount = 64;
     string m_effectId;
-    string m_rotateMode;
     string m_transitionId;
 
     std::unique_ptr<IAlbumArtEffect> m_effect;

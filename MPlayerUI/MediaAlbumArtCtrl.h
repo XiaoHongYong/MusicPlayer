@@ -40,10 +40,21 @@ protected:
 
     bool isMaskImageUsed() { return m_frmMask.isValid(); }
 
+    void beginArtCrossfade();
+    void finishArtCrossfade();
+    void startArtCrossfadeTimer();
+    void stopArtCrossfadeTimer();
+    bool isArtCrossfading() const { return m_artCrossfadeProgress < 1.f && m_imgPrev.isValid(); }
+    void drawAlbumArtImage(CRawGraph *canvas, CSFImage &img);
+
     CCurMediaAlbumArt           m_mediaAlbumArt;
 
     string                      m_strImgFile;
     CSFImage                    m_img;
+    CSFImage                    m_imgPrev;          // 多封面切换交叉淡入时的上一张
+    float                       m_artCrossfadeProgress = 1.f;
+    int                         m_nTimerIdCycle = 0;
+    int                         m_nTimerIdFade = 0;
 
     // no album art mask image
     CSFImage                    m_imgOrg;           // save original album art for resize.

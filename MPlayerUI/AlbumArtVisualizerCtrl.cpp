@@ -21,8 +21,8 @@ namespace {
 constexpr float kAttack = 0.72f;
 constexpr float kRelease = 0.32f;
 constexpr float kTransitionSec = 0.65f;
+constexpr float kArtCrossfadeSec = 0.85f;
 constexpr cstr_t kProfileEffectKey = "AlbumArtVisualizerEffect";
-constexpr cstr_t kProfileRotateKey = "AlbumArtVisualizerRotateMode";
 
 RawImageDataPtr scaleCoverSquare(const RawImageDataPtr &src, int size) {
     if (!src || src->width <= 0 || src->height <= 0 || size <= 0) {
@@ -129,7 +129,6 @@ CAlbumArtVisualizerCtrl::CAlbumArtVisualizerCtrl() {
     m_fallbackColor.set(180, 180, 180);
     applyFallbackColor(m_fallbackColor);
     m_effectId = defaultAlbumArtEffectId();
-    m_rotateMode = "bars";
     m_transitionId = defaultAlbumArtTransitionId();
 }
 
@@ -167,6 +166,16 @@ void CAlbumArtVisualizerCtrl::resetDefaultPalette() {
         const int i0 = (int)scaled;
         const int i1 = std::min(kPaletteSize - 1, i0 + 1);
         m_rayColors[i] = albumart_viz::lerpColor(m_palette[i0], m_palette[i1], scaled - i0, 255);
+    }
+    // 默认粒子色：以 Accent 为种子，等分色相，保证差异够大
+    float seedH = 0, seedS = 0, seedL = 0;
+    RGBToHLS(m_palette[2].get(), seedH, seedS, seedL);
+    const float step = 360.f / (float)kParticlePaletteSize;
+    for (int i = 0; i < kParticlePaletteSize; ++i) {
+        const float h = std::fmod(seedH + step * (float)i, 360.f);
+        const float s = std::clamp(std::max(0.55f, seedS * 0.9f + 0.2f), 0.5f, 0.95f);
+        m_particleColors[i].set(HLSToRGB(h, s, 0.55f));
+        m_particleColors[i].setAlpha(255);
     }
 }
 
@@ -247,30 +256,12 @@ bool CAlbumArtVisualizerCtrl::parsePalette(cstr_t szValue) {
     return true;
 }
 
-void CAlbumArtVisualizerCtrl::loadRotateMode() {
-    m_rotateMode = g_profile.getString(SZ_SECT_UI, kProfileRotateKey, m_rotateMode.c_str());
-    forwardRotateModeToEffect();
-}
-
-void CAlbumArtVisualizerCtrl::saveRotateMode() const {
-    g_profile.writeString(SZ_SECT_UI, kProfileRotateKey, m_rotateMode.c_str());
-}
-
 void CAlbumArtVisualizerCtrl::loadEffectId() {
     m_effectId = g_profile.getString(SZ_SECT_UI, kProfileEffectKey, m_effectId.c_str());
 }
 
 void CAlbumArtVisualizerCtrl::saveEffectId() const {
     g_profile.writeString(SZ_SECT_UI, kProfileEffectKey, m_effectId.c_str());
-}
-
-void CAlbumArtVisualizerCtrl::forwardRotateModeToEffect() {
-    if (m_effect) {
-        m_effect->setProperty("RotateMode", m_rotateMode.c_str());
-    }
-    if (m_nextEffect) {
-        m_nextEffect->setProperty("RotateMode", m_rotateMode.c_str());
-    }
 }
 
 void CAlbumArtVisualizerCtrl::ensureEffect(cstr_t id) {
@@ -287,7 +278,6 @@ void CAlbumArtVisualizerCtrl::ensureEffect(cstr_t id) {
     m_effectId = m_effect->id();
     m_effect->onAttach(this);
     m_effect->onSize(m_rcObj);
-    m_effect->setProperty("RotateMode", m_rotateMode.c_str());
     notifyEffectsAlbumArtChanged();
 }
 
@@ -327,7 +317,6 @@ void CAlbumArtVisualizerCtrl::requestEffect(cstr_t id) {
     auto next = createAlbumArtEffect(id);
     next->onAttach(this);
     next->onSize(m_rcObj);
-    next->setProperty("RotateMode", m_rotateMode.c_str());
     {
         AlbumArtVizContext ctx = buildContext(nullptr, nullptr, false);
         next->onAlbumArtChanged(ctx);
@@ -355,11 +344,17 @@ void CAlbumArtVisualizerCtrl::cycleEffect() {
     size_t idx = 0;
     for (size_t i = 0; i < ids.size(); ++i) {
         if (m_effect && strcasecmp(m_effect->id(), ids[i]) == 0) {
-            idx = (i + 1) % ids.size();
+            idx = i;
             break;
         }
     }
-    requestEffect(ids[idx]);
+    for (size_t n = 0; n < ids.size(); ++n) {
+        idx = (idx + 1) % ids.size();
+        if (strcasecmp(ids[idx], "debug-meters") != 0) {
+            requestEffect(ids[idx]);
+            return;
+        }
+    }
 }
 
 void CAlbumArtVisualizerCtrl::notifyEffectsAlbumArtChanged() {
@@ -380,11 +375,17 @@ AlbumArtVizContext CAlbumArtVisualizerCtrl::buildContext(CRawGraph *canvas,
     ctx.bounds = m_rcObj;
     ctx.scaleFactor = m_pSkin ? m_pSkin->getScaleFactor() : 1.f;
     ctx.albumArt = m_imgArt.isValid() ? &m_imgArt : nullptr;
-    ctx.hasAlbumArt = m_hasAlbumArt && m_imgArt.isValid();
+    ctx.albumArtPrev = isArtCrossfading() ? &m_imgArtPrev : nullptr;
+    ctx.albumArtOrg = m_imgArtOrg.isValid() ? &m_imgArtOrg : nullptr;
+    ctx.albumArtOrgPrev = isArtCrossfading() ? &m_imgArtOrgPrev : nullptr;
+    ctx.artCrossfade = m_artCrossfadeProgress;
+    ctx.hasAlbumArt = m_hasAlbumArt && (m_imgArt.isValid() || m_imgArtPrev.isValid());
     ctx.palette = m_palette;
     ctx.paletteSize = kPaletteSize;
     ctx.rayColors = m_rayColors;
     ctx.rayColorCount = kRayColorCount;
+    ctx.particleColors = m_particleColors;
+    ctx.particleColorCount = kParticlePaletteSize;
     ctx.frame = frame;
     ctx.hasFrame = hasFrame;
     ctx.displayLevels = m_displayLevels.empty() ? nullptr : m_displayLevels.data();
@@ -419,11 +420,20 @@ float CAlbumArtVisualizerCtrl::consumeDtSec() {
     return dt;
 }
 
-bool CAlbumArtVisualizerCtrl::onLButtonUp(uint32_t nFlags, CPoint point) {
+bool CAlbumArtVisualizerCtrl::onLButtonDown(uint32_t nFlags, CPoint point) {
+    return true;
+}
+
+bool CAlbumArtVisualizerCtrl::onLButtonClick(uint32_t nFlags, CPoint point) {
+    cycleEffect();
+    return true;
+}
+
+bool CAlbumArtVisualizerCtrl::onLButtonDblClk(uint32_t nFlags, CPoint point) {
     if (!m_rcObj.ptInRect(point)) {
         return false;
     }
-    cycleEffect();
+    requestEffect("debug-meters");
     return true;
 }
 
@@ -434,7 +444,6 @@ void CAlbumArtVisualizerCtrl::onCreate() {
                     ET_PLAYER_CUR_MEDIA_INFO_CHANGED);
     m_pSkin->registerTimerObject(this, 20 * 1000);
 
-    loadRotateMode();
     loadEffectId();
     ensureEffect(m_effectId.c_str());
     syncAnalysisSubscription();
@@ -443,6 +452,10 @@ void CAlbumArtVisualizerCtrl::onCreate() {
 
 void CAlbumArtVisualizerCtrl::onSize() {
     CUIObject::onSize();
+    // 尺寸变化时结束交叉淡入，避免旧圆图按旧尺寸错位
+    if (isArtCrossfading()) {
+        finishArtCrossfade();
+    }
     if (m_imgArtOrg.isValid()) {
         rebuildAlbumArtImage(m_imgArtOrg.getHandle());
     }
@@ -454,15 +467,59 @@ void CAlbumArtVisualizerCtrl::onSize() {
     }
 }
 
+void CAlbumArtVisualizerCtrl::beginArtCrossfade() {
+    if (!m_imgArt.isValid() && !m_imgArtOrg.isValid()) {
+        finishArtCrossfade();
+        return;
+    }
+    if (m_imgArt.isValid()) {
+        m_imgArtPrev = m_imgArt;
+    } else {
+        m_imgArtPrev.detach();
+    }
+    if (m_imgArtOrg.isValid()) {
+        m_imgArtOrgPrev = m_imgArtOrg;
+    } else {
+        m_imgArtOrgPrev.detach();
+    }
+    m_artCrossfadeProgress = 0.f;
+}
+
+void CAlbumArtVisualizerCtrl::finishArtCrossfade() {
+    m_imgArtPrev.detach();
+    m_imgArtOrgPrev.detach();
+    m_artCrossfadeProgress = 1.f;
+}
+
+void CAlbumArtVisualizerCtrl::updateArtCrossfade(float dtSec) {
+    if (!isArtCrossfading()) {
+        if (m_imgArtPrev.isValid()) {
+            finishArtCrossfade();
+        }
+        return;
+    }
+    m_artCrossfadeProgress =
+        std::clamp(m_artCrossfadeProgress + std::max(0.f, dtSec) / kArtCrossfadeSec, 0.f, 1.f);
+    if (m_artCrossfadeProgress >= 1.f) {
+        finishArtCrossfade();
+    }
+}
+
 void CAlbumArtVisualizerCtrl::onTimer(int nId) {
+    (void)nId;
     RawImageDataPtr image = m_mediaAlbumArt.loadNext();
     if (image) {
+        beginArtCrossfade();
         m_imgArtOrg.attach(image);
         extractPalette(image);
         sampleRayColors(image);
         rebuildAlbumArtImage(image);
         notifyEffectsAlbumArtChanged();
         invalidate();
+        // 暂停时无 analysis 帧，需自行驱动交叉淡入重绘
+        if (isArtCrossfading()) {
+            scheduleInvalidate();
+        }
     }
 }
 
@@ -471,6 +528,7 @@ void CAlbumArtVisualizerCtrl::onEvent(const IEvent *pEvent) {
         pEvent->eventType == ET_PLAYER_CUR_MEDIA_INFO_CHANGED) {
         m_pSkin->unregisterTimerObject(this);
         m_pSkin->registerTimerObject(this, 20 * 1000);
+        finishArtCrossfade();
         updateAlbumArt();
         invalidate();
     }
@@ -517,6 +575,7 @@ void CAlbumArtVisualizerCtrl::scheduleInvalidate() {
 
 void CAlbumArtVisualizerCtrl::updateAlbumArt() {
     m_mediaAlbumArt.reset();
+    finishArtCrossfade();
     m_imgArt.detach();
     m_imgArtOrg.detach();
     m_hasAlbumArt = false;
@@ -620,10 +679,126 @@ CColor colorFromBucket(const ColorBucket &bk) {
     return CColor(RGB((int)bk.r, (int)bk.g, (int)bk.b));
 }
 
+/** 粒子强调色：抬饱和、压到中亮，保证暗底上可辨 */
+CColor neonizeParticleColor(const CColor &raw) {
+    float h = 0, s = 0, l = 0;
+    RGBToHLS(raw.get(), h, s, l);
+    s = std::clamp(s * 1.2f + 0.18f, 0.48f, 0.98f);
+    l = std::clamp(l * 0.35f + 0.48f, 0.42f, 0.72f);
+    CColor out;
+    out.set(HLSToRGB(h, s, l));
+    out.setAlpha(255);
+    return out;
+}
+
+/**
+ * 从封面桶中贪心挑色相差异大的 N 色；不足时按最大最小色相距合成补齐。
+ * 专供 AudioReactor 粒子，避免共用 Accent/Light 时看起来差不多。
+ */
+void pickDiverseParticleColors(CColor *out, int n, const std::vector<ColorBucket> &ranked,
+                               const CColor &accent, const CColor &light) {
+    if (!out || n <= 0) {
+        return;
+    }
+
+    struct Cand {
+        CColor c;
+        float h = 0.f;
+    };
+    std::vector<Cand> cands;
+    cands.reserve((size_t)n * 4 + 4);
+
+    auto tryPush = [&](const CColor &raw) {
+        CColor c = neonizeParticleColor(raw);
+        float h = 0, s = 0, l = 0;
+        RGBToHLS(c.get(), h, s, l);
+        if (s < 0.22f) {
+            return;
+        }
+        for (const auto &e : cands) {
+            if (hueDistanceDeg(e.h, h) < 14.f) {
+                return;
+            }
+        }
+        cands.push_back({c, h});
+    };
+
+    tryPush(accent);
+    tryPush(light);
+    for (const auto &bk : ranked) {
+        tryPush(colorFromBucket(bk));
+        if ((int)cands.size() >= n * 5) {
+            break;
+        }
+    }
+
+    std::vector<Cand> picked;
+    picked.reserve((size_t)n);
+    // 先尽量拉开（≥55°），再逐步放宽
+    const float thresholds[] = {55.f, 42.f, 30.f, 20.f};
+    for (float minDist : thresholds) {
+        for (const auto &cand : cands) {
+            if ((int)picked.size() >= n) {
+                break;
+            }
+            bool ok = true;
+            for (const auto &p : picked) {
+                if (hueDistanceDeg(cand.h, p.h) < minDist) {
+                    ok = false;
+                    break;
+                }
+            }
+            if (ok) {
+                picked.push_back(cand);
+            }
+        }
+        if ((int)picked.size() >= n) {
+            break;
+        }
+    }
+
+    float seedH = 0, seedS = 0.65f, tmpL = 0;
+    RGBToHLS(accent.get(), seedH, seedS, tmpL);
+    if (!picked.empty()) {
+        RGBToHLS(picked[0].c.get(), seedH, seedS, tmpL);
+    }
+
+    // 不足则找与已选色「最小色相距」最大的色相合成
+    while ((int)picked.size() < n) {
+        float bestH = seedH;
+        float bestMin = -1.f;
+        for (int step = 0; step < 36; ++step) {
+            const float h = (float)step * 10.f;
+            float md = 180.f;
+            for (const auto &p : picked) {
+                md = std::min(md, hueDistanceDeg(h, p.h));
+            }
+            if (picked.empty()) {
+                md = 180.f;
+            }
+            if (md > bestMin) {
+                bestMin = md;
+                bestH = h;
+            }
+        }
+        const float s = std::clamp(std::max(0.55f, seedS), 0.55f, 0.95f);
+        CColor syn;
+        syn.set(HLSToRGB(bestH, s, 0.55f));
+        syn.setAlpha(255);
+        picked.push_back({syn, bestH});
+    }
+
+    for (int i = 0; i < n; ++i) {
+        out[i] = picked[(size_t)i].c;
+        out[i].setAlpha(255);
+    }
+}
+
 } // namespace
 
 // 写入 4 阶调色板（尽量拉开色相）：
 //   [0] BgDark 底色1  [1] BgMid 底色2  [2] Accent 亮色1  [3] Light 亮色2
+// 另写粒子色盘 m_particleColors（色相差异最大化）。
 // 边缘色环见 sampleRayColors → m_rayColors。
 void CAlbumArtVisualizerCtrl::extractPalette(const RawImageDataPtr &src) {
     resetDefaultPalette();
@@ -773,6 +948,9 @@ void CAlbumArtVisualizerCtrl::extractPalette(const RawImageDataPtr &src) {
     for (int i = 0; i < kPaletteSize; ++i) {
         m_palette[i].setAlpha(255);
     }
+
+    // 粒子专用：色相差异尽量大的一组强调色
+    pickDiverseParticleColors(m_particleColors, kParticlePaletteSize, ranked, accent, light);
 }
 
 void CAlbumArtVisualizerCtrl::updateDisplayLevels(const AudioAnalysisFrame &frame, int bandCount) {
@@ -889,6 +1067,7 @@ void CAlbumArtVisualizerCtrl::draw(CRawGraph *canvas) {
     updateReactiveSmooth(frame, hasFrame);
 
     const float dt = consumeDtSec();
+    updateArtCrossfade(dt);
     AlbumArtVizContext ctx = buildContext(canvas, hasFrame ? &frame : nullptr, hasFrame);
 
     if (m_transition && !m_transition->isFinished()) {
@@ -897,12 +1076,19 @@ void CAlbumArtVisualizerCtrl::draw(CRawGraph *canvas) {
         if (m_transition->isFinished()) {
             finishTransition();
         }
+        // 暂停时没有 analysis 帧驱动重绘，转场需自行继续请求下一帧
+        scheduleInvalidate();
         return;
     }
 
     if (m_effect) {
         m_effect->update(ctx, dt);
         m_effect->draw(ctx);
+    }
+
+    // 多封面交叉淡入：暂停时无 analysis 帧，仍需继续请求下一帧
+    if (isArtCrossfading()) {
+        scheduleInvalidate();
     }
 }
 
@@ -941,10 +1127,6 @@ bool CAlbumArtVisualizerCtrl::setProperty(cstr_t szProperty, cstr_t szValue) {
         }
     } else if (strcasecmp(szProperty, "Transition") == 0) {
         m_transitionId = szValue ? szValue : defaultAlbumArtTransitionId();
-    } else if (strcasecmp(szProperty, "RotateMode") == 0) {
-        m_rotateMode = szValue ? szValue : "bars";
-        forwardRotateModeToEffect();
-        saveRotateMode();
     } else {
         return false;
     }

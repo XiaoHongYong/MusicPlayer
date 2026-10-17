@@ -122,7 +122,6 @@ classDiagram
 - 平滑（Attack/Release、peak 下落、脉冲包络）留在宿主，特效吃**已平滑**的数据。
 - 节奏字段映射（见 [beat-detection.md](beat-detection.md)）：`lowEnergy`→呼吸/环厚，`bassPulse`/`lowOnset`→Bass 爆发，`beatPulse`→通用闪光，`onsetStrength`→踩镲等细振动；`beatFlash` 兼容等于 `beatPulse`。
 - 个别特效需要私有状态（粒子位置、环旋转角）放在特效对象内，不进 `Context`。
-- 旋转模式（bars / sync / none）可作为 Sonic Halo 的特效参数，不必升为全局宿主状态；若皮肤 XML 仍暴露 `RotateMode`，由宿主转发给当前特效。
 
 ---
 
@@ -173,6 +172,7 @@ classDiagram
 | id | 说明 | 阶段 |
 | --- | --- | --- |
 | `sonic-halo` | 现有径向频谱 + 光环迁入（默认） | 已实现 |
+| `plain-cover` | 仅封面：原图比例适配控件，不裁成圆形 | 已实现 |
 | `living-cover` | 呼吸 + 主色光晕 + 波纹 / 波浪边缘 | Phase A 已实现 |
 | `audio-reactor` | 多层频谱环 + Bass 呼吸 + Beat 冲击波 + 轨道微光 | Phase B 已实现 |
 | `debug-meters` | 调试柱状图：Bass（lowE/lowOn/bPuls）与通用打击（pulse/btStr）分列 | 测试用 |
@@ -306,7 +306,7 @@ flowchart LR
 4. ~~加 `CrossfadeTransition` + `requestEffect`~~ — 已完成；`LivingCoverEffect` 雏形用于点击切换验证。
 5. 按 [album-art-visual-effects.md](album-art-visual-effects.md) Phase A/B 补强 Living Cover / Audio Reactor；转场再扩 Dissolve / Portal。
 
-代码目录：`MPlayerUI/albumart-viz/`。皮肤 XML 标签名 `AlbumArtVisualizer` 不变；新增属性 `Effect` / `Transition`；点击改为循环切换特效（`RotateMode` 仍可通过属性 / profile 配置）。
+代码目录：`MPlayerUI/albumart-viz/`。皮肤 XML 标签名 `AlbumArtVisualizer` 不变；新增属性 `Effect` / `Transition`；点击循环切换特效。
 
 ---
 

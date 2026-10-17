@@ -11,7 +11,7 @@
 /**
  * Audio Reactor：
  * 封面 / 频谱 / 反应环同步旋转；固定 5 粒子（3×bassPulse + 2×beatPulse）、约 0.5 秒拖尾；
- * 移动时按路程稀疏留下外散微粒；喷射分别由对应 pulse×strength 驱动。
+ * 移动时按固定密度留拖尾微粒；beat/bass pulse 触发烟花式环射 + 中心闪光。
  */
 class AudioReactorEffect : public IAlbumArtEffect {
 public:
@@ -55,13 +55,13 @@ private:
         float wanderAngle = 0.f;
         float wanderTimer = 0.f;
         float asymAngle = 0.f;
-        float trailEmitAcc = 0.f; // 拖尾微粒：按路程累计
-        float beatSprayAcc = 0.f; // beat 喷射累计
+        float trailEmitAcc = 0.f;    // 拖尾微粒：按路程累计
+        float fireworkCooldown = 0.f; // 烟花爆发冷却（秒）
         int seed = 0;
         std::vector<TrailPoint> trail;
     };
 
-    /** 微粒：移动拖尾（慢速外散）或 beat 喷射后扩散淡出 */
+    /** 微粒：移动拖尾（慢速外散）或烟花喷射 */
     struct Spark {
         float x = 0.f;
         float y = 0.f;
@@ -73,7 +73,19 @@ private:
         float size1 = 6.f;
         float hueT = 0.6f;
         int colorSlot = 0;
-        bool isTrail = false; // true=移动留下的慢速外散；false=beat 喷射
+        bool isTrail = false; // true=拖尾；false=烟花
+    };
+
+    /** 烟花中心闪光 */
+    struct FireworkFlash {
+        float x = 0.f;
+        float y = 0.f;
+        float age = 0.f;
+        float life = 0.22f;
+        float size0 = 4.f;
+        float size1 = 28.f;
+        float coreRadius = 9.f; // 白芯半径：1080p 满喷约 9px，随喷射强度缩放
+        int colorSlot = 0;
     };
 
     struct Ribbon {
@@ -91,6 +103,7 @@ private:
     void emitSparks(Particle &p, const AlbumArtVizContext &ctx, float dt, float traveled,
                     float fromX, float fromY);
     void updateSparks(float dt);
+    void updateFireworkFlashes(float dt);
     CColor particleColor(const AlbumArtVizContext &ctx, int colorSlot, float hueT,
                          uint8_t alpha) const;
     static float segmentLevel(const AlbumArtVizContext &ctx, int segment);
@@ -98,6 +111,7 @@ private:
     void drawEnergyCloud(const AlbumArtVizContext &ctx);
     void drawParticleBody(const AlbumArtVizContext &ctx, const Particle &p, uint8_t headA);
     void drawSparks(const AlbumArtVizContext &ctx);
+    void drawFireworkFlashes(const AlbumArtVizContext &ctx);
     void drawRibbons(const AlbumArtVizContext &ctx, float cx, float cy, float artHalf, float maxR);
     void drawVinylGrooves(const AlbumArtVizContext &ctx, float cx, float cy, float artHalf,
                           float vinylOuter);
@@ -122,6 +136,7 @@ private:
     std::array<Particle, kSegmentCount> m_particles{};
     bool m_particlesInited = false;
     std::vector<Spark> m_sparks;
+    std::vector<FireworkFlash> m_flashes;
 
     Ribbon m_ribbons[4];
     bool m_ribbonsInited = false;
