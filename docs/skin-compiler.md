@@ -120,7 +120,7 @@ Compiler 的核心职责是把"组件 + 状态"翻译成引擎约定的精灵图
 |---|---|---|---|
 | `windowBackground` | `bg.png` 或 `bg-dialog.png` | 非方形 9-slice。圆角**外必须透明**，描边/标题镀铬画在同一张图。`variant` 缺省/`main` → `bg.png`；`dialog` → `bg-dialog.png`。`chrome.caption/bottom` 决定高度与 `VertExtendPos={caption},{H-bottom}`；`HorzExtendPos` = `{R+1},{W-R-1}`。无 chrome 时仍可方形（如 64/R12 → `13,51`） | 主窗口 / `WindowFrame` 的 `<Property Name="WindowImage">`（**固定 copy**，不再写 Frame） |
 | `windowFrame` | `frame.png` | **可选**。默认 64×64@1x；仅当不要把边框画进 `bg.png`、仍要独立 `<Frame>` 时使用。有 `windowBackground` 时 Compiler **不**往 XML 里塞 Frame | 无 `WindowImage` 时才生成 `<Frame BlendPixMode="copy">` |
-| `captionToolbar` | `caption-btn.png` + `caption-btn-mac.png` | Win/Linux：5 列 × 3 行，格宽默认 16。列 0 留空，**1=最小化 2=最大化 3=还原 4=关闭**。mac 图为同布局的红绿灯（关闭/最小化/最大化顺序由 XML 按钮排列，不改列号）。`FullStatusImage` 时整格含背景 | 样式 `DialogCaption`/`MenuCaption` + `.mac` 后缀；窗口里只写一份实例，见 skin-authoring.md 3.1 |
+| `captionToolbar` | `caption-btn.png` + `caption-btn-mac.png` | Win/Linux：5 列 × **4 行**（normal/hover/pressed/**inactive**），格宽默认 16。列 0 留空，**1=最小化 2=最大化 3=还原 4=关闭**。mac 图为同布局的红绿灯（失焦行为灰圆）；关闭/最小化/最大化顺序由 XML 按钮排列，不改列号。`FullStatusImage` 时整格含背景 | 样式 `DialogCaption`/`MenuCaption` + `.mac` 后缀；窗口里只写一份实例，见 skin-authoring.md 3.1 |
 | `captionBar` | `caption-bg.png` | 9-slice 标题条底（对话框 `WindowFrame` 也引用） | 标题栏容器 `BgImage` |
 | `button` | `{name}.png`（kebab-case）+ 可选 `-mask.png` | 默认 **1 列 × 3 行**（normal/hover/pressed）。`icons: ["prev","next"]` 时改为 **N 列 × 3 行** 打进同一张图（如 `prev-next.png`）。mask **必须同布局**（引擎用按钮图精灵坐标采样蒙版） | `<Button Image= ImagePos= ImageFocusPos= ImageSelPos= ImageMask=>` |
 | `toggleButton` | `{name}.png`（`playPause` → `playpause.png`） | **2 列 × 3 行**（列 = S0=`iconOff` / S1=`iconOn`，行 = 三状态） | `<Button S0_Image=... S1_Image=...>` |

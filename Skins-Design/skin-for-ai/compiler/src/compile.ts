@@ -588,15 +588,23 @@ async function emitCaptionToolbar(name: string, comp: Record<string, unknown>, c
     const cell = num(comp.cellSize as number | undefined, 16);
     const buttons = (comp.buttons as string[] | undefined) ?? ["minimize", "maximize", "restore", "close"];
     const cols = 5;
-    const rows = 3;
-    const states = ["normal", "hover", "pressed"] as const;
+    // 4 行：normal / hover / pressed / inactive（失焦灰态，与系统标题栏一致）
+    const rows = 4;
+    const states = ["normal", "hover", "pressed", "inactive"] as const;
     const cells: Array<{ col: number; row: number; svg: string }> = [];
     for (let col = 0; col < cols; col++) {
         const icon = col === 0 ? "" : buttons[col - 1] ?? CAPTION_GLYPHS[col];
         for (let row = 0; row < rows; row++) {
-            const vis = stateOf(comp, states[row], ctx.issues, `components.${name}.states.${states[row]}`);
+            const state = states[row];
+            // inactive 从 normal 派生，图标/底改灰，避免依赖 JSON 声明
+            const vis = state === "inactive"
+                ? stateOf(comp, "normal", ctx.issues, `components.${name}.states.normal`)
+                : stateOf(comp, state, ctx.issues, `components.${name}.states.${state}`);
             vis.radius = vis.radius ?? cell / 2;
-            if (icon === "close" && states[row] !== "normal") {
+            if (state === "inactive") {
+                vis.fill = undefined;
+                vis.iconColor = "#9A9A9A";
+            } else if (icon === "close" && state !== "normal") {
                 vis.fill = row === 1 ? "#E5484D" : "#B23338";
                 vis.iconColor = "#FFFFFF";
             }
@@ -635,19 +643,29 @@ function macTrafficSvg(cell: number, fill: string, glyph: string): string {
 async function emitCaptionToolbarMac(ctx: EmitCtx, cell: number): Promise<SavedPng[]> {
     const colors = ["", "#FEBC2E", "#28C840", "#28C840", "#FF5F57"];
     const dark = ["", "#D2961E", "#1C9630", "#1C9630", "#C84640"];
+    const inactiveGray = "#BEBEBE";
     const glyphs = ["", "min", "max", "restore", "close"];
     const cells: Array<{ col: number; row: number; svg: string }> = [];
+    // 4 行：normal / hover / pressed / inactive（灰圆，无 glyph）
     for (let col = 0; col < 5; col++) {
-        for (let row = 0; row < 3; row++) {
-            const fill = row === 2 ? dark[col] : colors[col];
-            const glyph = row === 0 || col === 0 ? "" : glyphs[col];
+        for (let row = 0; row < 4; row++) {
+            let fill = "";
+            let glyph = "";
+            if (col !== 0) {
+                if (row === 3) {
+                    fill = inactiveGray;
+                } else {
+                    fill = row === 2 ? dark[col] : colors[col];
+                    glyph = row === 0 ? "" : glyphs[col];
+                }
+            }
             const svg = col === 0
                 ? `<svg xmlns="http://www.w3.org/2000/svg" width="${cell}" height="${cell}"></svg>`
                 : macTrafficSvg(cell, fill, glyph);
             cells.push({ col, row, svg });
         }
     }
-    const sheet = await compositeSheet(5, 3, cell, cell, cells);
+    const sheet = await compositeSheet(5, 4, cell, cell, cells);
     return [await savePngPair(ctx.outDir, "caption-btn-mac", sheet.hi, sheet.width, sheet.height)];
 }
 
@@ -749,6 +767,10 @@ async function emitToggle(name: string, comp: Record<string, unknown>, ctx: Emit
 async function emitSlider(name: string, comp: Record<string, unknown>, ctx: EmitCtx): Promise<SavedPng[]> {
     const track = (comp.track as Record<string, unknown> | undefined) ?? {};
     const thumb = (comp.thumb as Record<string, unknown> | undefined) ?? {};
+    // file 前缀：缺省 progress/thumb；file:"vol" → vol-progress / vol-thumb
+    const prefix = typeof comp.file === "string" && comp.file.length > 0 ? `${kebabName(String(comp.file))}-` : "";
+    const trackBase = `${prefix}progress`;
+    const thumbBase = `${prefix}thumb`;
     const tw = num(track.width, 60);
     const th = num(track.height, 8);
     const half = Math.max(2, Math.floor(th / 2));
@@ -763,10 +785,11 @@ async function emitSlider(name: string, comp: Record<string, unknown>, ctx: Emit
         { col: 0, row: 0, svg: top },
         { col: 0, row: 1, svg: bot },
     ]);
-    const out: SavedPng[] = [await savePngPair(ctx.outDir, "progress", trackSheet.hi, tw, half * 2)];
+    const out: SavedPng[] = [await savePngPair(ctx.outDir, trackBase, trackSheet.hi, tw, half * 2)];
 
     const ts = (thumb.size as { width?: number; height?: number } | undefined) ?? {};
-    const tsz = num(ts.width, num(ts.height, 15));
+    const tszW = num(ts.width, num(ts.height, 15));
+    const tszH = num(ts.height, tszW);
     const tstates = ["normal", "hover", "pressed"] as const;
     const tcells: Array<{ col: number; row: number; svg: string }> = [];
     for (let row = 0; row < 3; row++) {
@@ -780,11 +803,13 @@ async function emitSlider(name: string, comp: Record<string, unknown>, ctx: Emit
         } else {
             vis = asVisual(thumb);
         }
-        vis.radius = vis.radius ?? tsz / 2;
-        tcells.push({ col: 0, row, svg: visualToSvg(vis, tsz, tsz) });
+        if (vis.radius === undefined && !(vis.layers && vis.layers.length)) {
+            vis.radius = Math.min(tszW, tszH) / 2;
+        }
+        tcells.push({ col: 0, row, svg: visualToSvg(vis, tszW, tszH) });
     }
-    const thumbSheet = await compositeSheet(1, 3, tsz, tsz, tcells);
-    out.push(await savePngPair(ctx.outDir, "thumb", thumbSheet.hi, tsz, tsz * 3));
+    const thumbSheet = await compositeSheet(1, 3, tszW, tszH, tcells);
+    out.push(await savePngPair(ctx.outDir, thumbBase, thumbSheet.hi, tszW, tszH * 3));
     return out;
 }
 

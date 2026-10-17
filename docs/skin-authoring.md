@@ -216,9 +216,11 @@ hover/pressed 行采样越界，按钮在悬停时直接消失。
 
 ### 4.3 Toolbar（图标工具条 / 标题栏按钮 / 视图 Tab）
 
-精灵图按 **列 = 按钮/状态，行 = normal/hover/pressed** 排布；
+精灵图按 **列 = 按钮/状态，行 = normal/hover/pressed[/inactive]** 排布；
 `units_x` = 每格宽度，`<button Left="n">` 以 units_x 为单位取列。
 `FullStatusImage="TRUE"` 表示整格（含背景）都取自图片。
+标题栏 `caption-btn*.png` 为 **4 行**（第 4 行 = 窗口失焦灰态）；引擎在
+`!isWndActive()` 时取该行，悬停/按下仍用彩色行（与系统标题栏一致）。
 
 ```xml
 <Toolbar Image="caption-btn.png" units_x="16" blank_x="-1" blank_cx="16"

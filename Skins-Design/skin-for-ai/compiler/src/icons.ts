@@ -10,6 +10,8 @@ const PATHS: Record<string, { d: string; stroke?: boolean }> = {
     check: { d: "M5 12 L10 17 L19 7", stroke: true },
     search: { d: "M10.5 10.5 m-5.5 0 a5.5 5.5 0 1 1 11 0 a5.5 5.5 0 1 1 -11 0 M14.5 14.5 L19 19", stroke: true },
     list: { d: "M5 7 h14 M5 12 h14 M5 17 h14", stroke: true },
+    // 汉堡菜单（标题栏弹出主菜单）
+    menu: { d: "M5 7 h14 M5 12 h14 M5 17 h14", stroke: true },
     lyric: { d: "M8 17 a3 3 0 1 0 0.1 0 M11 17 V6 l7 2 v3", stroke: true },
     "chevron-right": { d: "M9 6 L15 12 L9 18", stroke: true },
     "chevron-up": { d: "M6 15 L12 9 L18 15", stroke: true },
@@ -41,6 +43,16 @@ const FRAGMENTS: Record<string, (color: string) => string> = {
         `<rect x="13.3" y="4.5" width="6.2" height="6.2" rx="1.2" fill="none" stroke="${c}" stroke-width="1.7"/>` +
         `<rect x="4.5" y="13.3" width="6.2" height="6.2" rx="1.2" fill="none" stroke="${c}" stroke-width="1.7"/>` +
         `<rect x="13.3" y="13.3" width="6.2" height="6.2" rx="1.2" fill="none" stroke="${c}" stroke-width="1.7"/>`,
+    // 随机播放
+    shuffle: (c) =>
+        `<path d="M16 3 h5 v5 M4 20 L21 3 M21 16 v5 h-5 M15 15 l6 6 M4 4 l5 5" fill="none" stroke="${c}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>`,
+    // 循环全部
+    repeat: (c) =>
+        `<path d="M17 2 l4 4 -4 4 M3 11 V9 a4 4 0 0 1 4 -4 h14 M7 22 l-4 -4 4 -4 M21 13 v2 a4 4 0 0 1 -4 4 H3" fill="none" stroke="${c}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>`,
+    // 单曲循环
+    "repeat-one": (c) =>
+        `<path d="M17 2 l4 4 -4 4 M3 11 V9 a4 4 0 0 1 4 -4 h14 M7 22 l-4 -4 4 -4 M21 13 v2 a4 4 0 0 1 -4 4 H3" fill="none" stroke="${c}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>` +
+        `<path d="M10.5 9.5 v5 M10.5 9.5 h1.2 a1.5 1.5 0 0 1 0 3 H10.5" fill="none" stroke="${c}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`,
     // 歌词文件类型（lyric-file-type.png）：空 / TXT / LRC / 未知，及对应「网络来源」变体
     "lyr-file": (c) => lyrDocOutline(c),
     "lyr-file-txt": (c) =>

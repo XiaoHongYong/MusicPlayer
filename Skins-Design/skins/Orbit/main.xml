@@ -26,51 +26,47 @@
 
 	<styles>
 		<style>
-			<OrbitMainFrame Extends="Window"
-				MinWidth="360" MinHeight="560" Width="400" Height="662">
+			<OrbitMainFrame Extends="Window">
 				<Property Name="WindowImage" Image="bg.png" HorzExtendPos="11,53" VertExtendPos="36,56"/>
-				<Caption Rect="0,0,w,36"/>
+				<!-- 专用标题栏：无菜单栏；工具条与 Win 菜单按钮见 Styles OrbitMainCaption -->
+				<OrbitMainCaption Rect="0,0,w,36"/>
 				<!-- 底栏 230；进度条行加高 -->
-				<ClientArea Rect="8,40,w-16,h-40-230" ClipChildren="true"/>
-				<Container Name="BottomBar" Rect="0,h-230,w,230" TranslucencyWithSkin="FALSE">
+				<ClientArea Rect="8,40,w-16,h-40-220" ClipChildren="true"/>
+				<Container Name="BottomBar" Rect="0,h-220,w,220" TranslucencyWithSkin="FALSE">
 					<MediaInfoText Name="Title" Rect="16,16,w-32,22" FontName="Verdana" FontHeight="16" FontBold="TRUE"
 						TextColor="#F5F5F5" Text="" MediaInfoType="Title" AlignText="AT_CENTER | DT_VCENTER"/>
 					<MediaInfoText Name="Artist" Rect="16,46,w-32,18" FontName="Verdana" FontHeight="12" FontBold="false"
 						TextColor="#8A8A8A" Text="" MediaInfoType="Artist|Album" CombineWith=" - "
 						AlignText="AT_CENTER | DT_VCENTER"/>
 
-					<InfoText Name="StatusInfo" Rect="16,74,w-32,18" FontName="Verdana" FontHeight="12" FontItalic="1"
+					<InfoText Name="StatusInfo" Rect="16,76,w-32,18" FontName="Verdana" FontHeight="12" FontItalic="1"
 						TextColor="#E8C070" LeftMargin="0" AlignText="AT_CENTER | DT_VCENTER" TranslucencyWithSkin="TRUE"/>
 
-					<PlayingTimeText Name="TimeElapsed" Rect="16,112,48,20" FontName="Verdana" FontHeight="12"
+					<PlayingTimeText Name="TimeElapsed" Rect="16,109,48,20" FontName="Verdana" FontHeight="12"
 						TextColor="#C8C8C8" AlignText="AT_RIGHT | DT_VCENTER"/>
-					<Slider Name="Seek" ID="ID_SEEK" Rect="72,112,w-72-72,20" Height="20" EndWidth="10"/>
-					<MediaInfoText Name="Duration" Rect="w-64,112,48,20" FontName="Verdana" FontHeight="12"
+					<!-- 控件高 28、轨道图仍居中细条：上下为背景色点击区 -->
+					<Slider Name="Seek" ID="ID_SEEK" Rect="72,100,w-72-72,28" Height="28" EndWidth="8"/>
+					<MediaInfoText Name="Duration" Rect="w-64,105,48,20" FontName="Verdana" FontHeight="12"
 						TextColor="#8A8A8A" Text="" MediaInfoType="Duration" AlignText="AT_LEFT | DT_VCENTER"/>
 
-					<!--
-					  播放三键：Rect = ImageSize(48)，整组宽 176，相对窗口水平居中
-					  prev=w/2-88, play=w/2-24, next=w/2+40
-					-->
-					<Toolbar ID="CID_TB_VIEW" Rect="16,172,80,28" Image="view-tabs.png" enablehover="TRUE"
-						units_x="40" blank_x="-1" blank_cx="40" seperator_x="0" seperator_cx="0"
+					<!-- 随机/循环贴窗口左右边；中间播放三键 -->
+					<Toolbar ID="CID_TB_SHUFFLE" Rect="16,160,28,28" Image="shuffle-repeat.png" enablehover="TRUE"
+						units_x="28" blank_x="-1" blank_cx="28" seperator_x="0" seperator_cx="0"
 						MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
-						<button ID="CID_TOGGLE_PLAYLIST" Left="0" ToolTip="Playlist"/>
-						<button ID="CID_TOGGLE_LYRICS" Left="1" ToolTip="Lyrics"/>
+						<button ID="ID_SHUFFLE" Left="0" CanCheck="TRUE" checked_left="3"/>
 					</Toolbar>
-
-					<Button Rect="w/2-88,162,48,48" ID="ID_PREVIOUS" ImageMask="prev-next-mask.png" ImageMaskRect="0,0,48,48"
-						Image="prev-next.png" ImageSize="48,48" ImagePos="0,0" ImageSelPos="0,96" ImageFocusPos="0,48"/>
-					<Button Rect="w/2-24,162,48,48" ID="ID_PLAYPAUSE" ImageMask="playpause.png" ImageMaskRect="0,0,48,48"
-						S0_Image="playpause.png" S0_ImageSize="48,48" S0_ImagePos="0,0" S0_ImageSelPos="0,96" S0_ImageFocusPos="0,48"
-						S1_Image="playpause.png" S1_ImageSize="48,48" S1_ImagePos="48,0" S1_ImageSelPos="48,96" S1_ImageFocusPos="48,48"/>
-					<Button Rect="w/2+40,162,48,48" ID="ID_NEXT" ImageMask="prev-next-mask.png" ImageMaskRect="48,0,48,48"
-						Image="prev-next.png" ImageSize="48,48" ImagePos="48,0" ImageSelPos="48,96" ImageFocusPos="48,48"/>
-
-					<Toolbar ID="CID_TB_MEDIA_CENTER" Rect="w-56,172,40,28" Image="media-center.png" enablehover="TRUE"
-						units_x="40" blank_x="-1" blank_cx="40" seperator_x="0" seperator_cx="0"
+					<Button Rect="w/2-80,152,44,44" ID="ID_PREVIOUS" ImageMask="prev-next-mask.png" ImageMaskRect="0,0,44,44"
+						Image="prev-next.png" ImageSize="44,44" ImagePos="0,0" ImageSelPos="0,88" ImageFocusPos="0,44"/>
+					<Button Rect="w/2-22,152,44,44" ID="ID_PLAYPAUSE" ImageMask="playpause.png" ImageMaskRect="0,0,44,44"
+						S0_Image="playpause.png" S0_ImageSize="44,44" S0_ImagePos="0,0" S0_ImageSelPos="0,88" S0_ImageFocusPos="0,44"
+						S1_Image="playpause.png" S1_ImageSize="44,44" S1_ImagePos="44,0" S1_ImageSelPos="44,88" S1_ImageFocusPos="44,44"/>
+					<Button Rect="w/2+36,152,44,44" ID="ID_NEXT" ImageMask="prev-next-mask.png" ImageMaskRect="44,0,44,44"
+						Image="prev-next.png" ImageSize="44,44" ImagePos="44,0" ImageSelPos="44,88" ImageFocusPos="44,44"/>
+					<Toolbar ID="CID_TB_LOOP" Rect="w-16-28,160,28,28" Image="shuffle-repeat.png" enablehover="TRUE"
+						units_x="28" blank_x="-1" blank_cx="28" seperator_x="0" seperator_cx="0"
 						MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
-						<button ID="ID_OPEN_MEDIA_CENTER" Left="0" ToolTip="Media Center"/>
+						<!-- 0=关 1=全部 2=单曲；列 1/4/5 对应 shuffle-repeat 精灵图 -->
+						<button ID="ID_LOOP" Left="1" checked_left="4" left_of_status_2="5"/>
 					</Toolbar>
 				</Container>
 			</OrbitMainFrame>
@@ -86,7 +82,7 @@
 	</styles>
 
 	<skinwnd Extends="OrbitMainFrame" Name="MainWnd"
-		MinWidth="360" MinHeight="560" Width="400" Height="662" Menu="OrbitMainMenu"
+		MinWidth="270" MinHeight="430" Width="400" Height="662" Menu="OrbitMainMenu"
 		CmdHandler="ch_common,ch_playlist" Script="main.js"
 		ContextMenu="MainContextMenu">
 
@@ -94,6 +90,14 @@
 			<AlbumArtVisualizer Name="OrbitViz" Rect="4,4,w-8,h-8"
 				Image="albumart-black.png" ArtRatio="0.636" BandCount="64"
 				Palette="#1C1C1C,#C8A85A,#E8C070,#F5F5F5" FallbackColor="#E8C070"/>
+
+			<!-- 浮动音量：单层容器；宽 150，水平居中 -->
+			<Container ID="CID_VOLUME_POPUP" Name="VolumePopup" Rect="w/2-75,5,150,18" Visible="False"
+				TranslucencyWithSkin="TRUE">
+				<Property Name="BgImage" Image="lyr-ctrl-bg.png" HorzExtendPos="8,22" BlendPixMode="alpha_blend"/>
+				<Slider Name="Volume" ID="ID_VOLUME" Rect="10,4,130,10" Height="10" EndWidth="3"
+					ImageTrack="vol-progress.png" ImageThumb="vol-thumb.png" TabFocus="true"/>
+			</Container>
 		</Container>
 	</skinwnd>
 

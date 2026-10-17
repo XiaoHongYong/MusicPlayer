@@ -130,7 +130,7 @@
     },
     "playPause": {
       "type": "toggleButton",
-      "size": { "width": 48, "height": 48 },
+      "size": { "width": 44, "height": 44 },
       "iconOff": "play",
       "iconOn": "pause",
       "states": {
@@ -147,7 +147,7 @@
     "prevNext": {
       "type": "button",
       "file": "prev-next",
-      "size": { "width": 48, "height": 48 },
+      "size": { "width": 44, "height": 44 },
       "icons": ["prev", "next"],
       "mask": "hitbox",
       "iconInset": 0.12,
@@ -160,12 +160,12 @@
     "seekSlider": {
       "type": "slider",
       "track": {
-        "height": 10, "endWidth": 10, "radius": 5,
+        "height": 8, "endWidth": 8, "radius": 4,
         "remaining": { "fill": "$tokens.colors.bg-track" },
         "played": { "fill": "$tokens.colors.accent" }
       },
       "thumb": {
-        "size": { "width": 18, "height": 18 },
+        "size": { "width": 14, "height": 14 },
         "states": {
           "normal": { "fill": "$tokens.colors.fg", "border": { "width": 1, "color": "$tokens.colors.accent" } },
           "hover": { "$extends": "normal" },
@@ -175,7 +175,7 @@
     },
     "viewTabs": {
       "type": "toolbar",
-      "cellSize": { "width": 40, "height": 28 },
+      "cellSize": { "width": 28, "height": 28 },
       "items": [{ "icon": "list" }, { "icon": "lyric" }],
       "iconInset": 0.14,
       "states": {
@@ -190,6 +190,70 @@
       "file": "media-center",
       "cellSize": { "width": 40, "height": 28 },
       "items": [{ "icon": "media-center" }],
+      "iconInset": 0.16,
+      "states": {
+        "normal": { "iconColor": "$tokens.colors.fg-subtle" },
+        "hover": { "$extends": "normal", "iconColor": "$tokens.colors.fg-muted" },
+        "pressed": { "$extends": "hover" },
+        "checked": { "iconColor": "$tokens.colors.accent" }
+      }
+    },
+    "captionActions": {
+      "type": "toolbar",
+      "file": "caption-actions",
+      "cellSize": { "width": 28, "height": 28 },
+      "items": [
+        { "icon": "menu" },
+        { "icon": "volume" },
+        { "icon": "list" },
+        { "icon": "lyric" },
+        { "icon": "media-center" }
+      ],
+      "iconInset": 0.16,
+      "states": {
+        "normal": { "iconColor": "$tokens.colors.fg-subtle" },
+        "hover": { "$extends": "normal", "iconColor": "$tokens.colors.fg-muted" },
+        "pressed": { "$extends": "hover" },
+        "checked": { "iconColor": "$tokens.colors.accent" }
+      }
+    },
+    "volumePopupSlider": {
+      "type": "slider",
+      "file": "vol",
+      "track": {
+        "height": 6, "endWidth": 3, "radius": 3, "width": 80,
+        "remaining": { "fill": "#2A2A2ACC" },
+        "played": { "fill": "$tokens.colors.accent" }
+      },
+      "thumb": {
+        "size": { "width": 8, "height": 10 },
+        "states": {
+          "normal": { "fill": "#00000000" },
+          "hover": { "fill": "#00000000" },
+          "pressed": { "fill": "#00000000" }
+        }
+      }
+    },
+    "clickDismiss": {
+      "type": "sprite",
+      "file": "click-dismiss",
+      "cell": { "width": 4, "height": 4 },
+      "layout": ["normal", "hover", "pressed"],
+      "states": {
+        "normal": { "fill": "#00000000" },
+        "hover": { "fill": "#00000000" },
+        "pressed": { "fill": "#00000000" }
+      }
+    },
+    "shuffleRepeat": {
+      "type": "toolbar",
+      "file": "shuffle-repeat",
+      "cellSize": { "width": 28, "height": 28 },
+      "items": [
+        { "icon": "shuffle" },
+        { "icon": "repeat" },
+        { "icon": "repeat-one" }
+      ],
       "iconInset": 0.16,
       "states": {
         "normal": { "iconColor": "$tokens.colors.fg-subtle" },

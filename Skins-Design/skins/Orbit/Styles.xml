@@ -37,6 +37,47 @@
 		<Text ID="ID_CAPTION" Rect="80,8,w-160,20" CaptionText="true" FontName="Verdana" FontHeight="14" FontBold="false" TextColor="#8A8A8A" LeftMargin="0" AlignText="AT_CENTER | AT_VCENTER"/>
 	</Caption.mac>
 
+	<!-- MainFrame 专用标题栏：功能钮同一 Toolbar；Win 靠左，mac 靠右；系统按钮分开 -->
+	<OrbitMainCaption Extends="Container" Name="Caption" TranslucencyWithSkin="FALSE">
+		<!-- 菜单 | 音量 | 列表/歌词 | 媒体中心（列 0..4；5..9 为 checked） -->
+		<Toolbar ID="CID_TB_CAPTION_ACTIONS" Rect="10,4,160,28" Image="caption-actions.png" enablehover="TRUE"
+			units_x="28" blank_x="-1" blank_cx="28" seperator_x="0" seperator_cx="0"
+			MarginX="0" MarginY="0" ButtonSpacesCX="5" FullStatusImage="TRUE">
+			<button ID="ID_MENU" Left="0" ToolTip="Menu"/>
+			<button ID="CID_TOGGLE_VOLUME" Left="1" ToolTip="Volume"/>
+			<button ID="CID_TOGGLE_PLAYLIST" Left="2" ToolTip="Playlist"/>
+			<button ID="CID_TOGGLE_LYRICS" Left="3" ToolTip="Lyrics"/>
+			<button ID="ID_OPEN_MEDIA_CENTER" Left="4" ToolTip="Media Center"/>
+		</Toolbar>
+		<Toolbar ID="CID_TB_SYSBT" Rect="w-12-60,10,60,16"
+			 Image="caption-btn.png" enablehover="TRUE" units_x="16"
+			 blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
+			 MarginX="0" MarginY="0" ButtonSpacesCX="5" FullStatusImage="TRUE">
+			<button ID="ID_MINIMIZE" Left="1" />
+			<button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
+			<button ID="ID_CLOSE" Left="4" />
+		</Toolbar>
+	</OrbitMainCaption>
+	<OrbitMainCaption.mac Extends="Container" Name="Caption" TranslucencyWithSkin="FALSE">
+		<Toolbar ID="CID_TB_SYSBT" Rect="14,10,64,16"
+			 Image="caption-btn-mac.png" enablehover="TRUE" units_x="16"
+			 blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
+			 MarginX="0" MarginY="0" ButtonSpacesCX="8" FullStatusImage="TRUE">
+			<button ID="ID_CLOSE" Left="4" />
+			<button ID="ID_MINIMIZE" Left="1" />
+			<button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
+		</Toolbar>
+		<!-- 音量 | 列表/歌词 | 媒体中心，贴最右（无菜单列） -->
+		<Toolbar ID="CID_TB_CAPTION_ACTIONS" Rect="w-10-127,4,127,28" Image="caption-actions.png" enablehover="TRUE"
+			units_x="28" blank_x="-1" blank_cx="28" seperator_x="0" seperator_cx="0"
+			MarginX="0" MarginY="0" ButtonSpacesCX="5" FullStatusImage="TRUE">
+			<button ID="CID_TOGGLE_VOLUME" Left="1" ToolTip="Volume"/>
+			<button ID="CID_TOGGLE_PLAYLIST" Left="2" ToolTip="Playlist"/>
+			<button ID="CID_TOGGLE_LYRICS" Left="3" ToolTip="Lyrics"/>
+			<button ID="ID_OPEN_MEDIA_CENTER" Left="4" ToolTip="Media Center"/>
+		</Toolbar>
+	</OrbitMainCaption.mac>
+
 	<DialogCaption Extends="Container" Name="Caption bar" TranslucencyWithSkin="TRUE">
 		<Text ID="ID_CAPTION" Rect="24,6,w-80,20" CaptionText="true" FontName="Verdana" FontHeight="15" FontBold="false" TextColor="#F5F5F5" LeftMargin="0" AlignText="AT_LEFT | AT_VCENTER"/>
 		<Toolbar ID="CID_TB_SYSBT" Rect="w-8-16,9,16,16" TranslucencyWithSkin="TRUE"
@@ -178,6 +219,7 @@
 		NowPlayingBgColor="#1A1810" NowPlayingTextColor="#F5F5F5" CustomizedColors="#E8C070,#8A8A8A"
 		TextColor="#C8C8C8" SelTextColor="#FFFFFF" FontName="Verdana" FontHeight="14" LineHeight="30"/>
 
-	<Slider Extends="SeekCtrl" Height="20" EndWidth="10" ImageThumb="thumb.png" ImageTrack="progress.png"/>
+	<!-- Height 大于 track 图高：上下露出底栏背景，整条可点，打点更容易 -->
+	<Slider Extends="SeekCtrl" Height="28" EndWidth="8" ImageThumb="thumb.png" ImageTrack="progress.png"/>
   </style>
 </styles>
