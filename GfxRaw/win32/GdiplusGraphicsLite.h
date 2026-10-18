@@ -1,5 +1,4 @@
 ﻿
-
 #ifndef GfxRaw_win32_GdiplusGraphicsLite_h
 #define GfxRaw_win32_GdiplusGraphicsLite_h
 
@@ -25,6 +24,10 @@ using namespace Gdiplus;
 class CGdiplusFont;
 using CGdiplusFontPtr = std::shared_ptr<CGdiplusFont>;
 
+// 不在头文件暴露 LOGFONT/windows.h，避免 winsock.h 与 winsock2 冲突
+int gdiplusFontAscent(const CGdiplusFontPtr &font);
+int gdiplusFontDescent(const CGdiplusFontPtr &font);
+
 //
 // GDI Plus方式的画图
 //
@@ -37,7 +40,8 @@ public:
     void attach(HDC hdc);
     HDC getHandle() const { return m_hdc; }
 
-    bool textOut(int x, int y, cwstr_t szText, int nLen);
+    // layoutHeight>0 时按该高度布局并裁剪（字形烘焙应对齐 FontHeight）
+    bool textOut(int x, int y, cwstr_t szText, int nLen, int layoutHeight = 0);
 
     bool getTextExtentPoint32(cwstr_t szText, int nLen, CSize *pSize);
 

@@ -16,7 +16,7 @@ if(UNIX AND NOT APPLE)
     set(LINUX TRUE)
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+# 用 CMAKE_CXX_STANDARD，勿手写 -std=c++17（MSVC 不认，会 D9002）。
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -121,6 +121,7 @@ set(SRC ${SRC}
     ${PROJECT_SOURCE_DIR}/third-parties/http-parser/http_parser.c
 
     ${PROJECT_SOURCE_DIR}/third-parties/faad2/frontend/mp4read.c
+    ${PROJECT_SOURCE_DIR}/third-parties/faad2/frontend/unicode_support.c
 )
 
 if (UT)

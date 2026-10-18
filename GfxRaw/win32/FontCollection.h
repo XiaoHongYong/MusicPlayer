@@ -27,7 +27,13 @@ public:
     }
 
     void setFont(FontInfoEx &font) {
-        if (m_logFontLatin9.lfHeight == font.getSize() &&
+        // 负 lfHeight：按字符高匹配，避免 CJK 因 large internal leading 显得偏小
+        int lfHeight = font.getSize();
+        if (lfHeight > 0) {
+            lfHeight = -lfHeight;
+        }
+
+        if (m_logFontLatin9.lfHeight == lfHeight &&
             m_logFontLatin9.lfWeight == font.getWeight() &&
             m_logFontLatin9.lfItalic == (uint8_t)font.getItalic() &&
             m_logFontLatin9.lfUnderline == (uint8_t)font.isUnderline()) {
@@ -39,7 +45,7 @@ public:
 
         destroy();
 
-        m_logFontOthers.lfHeight = m_logFontLatin9.lfHeight = font.getSize();
+        m_logFontOthers.lfHeight = m_logFontLatin9.lfHeight = lfHeight;
         m_logFontOthers.lfWeight = m_logFontLatin9.lfWeight = font.getWeight();
         m_logFontOthers.lfItalic = m_logFontLatin9.lfItalic = font.getItalic();
         m_logFontOthers.lfUnderline = m_logFontLatin9.lfUnderline = font.isUnderline();

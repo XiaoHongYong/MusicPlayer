@@ -45,7 +45,7 @@ function writeStorage(key: string, value: string) {
 
 function loadPlaybackTarget(): PlaybackTarget {
   const v = readStorage(KEYS.playback);
-  return v === 'desktop' || v === 'browser' ? v : 'browser';
+  return v === 'desktop' || v === 'browser' ? v : 'desktop';
 }
 
 function loadThemeMode(): ThemeMode {

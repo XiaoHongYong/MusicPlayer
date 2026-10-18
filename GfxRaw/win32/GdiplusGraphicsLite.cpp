@@ -83,6 +83,8 @@ class CGdiplusFont {
 public:
     CGdiplusFont() {
         m_font = nullptr;
+        m_ascent = 0;
+        m_descent = 0;
     }
     ~CGdiplusFont() {
         destroy();
@@ -92,6 +94,8 @@ public:
         Status ret;
 
         destroy();
+        m_ascent = 0;
+        m_descent = 0;
 
         ret = g_funGdipCreateFontFromLogfontW(canvas->getHandle(), &logFont, &m_font);
         if (ret == NotTrueTypeFont) {
@@ -102,8 +106,29 @@ public:
                 wcscpy_s(logfontNew.lfFaceName, CountOf(logfontNew.lfFaceName), face);
                 ret = g_funGdipCreateFontFromLogfontW(canvas->getHandle(), &logfontNew, &m_font);
                 if (ret == Ok) {
+                    logFont = logfontNew;
                     break;
                 }
+            }
+        }
+
+        if (ret == Ok && canvas->getHandle()) {
+            // 用同一 LOGFONT 取 GDI 度量，供多字体基线对齐
+            HFONT hFont = CreateFontIndirectW(&logFont);
+            if (hFont) {
+                HGDIOBJ old = SelectObject(canvas->getHandle(), hFont);
+                TEXTMETRICW tm = { 0 };
+                if (GetTextMetricsW(canvas->getHandle(), &tm)) {
+                    m_ascent = tm.tmAscent;
+                    m_descent = tm.tmDescent;
+                }
+                SelectObject(canvas->getHandle(), old);
+                DeleteObject(hFont);
+            }
+            if (m_ascent <= 0) {
+                int h = logFont.lfHeight < 0 ? -logFont.lfHeight : logFont.lfHeight;
+                m_ascent = max(1, h * 4 / 5);
+                m_descent = max(1, h - m_ascent);
             }
         }
 
@@ -115,14 +140,27 @@ public:
             g_funGdipDeleteFont(m_font);
             m_font = nullptr;
         }
+        m_ascent = 0;
+        m_descent = 0;
     }
 
     GpFont *getHandle() { return m_font; }
+    int getAscent() const { return m_ascent; }
+    int getDescent() const { return m_descent; }
 
 protected:
     GpFont                      *m_font;
-
+    int                         m_ascent;
+    int                         m_descent;
 };
+
+int gdiplusFontAscent(const CGdiplusFontPtr &font) {
+    return font ? font->getAscent() : 0;
+}
+
+int gdiplusFontDescent(const CGdiplusFontPtr &font) {
+    return font ? font->getDescent() : 0;
+}
 
 
 #define g_funGdipCreateFontFromLogfont g_funGdipCreateFontFromLogfontW
@@ -228,8 +266,10 @@ void CGdiplusGraphicsLite::attach(HDC hdc) {
     bInitOK = true;
 }
 
-bool CGdiplusGraphicsLite::textOut(int x, int y, cwstr_t szText, int nLen) {
-    RectF rect((float)x, (float)y, (float)2000, (float)300);
+bool CGdiplusGraphicsLite::textOut(int x, int y, cwstr_t szText, int nLen, int layoutHeight) {
+    // 默认大布局框供通用绘制；字形烘焙传入 FontHeight，使墨迹落入字号契约内
+    float h = layoutHeight > 0 ? (float)layoutHeight : 300.f;
+    RectF rect((float)x, (float)y, (float)2000, h);
 
     if (!bInitOK) {
         return false;
@@ -353,7 +393,11 @@ void CGdiplusGraphicsLite::shutdown() {
 
 CGdiplusFontPtr CGdiplusGraphicsLite::createFont(FontInfoEx &font, bool isLatin) {
     LOGFONTW logFont = { 0 };
-    logFont.lfHeight = font.getSize();
+    // 正 lfHeight 按 cell height（含 internal leading）匹配。雅黑等 CJK 字体
+    // leading 很大，同样字号下中文会明显小于 Verdana/Tahoma；负值按字符高（em）
+    // 匹配。字形烘焙时用 FontHeight 作为 DrawString 布局高，墨迹不超出字号契约。
+    int size = font.getSize();
+    logFont.lfHeight = size > 0 ? -size : size;
     logFont.lfWeight = font.getWeight();
     logFont.lfItalic = font.getItalic();
     logFont.lfUnderline = font.isUnderline;

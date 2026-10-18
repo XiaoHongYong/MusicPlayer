@@ -9,7 +9,6 @@ const PATHS: Record<string, { d: string; stroke?: boolean }> = {
     next: { d: "M15.8 6 H18 v12 h-2.2 z M6 6 L14.5 12 L6 18 z" },
     check: { d: "M5 12 L10 17 L19 7", stroke: true },
     search: { d: "M10.5 10.5 m-5.5 0 a5.5 5.5 0 1 1 11 0 a5.5 5.5 0 1 1 -11 0 M14.5 14.5 L19 19", stroke: true },
-    list: { d: "M5 7 h14 M5 12 h14 M5 17 h14", stroke: true },
     // 汉堡菜单（标题栏弹出主菜单）
     menu: { d: "M5 7 h14 M5 12 h14 M5 17 h14", stroke: true },
     lyric: { d: "M8 17 a3 3 0 1 0 0.1 0 M11 17 V6 l7 2 v3", stroke: true },
@@ -37,6 +36,12 @@ function lyrNetBadge(c: string): string {
 }
 
 const FRAGMENTS: Record<string, (color: string) => string> = {
+    // 播放列表：左侧圆点 + 横线（与汉堡菜单区分）
+    list: (c) =>
+        `<circle cx="6" cy="7" r="1.35" fill="${c}"/>` +
+        `<circle cx="6" cy="12" r="1.35" fill="${c}"/>` +
+        `<circle cx="6" cy="17" r="1.35" fill="${c}"/>` +
+        `<path d="M10 7 h9 M10 12 h9 M10 17 h9" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round"/>`,
     // 媒体中心：四宫格入口图标
     "media-center": (c) =>
         `<rect x="4.5" y="4.5" width="6.2" height="6.2" rx="1.2" fill="none" stroke="${c}" stroke-width="1.7"/>` +
