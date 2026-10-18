@@ -348,7 +348,7 @@ export async function compileSkin(opts: CompileOptions): Promise<CompileReport> 
     let extendDialog: [number, number] = [11, 21];
     let extendDialogVert: [number, number] = [11, 21];
     let hasDialogBg = false;
-    let extendPanel: [number, number] = [11, 21];
+    let extendPanel: [number, number] = [14, 18];
     let sliderEndWidth = 8;
     let playlistAttrs: Record<string, unknown> | undefined;
 
@@ -384,7 +384,8 @@ export async function compileSkin(opts: CompileOptions): Promise<CompileReport> 
         }
         if (type === "panel") {
             const r = radiusOf(comp, asVisual(comp), 10);
-            extendPanel = extendPos(32, r);
+            // Glass 等软边面板：radius+1 仍落在阴影过渡带，tile 会打出水平横纹
+            extendPanel = extendPos(32, r, 3);
         }
         if (type === "captionToolbar") {
             captionCell = num((comp.cellSize as number | undefined), 16);

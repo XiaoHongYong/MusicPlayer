@@ -50,23 +50,21 @@
 			<button ID="CID_TOGGLE_LYRICS" Left="3" ToolTip="Lyrics"/>
 			<button ID="ID_OPEN_MEDIA_CENTER" Left="4" ToolTip="Media Center"/>
 		</Toolbar>
-		<Toolbar ID="CID_TB_SYSBT" Rect="w-138,0,138,25"
+		<Toolbar ID="CID_TB_SYSBT" Rect="w-92,0,92,25"
 			 Image="caption-btn-lg.png" enablehover="TRUE" units_x="46"
 			 blank_x="-1" blank_cx="46" seperator_x="0" seperator_cx="10"
 			 MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
 			<button ID="ID_MINIMIZE" Left="1" />
-			<button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
 			<button ID="ID_CLOSE" Left="4" />
 		</Toolbar>
 	</OrbitMainCaption>
 	<OrbitMainCaption.mac Extends="Container" Name="Caption" TranslucencyWithSkin="FALSE">
-		<Toolbar ID="CID_TB_SYSBT" Rect="14,10,64,16"
+		<Toolbar ID="CID_TB_SYSBT" Rect="14,10,40,16"
 			 Image="caption-btn-mac.png" enablehover="TRUE" units_x="16"
 			 blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
 			 MarginX="0" MarginY="0" ButtonSpacesCX="8" FullStatusImage="TRUE">
 			<button ID="ID_CLOSE" Left="4" />
 			<button ID="ID_MINIMIZE" Left="1" />
-			<button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
 		</Toolbar>
 		<!-- 音量 | 列表/歌词 | 媒体中心，贴最右（无菜单列） -->
 		<Toolbar ID="CID_TB_CAPTION_ACTIONS" Rect="w-10-127,4,127,28" Image="caption-actions.png" enablehover="TRUE"

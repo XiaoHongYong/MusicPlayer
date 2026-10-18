@@ -9,6 +9,7 @@
 #include "RawBmpFont.h"
 #include "ImageBuffBlt.h"
 #include "RawGlyphSet.hpp"
+#include <cmath>
 
 
 inline uint8_t RGBToGray(int r, int g, int b) {
@@ -340,7 +341,11 @@ bool CRawBmpFont::create(const FontInfoEx &font, float scaleFactor) {
     m_scaleFactor = scaleFactor;
 
     auto scaledFont = font;
-    scaledFont.height *= scaleFactor;
+    // 非整数 DPI（如 1.25/1.5）用四舍五入，避免截断导致字号偏小发糊
+    scaledFont.height = (int)lround(font.height * scaleFactor);
+    if (scaledFont.height < 1) {
+        scaledFont.height = 1;
+    }
 
     m_glyphHeight = scaledFont.height + MARGIN_FONT * 2;
 

@@ -13,6 +13,7 @@
 #include "SkinVScrollBar.h"
 #include "SkinCaption.h"
 #include "api-js/SkinJsAPI.hpp"
+#include <cmath>
 
 
 #define _SZ_SKINWND         "skinwnd"
@@ -1687,6 +1688,15 @@ void CSkinWnd::onCreate() {
     Window::onCreate();
     m_skinToolTip.onCreate();
 
+    // WM_SIZE 在 WM_CREATE 之后才到；开皮肤/刷新可能先要 memGraph，先同步客户区逻辑尺寸
+    if (m_wndSize.cx <= 0 || m_wndSize.cy <= 0) {
+        CRect rc;
+        if (getClientRect(&rc) && rc.width() > 0 && rc.height() > 0) {
+            m_wndSize.cx = rc.width();
+            m_wndSize.cy = rc.height();
+        }
+    }
+
     if (m_bManageBySkinFactory) {
         m_pSkinFactory->onSkinWndCreate(this);
     }
@@ -1768,7 +1778,8 @@ void CSkinWnd::updateMemGraphicsToScreen(const CRect* lpRect) {
 
 #ifdef _WIN32
     if (getEnableTranslucencyLayered()) {
-        updateLayeredWindowUsingMemGraph(m_pmemGraph);
+        // 与 invalidateRectOfLayeredWindow 一致：先 onPaint（含 WindowImage）再上屏
+        invalidateRectOfLayeredWindow(lpRect);
     } else {
         m_pmemGraph->drawToWindow(
             lpRect->left, lpRect->top,
@@ -2219,6 +2230,13 @@ int CSkinWnd::fromXML(SXNode *pXmlNode) {
 
     onSkinLoaded();
 
+#ifdef _WIN32
+    // 切肤后 layered 缓冲可能被清空；强制全窗重绘，避免 Orbit 只剩四周 frame
+    if (m_bTranslucencyLayered && isValid()) {
+        invalidateRectOfLayeredWindow(nullptr);
+    }
+#endif
+
     string strOnCreateCmd;
     strOnCreateCmd = pXmlNode->getPropertySafe("OnCreateCommand");
 
@@ -2415,6 +2433,24 @@ void CSkinWnd::onLoadWndSizePos() {
         rcNew.bottom = rcNew.top + g_profile.getInt(section.c_str(), "wnd_height", m_nHeight);
         bCenterWnd = false;
 
+#ifdef _WIN32
+        // 启用 DPI 后曾误存物理像素。无 logical 标记且尺寸明显像「逻辑*scale」时再换算，
+        // 避免把 DPI 感知前保存的逻辑坐标再除一次。
+        if (g_profile.getInt(section.c_str(), "wnd_coords_logical", 0) == 0) {
+            const float scale = getScaleFactor();
+            const int refW = m_nWidth > 0 ? m_nWidth : m_rcBoundBox.width();
+            const int savedW = rcNew.width();
+            if (scale > 1.01f && refW > 0
+                && savedW > refW * 115 / 100
+                && savedW >= (int)lround(refW * scale * 0.85f)) {
+                rcNew.left = toLogical(rcNew.left);
+                rcNew.top = toLogical(rcNew.top);
+                rcNew.right = toLogical(rcNew.right);
+                rcNew.bottom = toLogical(rcNew.bottom);
+            }
+        }
+#endif
+
         if (m_wndResizer.isFixedWidth()) {
             rcNew.right = rcNew.left + m_nWidth;
         }
@@ -2483,25 +2519,24 @@ void CSkinWnd::saveWndPos() {
         return;
     }
 
-    WINDOWPLACEMENT wp;
+    // 与 moveWindow/getWindowRect 一致：存逻辑坐标（勿用 GetWindowPlacement 的物理像素）
+    if (!getWindowRect(&rcToSave)) {
+        return;
+    }
 
+    WINDOWPLACEMENT wp;
     wp.length = sizeof(wp);
     if (GetWindowPlacement(m_hWnd, &wp)) {
-        rcToSave = wp.rcNormalPosition;
-    } else {
-        rcToSave = m_rcBoundBox;
+        WndSizeMode sizeMode;
+        if (isFlagSet(wp.showCmd, SW_SHOWMAXIMIZED)) {
+            sizeMode = WndSizeMode_Maximized;
+        } else if (isFlagSet(wp.showCmd, SW_SHOWMINIMIZED)) {
+            sizeMode = WndSizeMode_Minimized;
+        } else {
+            sizeMode = WndSizeMode_Normal;
+        }
+        g_profile.writeInt(section.c_str(), "SizeMode", sizeMode);
     }
-
-    WndSizeMode sizeMode;
-    if (isFlagSet(wp.showCmd, SW_SHOWMAXIMIZED)) {
-        sizeMode = WndSizeMode_Maximized;
-    } else if (isFlagSet(wp.showCmd, SW_SHOWMINIMIZED)) {
-        sizeMode = WndSizeMode_Minimized;
-    } else {
-        sizeMode = WndSizeMode_Normal;
-    }
-
-    g_profile.writeInt(section.c_str(), "SizeMode", sizeMode);
 #else
     if (!getWindowRect(&rcToSave)) {
         return;
@@ -2512,4 +2547,7 @@ void CSkinWnd::saveWndPos() {
     g_profile.writeInt(section.c_str(), "wnd_top", rcToSave.top);
     g_profile.writeInt(section.c_str(), "wnd_width", rcToSave.width());
     g_profile.writeInt(section.c_str(), "wnd_height", rcToSave.height());
+#ifdef _WIN32
+    g_profile.writeInt(section.c_str(), "wnd_coords_logical", 1);
+#endif
 }

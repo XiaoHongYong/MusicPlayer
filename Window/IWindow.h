@@ -20,6 +20,9 @@ void showInFinder(cstr_t filename);
 void showInFinder(const VecStrings &files);
 float getScreenScaleFactor();
 
+// Windows：进程启动时调用，启用 Per-Monitor DPI awareness（须在创建窗口前）
+void enableProcessDpiAwareness();
+
 //
 // The Window size state definition
 //

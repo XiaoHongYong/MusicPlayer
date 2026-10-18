@@ -103,8 +103,9 @@ export async function compositeSheet(
     return { hi: sheet, width: w, height: h };
 }
 
-export function extendPos(size: number, radius: number): [number, number] {
-    const a = Math.max(1, Math.min(radius + 1, Math.floor(size / 2) - 1));
+/** 九宫格可平铺区 [start, end)。softPad 用于躲开圆角外的软阴影/AA 过渡，避免 tile 出横纹。 */
+export function extendPos(size: number, radius: number, softPad = 0): [number, number] {
+    const a = Math.max(1, Math.min(radius + 1 + softPad, Math.floor(size / 2) - 1));
     return [a, size - a];
 }
 

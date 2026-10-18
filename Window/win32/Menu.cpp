@@ -121,14 +121,20 @@ void CMenu::trackPopupMenu(int x, int y, Window *pWnd, CRect *prcNotOverlap) {
 
     updateMenuStatus(pWnd);
 
-    TPMPARAMS tpmParam;
+    // 入参为逻辑屏幕坐标；TrackPopupMenuEx 要物理像素
+    const int physX = pWnd->toPhysical(x);
+    const int physY = pWnd->toPhysical(y);
 
+    TPMPARAMS tpmParam;
     if (prcNotOverlap) {
+        CRect rcExclude = *prcNotOverlap;
+        pWnd->toPhysical(rcExclude);
         tpmParam.cbSize = sizeof(tpmParam);
-        tpmParam.rcExclude = *prcNotOverlap;
+        tpmParam.rcExclude = rcExclude;
     }
 
-    TrackPopupMenuEx(getHandle(), TPM_LEFTALIGN, x, y, pWnd->getWndHandle(), prcNotOverlap ? &tpmParam : nullptr);
+    TrackPopupMenuEx(getHandle(), TPM_LEFTALIGN, physX, physY, pWnd->getWndHandle(),
+        prcNotOverlap ? &tpmParam : nullptr);
 }
 
 void CMenu::trackPopupSubMenu(int x, int y, int nSubMenu, Window *pWnd, CRect *prcNotOverlap) {
@@ -136,14 +142,19 @@ void CMenu::trackPopupSubMenu(int x, int y, int nSubMenu, Window *pWnd, CRect *p
 
     updateMenuStatus(pWnd);
 
-    TPMPARAMS tpmParam;
+    const int physX = pWnd->toPhysical(x);
+    const int physY = pWnd->toPhysical(y);
 
+    TPMPARAMS tpmParam;
     if (prcNotOverlap) {
+        CRect rcExclude = *prcNotOverlap;
+        pWnd->toPhysical(rcExclude);
         tpmParam.cbSize = sizeof(tpmParam);
-        tpmParam.rcExclude = *prcNotOverlap;
+        tpmParam.rcExclude = rcExclude;
     }
 
-    TrackPopupMenuEx(getSubMenuHandle(nSubMenu), TPM_LEFTALIGN | TPM_VERTICAL, x, y, pWnd->getWndHandle(), prcNotOverlap ? &tpmParam : nullptr);
+    TrackPopupMenuEx(getSubMenuHandle(nSubMenu), TPM_LEFTALIGN | TPM_VERTICAL, physX, physY,
+        pWnd->getWndHandle(), prcNotOverlap ? &tpmParam : nullptr);
 }
 
 void CMenu::enableItem(int nID, bool bEnable) {

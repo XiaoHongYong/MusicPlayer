@@ -96,6 +96,16 @@ public:
 
     void setCursor(Cursor *cursor) override;
 
+    // 逻辑坐标（与皮肤/Mac points 一致）↔ 物理像素
+    int toPhysical(int logical) const;
+    int toLogical(int physical) const;
+    float toPhysicalF(float logical) const;
+    float toLogicalF(float physical) const;
+    void toPhysical(CRect &rc) const;
+    void toLogical(CRect &rc) const;
+    void toPhysical(CPoint &pt) const;
+    void toLogical(CPoint &pt) const;
+
     void setParent(Window *pWndParent);
     Window *getParent();
 
@@ -190,9 +200,13 @@ public:
     virtual LRESULT wndProc(uint32_t message, WPARAM wParam, LPARAM lParam);
 
 protected:
+    void updateScaleFactorFromDpi(UINT dpi);
+    void updateScaleFactorFromWindow();
+
     WndSizeMode                 m_WndSizeMode;
     HWND                        m_hWnd;
     bool                        m_isCursorSet = false;
+    float                       m_scaleFactor = 1.0f;
 
 };
 

@@ -12,6 +12,7 @@
 #include "GfxRaw.h"
 #include "RawGraph.h"
 #include "ImageBuffBlt.h"
+#include <cmath>
 
 
 #ifdef WIN32
@@ -37,16 +38,24 @@ CRawGraph::~CRawGraph() {
 }
 
 bool CRawGraph::create(int cx, int cy, WindowHandle windowHandle, int nBitCount) {
+    if (cx <= 0 || cy <= 0) {
+        return false;
+    }
+
     m_rcClip.setLTWH(0, 0, cx, cy);
     m_rcClipScaleMaped = scale(m_rcClip);
     m_ptOrigin.x = m_ptOrigin.y = 0;
     m_width = cx;
     m_height = cy;
 
-    cx *= m_scaleFactor;
-    cy *= m_scaleFactor;
+    // 与 Window::toPhysical 一致用四舍五入，避免与 GetWindowRect 差 1px
+    const int physCx = (int)lround(cx * m_scaleFactor);
+    const int physCy = (int)lround(cy * m_scaleFactor);
+    if (physCx <= 0 || physCy <= 0) {
+        return false;
+    }
 
-    if (!CRawGraphData::create(cx, cy, windowHandle, nBitCount)) {
+    if (!CRawGraphData::create(physCx, physCy, windowHandle, nBitCount)) {
         return false;
     }
 

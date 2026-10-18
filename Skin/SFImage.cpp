@@ -73,7 +73,7 @@ bool CSFImage::loadFromSRM(CSkinWnd *skinWnd, cstr_t resName) {
     return loadFromSRM(skinWnd->getSkinFactory()->getResourceMgr(), resName, skinWnd->getScaleFactor());
 }
 
-bool CSFImage::loadFromSRM(CSkinResMgr *resMgr, cstr_t resName, int scaleFactor) {
+bool CSFImage::loadFromSRM(CSkinResMgr *resMgr, cstr_t resName, float scaleFactor) {
     detach();
 
     m_skinResMgr = resMgr;

@@ -38,6 +38,10 @@ void IWindow::onResized(int width, int height) {
 }
 
 void IWindow::onScaleFactorChanged(float scaleFactor) {
+    (void)scaleFactor;
+    if (m_wndSize.cx <= 0 || m_wndSize.cy <= 0) {
+        return;
+    }
     recreateMemGraphics();
 }
 
@@ -45,6 +49,9 @@ CRawGraph *IWindow::getMemGraphics() {
     //    assert(m_pmemGraph);
     if (!m_pmemGraph) {
         recreateMemGraphics();
+    }
+    if (!m_pmemGraph) {
+        return nullptr;
     }
 
     m_pmemGraph->resetClipBoundBox(CRect(0, 0, m_pmemGraph->width(), m_pmemGraph->height()));
@@ -54,12 +61,20 @@ CRawGraph *IWindow::getMemGraphics() {
 }
 
 bool IWindow::recreateMemGraphics() {
+    if (m_wndSize.cx <= 0 || m_wndSize.cy <= 0) {
+        return false;
+    }
+
     if (m_pmemGraph) {
         delete m_pmemGraph;
+        m_pmemGraph = nullptr;
     }
 
     CRawGraph *memCanvas = new CRawGraph(getScaleFactor());
-    memCanvas->create(m_wndSize.cx, m_wndSize.cy, getHandle());
+    if (!memCanvas->create(m_wndSize.cx, m_wndSize.cy, getHandle())) {
+        delete memCanvas;
+        return false;
+    }
     m_pmemGraph = memCanvas;
 
     return true;

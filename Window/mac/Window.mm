@@ -33,6 +33,10 @@ float getScreenScaleFactor() {
     return [screen backingScaleFactor];
 }
 
+void enableProcessDpiAwareness() {
+    // macOS 无此概念
+}
+
 Window::Window() {
     m_handleHolder = new WindowHandleHolder();
     m_handleHolder->window = nullptr;

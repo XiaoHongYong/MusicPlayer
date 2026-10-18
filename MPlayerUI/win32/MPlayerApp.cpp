@@ -1,5 +1,6 @@
 ﻿
 #include "../../GfxRaw/win32/GdiplusGraphicsLite.h"
+#include "../../Window/IWindow.h"
 #include "../MPlayerApp.h"
 #include "../VersionUpdate.h"
 #include "../OnlineSearch.h"
@@ -53,6 +54,9 @@ bool terminateAnotherInstance() {
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, WCHAR *lpCmdLine, int nCmdShow) {
+    // 须在创建任何窗口前启用，否则高 DPI 下整窗被系统拉伸导致字体发糊
+    enableProcessDpiAwareness();
+
     setAppInstance(hInstance);
 
     initBaseFramework(0, nullptr, "MusicPlayer.log", "MusicPlayer.ini", "MusicPlayer");

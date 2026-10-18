@@ -6,7 +6,108 @@
 #include "../Desktop.h"
 
 #include <dwmapi.h>
+#include <cmath>
 
+#ifndef WM_DPICHANGED
+#define WM_DPICHANGED 0x02E0
+#endif
+
+#ifndef DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2
+DECLARE_HANDLE(DPI_AWARENESS_CONTEXT);
+#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 ((DPI_AWARENESS_CONTEXT)-4)
+#endif
+
+#ifndef MDT_EFFECTIVE_DPI
+#define MDT_EFFECTIVE_DPI 0
+#endif
+
+using PFN_SetProcessDpiAwarenessContext = BOOL (WINAPI *)(DPI_AWARENESS_CONTEXT);
+using PFN_SetProcessDpiAwareness = HRESULT (WINAPI *)(int);
+using PFN_GetDpiForWindow = UINT (WINAPI *)(HWND);
+using PFN_GetDpiForSystem = UINT (WINAPI *)();
+using PFN_GetDpiForMonitor = HRESULT (WINAPI *)(HMONITOR, int, UINT *, UINT *);
+
+static PFN_GetDpiForWindow g_GetDpiForWindow = nullptr;
+static PFN_GetDpiForSystem g_GetDpiForSystem = nullptr;
+static PFN_GetDpiForMonitor g_GetDpiForMonitor = nullptr;
+static bool g_dpiApisLoaded = false;
+
+static void loadDpiApis() {
+    if (g_dpiApisLoaded) {
+        return;
+    }
+    g_dpiApisLoaded = true;
+
+    HMODULE user32 = GetModuleHandleW(L"user32.dll");
+    if (user32) {
+        g_GetDpiForWindow = (PFN_GetDpiForWindow)GetProcAddress(user32, "GetDpiForWindow");
+        g_GetDpiForSystem = (PFN_GetDpiForSystem)GetProcAddress(user32, "GetDpiForSystem");
+    }
+    HMODULE shcore = LoadLibraryW(L"Shcore.dll");
+    if (shcore) {
+        g_GetDpiForMonitor = (PFN_GetDpiForMonitor)GetProcAddress(shcore, "GetDpiForMonitor");
+    }
+}
+
+static UINT querySystemDpi() {
+    loadDpiApis();
+    if (g_GetDpiForSystem) {
+        UINT dpi = g_GetDpiForSystem();
+        if (dpi > 0) {
+            return dpi;
+        }
+    }
+    HDC hdc = GetDC(nullptr);
+    UINT dpi = hdc ? (UINT)GetDeviceCaps(hdc, LOGPIXELSX) : 96;
+    if (hdc) {
+        ReleaseDC(nullptr, hdc);
+    }
+    return dpi > 0 ? dpi : 96;
+}
+
+static UINT queryDpiForPoint(int x, int y) {
+    loadDpiApis();
+    if (g_GetDpiForMonitor) {
+        POINT pt = { x, y };
+        HMONITOR mon = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
+        UINT dpiX = 0, dpiY = 0;
+        if (mon && SUCCEEDED(g_GetDpiForMonitor(mon, MDT_EFFECTIVE_DPI, &dpiX, &dpiY)) && dpiX > 0) {
+            return dpiX;
+        }
+    }
+    return querySystemDpi();
+}
+
+void enableProcessDpiAwareness() {
+    loadDpiApis();
+
+    HMODULE user32 = GetModuleHandleW(L"user32.dll");
+    if (user32) {
+        auto setCtx = (PFN_SetProcessDpiAwarenessContext)GetProcAddress(user32, "SetProcessDpiAwarenessContext");
+        if (setCtx && setCtx(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)) {
+            return;
+        }
+    }
+
+    HMODULE shcore = LoadLibraryW(L"Shcore.dll");
+    if (shcore) {
+        // PROCESS_PER_MONITOR_DPI_AWARE = 2
+        auto setAwareness = (PFN_SetProcessDpiAwareness)GetProcAddress(shcore, "SetProcessDpiAwareness");
+        if (setAwareness) {
+            setAwareness(2);
+            return;
+        }
+    }
+
+    // Vista+；低 _WIN32_WINNT 下无声明，运行时解析
+    if (user32) {
+        using PFN_SetProcessDPIAware = BOOL (WINAPI *)();
+        auto setDpiAware = (PFN_SetProcessDPIAware)GetProcAddress(user32, "SetProcessDPIAware");
+        if (setDpiAware) {
+            setDpiAware();
+        }
+    }
+}
 
 void showInFinder(cstr_t filename) {
     executeCmd(("explorer.exe /select, " + std::string(filename)).c_str());
@@ -25,7 +126,7 @@ void showInFinder(const VecStrings &files) {
 }
 
 float getScreenScaleFactor() {
-    return 1;
+    return querySystemDpi() / 96.0f;
 }
 
 #define BASEWNDCLASSNAME    "Window"
@@ -246,19 +347,23 @@ bool moveWindowSafely(HWND hWnd, int X, int Y, int nWidth, int nHeight, bool bRe
 }
 
 void centerWindowToMonitor(HWND hWnd) {
-    CRect rc, rcRestrict;
-    int w, h;
-
+    // 全程物理像素，避免与逻辑坐标 API 混用
+    RECT rc = {};
     GetWindowRect(hWnd, &rc);
-    getMonitorRestrictRect(rc, rcRestrict);
+    HMONITOR mon = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+    MONITORINFO mi;
+    memset(&mi, 0, sizeof(mi));
+    mi.cbSize = sizeof(mi);
+    if (!mon || !GetMonitorInfo(mon, &mi)) {
+        return;
+    }
 
-    w = rc.right - rc.left;
-    h = rc.bottom - rc.top;
+    const int w = rc.right - rc.left;
+    const int h = rc.bottom - rc.top;
+    const int x = mi.rcWork.left + (mi.rcWork.right - mi.rcWork.left - w) / 2;
+    const int y = mi.rcWork.top + (mi.rcWork.bottom - mi.rcWork.top - h) / 2;
 
-    rc.left = rcRestrict.left + (rcRestrict.right - rcRestrict.left - w) / 2;
-    rc.top = rcRestrict.top + (rcRestrict.bottom - rcRestrict.top - h) / 2;
-
-    SetWindowPos(hWnd, nullptr, rc.left, rc.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+    SetWindowPos(hWnd, nullptr, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
 }
 
 bool isLayeredWndSupported()
@@ -310,12 +415,80 @@ void unSetLayeredWindow(HWND hWnd) {
 Window::Window() {
     m_hWnd = nullptr;
     m_WndSizeMode = (WndSizeMode)-1;
+    m_scaleFactor = getScreenScaleFactor();
 }
 
 Window::~Window() {
 
 }
 
+void Window::updateScaleFactorFromDpi(UINT dpi) {
+    if (dpi < 72) {
+        dpi = 96;
+    }
+    m_scaleFactor = dpi / 96.0f;
+    if (m_scaleFactor < 0.5f) {
+        m_scaleFactor = 1.0f;
+    }
+}
+
+void Window::updateScaleFactorFromWindow() {
+    loadDpiApis();
+    if (m_hWnd && g_GetDpiForWindow) {
+        UINT dpi = g_GetDpiForWindow(m_hWnd);
+        if (dpi > 0) {
+            updateScaleFactorFromDpi(dpi);
+            return;
+        }
+    }
+    updateScaleFactorFromDpi(querySystemDpi());
+}
+
+int Window::toPhysical(int logical) const {
+    return (int)lround(logical * m_scaleFactor);
+}
+
+int Window::toLogical(int physical) const {
+    if (m_scaleFactor <= 0.f) {
+        return physical;
+    }
+    return (int)lround(physical / m_scaleFactor);
+}
+
+float Window::toPhysicalF(float logical) const {
+    return logical * m_scaleFactor;
+}
+
+float Window::toLogicalF(float physical) const {
+    if (m_scaleFactor <= 0.f) {
+        return physical;
+    }
+    return physical / m_scaleFactor;
+}
+
+void Window::toPhysical(CRect &rc) const {
+    rc.left = toPhysical(rc.left);
+    rc.top = toPhysical(rc.top);
+    rc.right = toPhysical(rc.right);
+    rc.bottom = toPhysical(rc.bottom);
+}
+
+void Window::toLogical(CRect &rc) const {
+    rc.left = toLogical(rc.left);
+    rc.top = toLogical(rc.top);
+    rc.right = toLogical(rc.right);
+    rc.bottom = toLogical(rc.bottom);
+}
+
+void Window::toPhysical(CPoint &pt) const {
+    pt.x = toPhysical(pt.x);
+    pt.y = toPhysical(pt.y);
+}
+
+void Window::toLogical(CPoint &pt) const {
+    pt.x = toLogical(pt.x);
+    pt.y = toLogical(pt.y);
+}
 
 bool Window::create(cstr_t szCaption, int x, int y, int nWidth, int nHeight, Window *pWndParent, uint32_t dwStyle, int nID) {
     return createEx(BASEWNDCLASSNAME, szCaption, x, y, nWidth, nHeight, pWndParent, dwStyle, nID);
@@ -328,18 +501,29 @@ bool Window::createEx(cstr_t szClassName, cstr_t szCaption, int x, int y, int nW
 
     assert(m_hWnd == nullptr);
 
+    // DPI-aware 下 CreateWindow 使用物理像素；皮肤传入的是逻辑尺寸（同 Mac points）
+    updateScaleFactorFromDpi(queryDpiForPoint(x, y));
+    const int physX = toPhysical(x);
+    const int physY = toPhysical(y);
+    const int physW = toPhysical(nWidth);
+    const int physH = toPhysical(nHeight);
+
     // 创建窗口
     m_hWnd = CreateWindowExA(
         dwExStyle,              // extend styles
         szClassName,            // window class name
         szCaption,              // window title
         dwStyle,                // window style
-        x, y,                   // screen position
-        nWidth, nHeight,        // width & height of window
+        physX, physY,           // screen position (physical)
+        physW, physH,           // width & height (physical)
         pWndParent ? pWndParent->m_hWnd : nullptr,    // parent window
         (HMENU)nID,             // menu or window id
         getAppInstance(),       // hInstance
         (void *)this);          // this for window creation data
+
+    if (m_hWnd) {
+        updateScaleFactorFromWindow();
+    }
 
     return m_hWnd != nullptr;
 }
@@ -465,37 +649,57 @@ bool Window::getDlgItemRect(int nIDItem, CRect* lpRect) {
         return false;
     }
 
-    return tobool(::GetWindowRect(hWnd, lpRect));
+    if (!::GetWindowRect(hWnd, lpRect)) {
+        return false;
+    }
+    toLogical(*lpRect);
+    return true;
 }
 
 void Window::screenToClient(CRect &rc) {
+    toPhysical(rc);
     ::ScreenToClient(m_hWnd, (LPPOINT)&rc.left);
     ::ScreenToClient(m_hWnd, (LPPOINT)&rc.right);
+    toLogical(rc);
 }
 
 void Window::clientToScreen(CRect &rc) {
+    toPhysical(rc);
     ::ClientToScreen(m_hWnd, (LPPOINT)&rc.left);
     ::ClientToScreen(m_hWnd, (LPPOINT)&rc.right);
+    toLogical(rc);
 }
 
 void Window::screenToClient(CPoint &pt) {
+    toPhysical(pt);
     ::ScreenToClient(m_hWnd, &pt);
+    toLogical(pt);
 }
 
 void Window::clientToScreen(CPoint &pt) {
+    toPhysical(pt);
     ::ClientToScreen(m_hWnd, &pt);
+    toLogical(pt);
 }
 
 bool Window::getWindowRect(CRect* lpRect) {
-    return tobool(::GetWindowRect(m_hWnd, lpRect));
+    if (!::GetWindowRect(m_hWnd, lpRect)) {
+        return false;
+    }
+    toLogical(*lpRect);
+    return true;
 }
 
 bool Window::getClientRect(CRect* lpRect) {
-    return tobool(::GetClientRect(m_hWnd, lpRect));
+    if (!::GetClientRect(m_hWnd, lpRect)) {
+        return false;
+    }
+    toLogical(*lpRect);
+    return true;
 }
 
 float Window::getScaleFactor() {
-    return 1.0;
+    return m_scaleFactor;
 }
 
 void Window::setCursor(Cursor *cursor) {
@@ -550,7 +754,12 @@ void Window::releaseCapture() {
 }
 
 bool Window::invalidateRect(const CRect *lpRect, bool bErase) {
-    return ::InvalidateRect(m_hWnd, lpRect, bErase);
+    if (!lpRect) {
+        return tobool(::InvalidateRect(m_hWnd, nullptr, bErase));
+    }
+    CRect rcPhys = *lpRect;
+    toPhysical(rcPhys);
+    return tobool(::InvalidateRect(m_hWnd, &rcPhys, bErase));
 }
 
 bool Window::isChild() {
@@ -623,31 +832,37 @@ bool Window::setForeground() {
 }
 
 void Window::setWindowPos(int x, int y) {
-    ::SetWindowPos(m_hWnd, nullptr, x, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOREPOSITION);
+    ::SetWindowPos(m_hWnd, nullptr, toPhysical(x), toPhysical(y), 0, 0,
+        SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOREPOSITION);
 }
 
 void Window::setWindowPosSafely(int x, int y) {
+    int physX = toPhysical(x);
+    int physY = toPhysical(y);
     if (isChild()) {
         HWND hWndParent;
         hWndParent = ::GetParent(m_hWnd);
         if (hWndParent) {
             CPoint pt;
-            pt.x = x;
-            pt.y = y;
+            pt.x = physX;
+            pt.y = physY;
             ::ScreenToClient(hWndParent, &pt);
-            x = pt.x;
-            y = pt.y;
+            physX = pt.x;
+            physY = pt.y;
         }
     }
-    ::SetWindowPos(m_hWnd, nullptr, x, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOREPOSITION);
+    ::SetWindowPos(m_hWnd, nullptr, physX, physY, 0, 0,
+        SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOREPOSITION);
 }
 
 bool Window::moveWindow(int X, int Y, int nWidth, int nHeight, bool bRepaint) {
-    return tobool(::MoveWindow(m_hWnd, X, Y, nWidth, nHeight, bRepaint));
+    return tobool(::MoveWindow(m_hWnd, toPhysical(X), toPhysical(Y),
+        toPhysical(nWidth), toPhysical(nHeight), bRepaint));
 }
 
 bool Window::moveWindowSafely(int X, int Y, int nWidth, int nHeight, bool bRepaint) {
-    return tobool(::moveWindowSafely(m_hWnd, X, Y, nWidth, nHeight, bRepaint));
+    return tobool(::moveWindowSafely(m_hWnd, toPhysical(X), toPhysical(Y),
+        toPhysical(nWidth), toPhysical(nHeight), bRepaint));
 }
 
 int Window::messageOut(cstr_t text, uint32_t uType, cstr_t caption) {
@@ -684,6 +899,18 @@ void Window::sendUserMessage(int nMessageID, LPARAM param) {
 
 LRESULT Window::wndProc(uint32_t message, WPARAM wParam, LPARAM lParam) {
     assert(m_hWnd);
+
+    auto clientPtFromLParam = [this](LPARAM lp) {
+        CPoint pt((short)LOWORD(lp), (short)HIWORD(lp));
+        toLogical(pt);
+        return pt;
+    };
+    auto screenPtFromLParam = [this](LPARAM lp) {
+        CPoint pt((short)LOWORD(lp), (short)HIWORD(lp));
+        toLogical(pt);
+        return pt;
+    };
+
     switch (message) {
     case ML_WM_LANGUAGE_CHANGED:
         onLanguageChanged();
@@ -705,6 +932,7 @@ LRESULT Window::wndProc(uint32_t message, WPARAM wParam, LPARAM lParam) {
         }
         break;
     case WM_CREATE:
+        updateScaleFactorFromWindow();
         onCreate();
         return 0;
     case WM_CLOSE:
@@ -720,14 +948,14 @@ LRESULT Window::wndProc(uint32_t message, WPARAM wParam, LPARAM lParam) {
         break;
     case WM_CONTEXTMENU:
         {
-            //            int xPos = LOWORD(lParam);
-            //            int yPos = HIWORD(lParam);
             if (lParam == -1) {
                 CPoint pt;
                 GetCursorPos(&pt);
+                toLogical(pt);
                 onContexMenu(pt.x, pt.y);
             } else {
-                onContexMenu(LOWORD(lParam), HIWORD(lParam));
+                CPoint pt = screenPtFromLParam(lParam);
+                onContexMenu(pt.x, pt.y);
             }
         }
         break;
@@ -758,19 +986,19 @@ LRESULT Window::wndProc(uint32_t message, WPARAM wParam, LPARAM lParam) {
         onChar(wParam);
         break;
     case WM_LBUTTONDOWN:
-        onLButtonDown((uint32_t)wParam, CPoint((short)LOWORD(lParam), (short)HIWORD(lParam)));
+        onLButtonDown((uint32_t)wParam, clientPtFromLParam(lParam));
         break;
     case WM_LBUTTONDBLCLK:
-        onLButtonDblClk((uint32_t)wParam, CPoint((short)LOWORD(lParam), (short)HIWORD(lParam)));
+        onLButtonDblClk((uint32_t)wParam, clientPtFromLParam(lParam));
         break;
     case WM_LBUTTONUP:
-        onLButtonUp((uint32_t)wParam, CPoint((short)LOWORD(lParam), (short)HIWORD(lParam)));
+        onLButtonUp((uint32_t)wParam, clientPtFromLParam(lParam));
         break;
     case WM_RBUTTONDOWN:
-        onRButtonDown((uint32_t)wParam, CPoint((short)LOWORD(lParam), (short)HIWORD(lParam)));
+        onRButtonDown((uint32_t)wParam, clientPtFromLParam(lParam));
         break;
     case WM_RBUTTONUP:
-        onRButtonUp((uint32_t)wParam, CPoint((short)LOWORD(lParam), (short)HIWORD(lParam)));
+        onRButtonUp((uint32_t)wParam, clientPtFromLParam(lParam));
         break;
     case WM_MOUSEMOVE:
         {
@@ -778,15 +1006,15 @@ LRESULT Window::wndProc(uint32_t message, WPARAM wParam, LPARAM lParam) {
 
             uint32_t nFlags = uint32_t(wParam);
             if (nFlags & MK_LBUTTON) {
-                onMouseDrag((uint32_t)wParam, CPoint((short)LOWORD(lParam), (short)HIWORD(lParam)));
+                onMouseDrag((uint32_t)wParam, clientPtFromLParam(lParam));
             } else {
-                onMouseMove(CPoint((short)LOWORD(lParam), (short)HIWORD(lParam)));
+                onMouseMove(clientPtFromLParam(lParam));
             }
         }
         break;
     case WM_MOUSEWHEEL:
         {
-            onMouseWheel(short(HIWORD(wParam)) / -60, LOWORD(wParam), CPoint((short)LOWORD(lParam), (short)HIWORD(lParam)));
+            onMouseWheel(short(HIWORD(wParam)) / -60, LOWORD(wParam), screenPtFromLParam(lParam));
         }
         break;
     case WM_SETCURSOR:
@@ -796,7 +1024,7 @@ LRESULT Window::wndProc(uint32_t message, WPARAM wParam, LPARAM lParam) {
         }
         return true;
     case WM_MOVE:
-        onMove(LOWORD(lParam), HIWORD(lParam));
+        onMove(toLogical((short)LOWORD(lParam)), toLogical((short)HIWORD(lParam)));
         return 0;
     case WM_KILLFOCUS:
         onKillFocus();
@@ -806,7 +1034,8 @@ LRESULT Window::wndProc(uint32_t message, WPARAM wParam, LPARAM lParam) {
         break;
     case WM_SIZE:
         if (wParam == SIZE_RESTORED) {
-            auto cx = LOWORD(lParam), cy = HIWORD(lParam);
+            auto cx = toLogical((int)LOWORD(lParam));
+            auto cy = toLogical((int)HIWORD(lParam));
             if (cx > 0 && cy > 0) {
                 onResized(cx, cy);
             }
@@ -818,11 +1047,28 @@ LRESULT Window::wndProc(uint32_t message, WPARAM wParam, LPARAM lParam) {
             m_WndSizeMode = WndSizeMode_Minimized;
             onSizeModeChanged(m_WndSizeMode);
         } else if (wParam == SIZE_MAXIMIZED) {
-            onResized(LOWORD(lParam), HIWORD(lParam));
+            onResized(toLogical((int)LOWORD(lParam)), toLogical((int)HIWORD(lParam)));
             m_WndSizeMode = WndSizeMode_Maximized;
             onSizeModeChanged(m_WndSizeMode);
         }
         break;
+    case WM_DPICHANGED:
+        {
+            const float oldScale = m_scaleFactor;
+            updateScaleFactorFromDpi(LOWORD(wParam));
+            auto *const prcNew = (RECT *)lParam;
+            if (prcNew) {
+                // 建议矩形已是物理像素，直接交给系统
+                ::SetWindowPos(m_hWnd, nullptr, prcNew->left, prcNew->top,
+                    prcNew->right - prcNew->left, prcNew->bottom - prcNew->top,
+                    SWP_NOZORDER | SWP_NOACTIVATE);
+            }
+            if (oldScale != m_scaleFactor) {
+                onScaleFactorChanged(m_scaleFactor);
+                invalidateRect(nullptr, true);
+            }
+        }
+        return 0;
     case WM_VSCROLL:
         {
             onVScroll(LOWORD(wParam), HIWORD(wParam), nullptr);
@@ -910,8 +1156,9 @@ bool Window::updateLayeredWindowUsingMemGraph(CRawGraph *canvas) {
         SetWindowLong(m_hWnd, GWL_EXSTYLE, dwStyleNew);
     }
 
-    CRect rcWnd;
-    getWindowRect(&rcWnd);
+    // UpdateLayeredWindow 需要物理像素尺寸，与 memGraph（logical * scale）一致
+    RECT rcPhys = {};
+    ::GetWindowRect(m_hWnd, &rcPhys);
 
     BLENDFUNCTION blend;
     blend.AlphaFormat = AC_SRC_ALPHA;
@@ -919,8 +1166,8 @@ bool Window::updateLayeredWindowUsingMemGraph(CRawGraph *canvas) {
     blend.BlendFlags = 0;
     blend.SourceConstantAlpha = m_nAlpha;
 
-    CPoint ptSrc, ptDest(rcWnd.left, rcWnd.top);
-    CSize sizeWnd(rcWnd.width(), rcWnd.height());
+    CPoint ptSrc, ptDest(rcPhys.left, rcPhys.top);
+    CSize sizeWnd(rcPhys.right - rcPhys.left, rcPhys.bottom - rcPhys.top);
 
     bool bRet = UpdateLayeredWindow(m_hWnd, hdc, &ptDest, &sizeWnd, hdcSrc, &ptSrc, 0, &blend, ULW_ALPHA);
 
@@ -931,6 +1178,7 @@ bool Window::updateLayeredWindowUsingMemGraph(CRawGraph *canvas) {
 
 void Window::attach(HWND hWnd) {
     m_hWnd = hWnd;
+    updateScaleFactorFromWindow();
 }
 
 void Window::detach() {

@@ -21,16 +21,14 @@ bool CSkinWnd::invalidateRect(const CRect *lpRect, bool bErase) {
 void CSkinWnd::invalidateRectOfLayeredWindow(const CRect* lpRect) {
     assert(m_bTranslucencyLayered);
     auto memCanvas = getMemGraphics();
-
-    // 与 onPaint 一致：先铺 WindowImage 再画控件。
-    // 有 WindowImage 时 root 的 bgType=BG_NONE，若此处漏画背景，
-    // UpdateLayeredWindow 只会提交控件像素，窗口主体会完全透明。
-    CRect rcClip;
-    if (lpRect) {
-        rcClip = *lpRect;
-    } else {
-        rcClip.setLTWH(0, 0, m_rcBoundBox.width(), m_rcBoundBox.height());
+    if (!memCanvas) {
+        return;
     }
+
+    // UpdateLayeredWindow 整窗提交：必须画满整窗（含 WindowImage）。
+    // 若只用局部 clip，中间 ClientArea 可能仍是透明，表现为「只剩四周 frame」。
+    (void)lpRect;
+    CRect rcClip(0, 0, m_rcBoundBox.width(), m_rcBoundBox.height());
     onPaint(memCanvas, &rcClip);
     updateLayeredWindowUsingMemGraph(memCanvas);
 }
@@ -83,9 +81,9 @@ LRESULT CSkinWnd::wndProc(uint32_t message, WPARAM wParam, LPARAM lParam) {
     case WM_PAINT:
         {
             if (m_bTranslucencyLayered) {
-                CRect rcClip;
-                if (::GetUpdateRect(m_hWnd, &rcClip, false)) {
-                    invalidateRectOfLayeredWindow(&rcClip);
+                if (::GetUpdateRect(m_hWnd, nullptr, false)) {
+                    // 全窗重绘（见 invalidateRectOfLayeredWindow）
+                    invalidateRectOfLayeredWindow(nullptr);
                 }
 
                 // updates the position, size, shape, content, and translucency of a layered window
@@ -95,6 +93,7 @@ LRESULT CSkinWnd::wndProc(uint32_t message, WPARAM wParam, LPARAM lParam) {
                 if (!::GetUpdateRect(m_hWnd, &rcClip, false)) {
                     return 0;
                 }
+                toLogical(rcClip);
 
                 PAINTSTRUCT ps;
                 HDC hdc = BeginPaint(m_hWnd, &ps);
