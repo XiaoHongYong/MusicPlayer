@@ -8,6 +8,7 @@
 }
 
 - (void) onCommand:(NSMenuItem *)item;
+- (void) dispatchCommand:(NSNumber *)cmd;
 - (void) setBaseWnd:(Window *)pWnd;
 
 @end
@@ -15,7 +16,17 @@
 @implementation MLMenuImp
 
 - (void) onCommand:(NSMenuItem *)item {
-    mBaseWnd->onCommand((uint32_t)[item tag]);
+    // 异步派发，避免在 NSMenu 跟踪栈内同步执行 onCommand（开窗/销毁 UI）
+    NSNumber *cmd = [NSNumber numberWithUnsignedInt:(uint32_t)[item tag]];
+    [self performSelectorOnMainThread:@selector(dispatchCommand:)
+                           withObject:cmd
+                        waitUntilDone:NO];
+}
+
+- (void) dispatchCommand:(NSNumber *)cmd {
+    if (mBaseWnd) {
+        mBaseWnd->onCommand([cmd unsignedIntValue]);
+    }
 }
 
 -(BOOL) validateMenuItem:(NSMenuItem *)item {

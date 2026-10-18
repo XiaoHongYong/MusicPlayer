@@ -789,7 +789,7 @@ bool CSkinWnd::onKeyDown(uint32_t nChar, uint32_t nFlags) {
 
     if (nFlags == MK_COMMAND) {
         if (nChar == VK_W) {
-            onCommand(ID_CLOSE);
+            postCustomCommandMsg(ID_CLOSE);
             return true;
         }
     }
@@ -2246,7 +2246,7 @@ int CSkinWnd::fromXML(SXNode *pXmlNode) {
         strSplit(strOnCreateCmd.c_str(), ',', vStrParam);
         for (int i = 0; i < (int)vStrParam.size(); i++) {
             trimStr(vStrParam[i]);
-            onCommand(m_pSkinFactory->getIDByName(vStrParam[i].c_str()));
+            postCustomCommandMsg(m_pSkinFactory->getIDByName(vStrParam[i].c_str()));
         }
     }
 

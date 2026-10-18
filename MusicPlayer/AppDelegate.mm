@@ -39,7 +39,9 @@ void CallMenuCommand(int cmd);
 
 
 void CallMenuCommand(int cmd) {
-    MPlayerApp::getInstance()->getMainWnd()->onCommand(cmd);
+    CMPSkinMainWnd *pWnd = MPlayerApp::getInstance()->getMainWnd();
+    if (pWnd != NULL && pWnd->isValid())
+        pWnd->postCustomCommandMsg(cmd);
 }
 
 @implementation AppDelegate

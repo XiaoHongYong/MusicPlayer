@@ -165,7 +165,7 @@ bool SkinMenuItemsContainer::onLButtonUp(uint32_t nFlags, CPoint point) {
     } else if (item != IDX_INVALID && m_items[item].id != ID_INVALID) {
         onPopupMenuClosed();
         m_pSkin->invalidateRect();
-        m_pSkin->onCommand(m_items[item].id);
+        m_pSkin->postCustomCommandMsg(m_items[item].id);
         return true;
     }
 

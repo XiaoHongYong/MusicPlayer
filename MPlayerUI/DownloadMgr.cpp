@@ -190,7 +190,7 @@ bool CDownloadMgr::searchInCacheResult(bool bShowInfoText) {
                 _TLT("Found lyrics, please select the lyrics in the popup dialog."), ID_OPEN_LRC);
         }
 
-        MPlayerApp::getMainWnd()->onCommand(ID_OPEN_LRC);
+        MPlayerApp::getMainWnd()->postCustomCommandMsg(ID_OPEN_LRC);
         return true;
     } else {
         if (bShowInfoText) {
