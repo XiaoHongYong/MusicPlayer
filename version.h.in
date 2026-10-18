@@ -1,9 +1,9 @@
 #pragma once
 
 #define MAJOR_VERSION       1
-#define MINOR_VERSION       0
+#define MINOR_VERSION       1
 #define BUILD               "ABCDEF"
 
 #define make_str(s) #s
 
-#define VERSION_STR         "1.0.ABCDEF"
+#define VERSION_STR         "1.1.ABCDEF"

@@ -23,12 +23,16 @@ public:
 
 protected:
     int getHeightBitmap();
+    int getDrawBufferHeight();
+    void createMemGraph(int nWidthGraph);
 
 protected:
     FontInfoEx                  m_fontInfo;
     GfxFont                     m_fontLatin;
     GfxFont                     m_fontOthers;
     CRawGraphData               m_fontMemGraph;
+    int                         m_refAscent;    // 拉丁/中文 ascent 取大，作公共基线参考
+    int                         m_baselineY;    // 烘焙缓冲中的公共基线 Y
 
 };
 

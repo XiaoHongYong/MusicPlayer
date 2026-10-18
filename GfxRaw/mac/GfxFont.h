@@ -21,8 +21,11 @@ public:
 
     bool create(cstr_t faceName, int fontHeight, bool italic, int weight, bool isUnderline);
 
-    // 返回绘制字符串宽度
+    // 在基线位置 (x, y) 绘制，返回字符串宽度
     int draw(CGContextRef ctx, CFStringRef attrString, int x, int y);
+
+    int getAscent() const;
+    int getDescent() const;
 
     void destroy();
 

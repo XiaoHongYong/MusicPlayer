@@ -16,10 +16,6 @@ if(UNIX AND NOT APPLE)
     set(LINUX TRUE)
 endif()
 
-# 用 CMAKE_CXX_STANDARD，勿手写 -std=c++17（MSVC 不认，会 D9002）。
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 option(UT "unit test" OFF)
 if (UT)
     add_definitions(-DUNIT_TEST)
@@ -47,12 +43,17 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
 
 PROJECT(MusicPlayer)
 
+# 必须在 project() 之后设置：Xcode 生成器在 project() 前设 CMAKE_CXX_STANDARD
+# 时，主 target（含 .mm 混编）可能落不到 -std=c++17，导致 std::clamp 等不可用。
+# 用 CMAKE_CXX_STANDARD，勿手写 -std=c++17（MSVC 不认，会 D9002）。
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # 必须在 project() 之后：此前 MSVC 工具链未就绪，add_compile_options(/utf-8) 进不了 vcxproj。
 # 源码为 UTF-8，否则中文字面量会被当成 CP936，触发 C3680/C2001。
 if(MSVC)
     add_compile_options(/utf-8)
 endif()
-
 #
 # Compile third-parties first.
 #
@@ -261,6 +262,18 @@ endif()
 # 发布版禁用 assert（NDEBUG），避免代码中的数据校验断言在用户机器上直接 Abort 闪退。
 # 使用 per-config 的 COMPILE_DEFINITIONS_RELEASE，对单配置和 Xcode 多配置都生效。
 set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS_RELEASE "NDEBUG")
+
+# 显式钉死 C++17。CMake 3.22 + Xcode 对含 .mm 的混编 target 常不把
+# CXX_STANDARD 写进 OTHER_CPLUSPLUSFLAGS，导致默认 C++14、std::clamp 不可用。
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+)
+if(APPLE)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++17"
+    )
+endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}

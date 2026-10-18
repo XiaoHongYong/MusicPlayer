@@ -37,6 +37,7 @@
   - `-g`：`cmake -G Xcode` 生成 Xcode 工程到 `build/`（会先跑 i18n 提取）
   - `-b`：`xcodebuild ...` 编译，再把 `i18n/lang/` 与媒体中心 `dist` 装入 App Bundle
   - `-p`：打 dmg 包到 `../Release/<version>`
+- 多平台发布（本机打包 → GitHub/Gitee Release）：见 [docs/release.md](docs/release.md)；准备步骤用 skill `release-prepare`，上传用 `python3 tools/release.py`。
 - 单元测试：CMake 配 `-DUT=ON`（定义 `UNIT_TEST`，链入 googletest）。测试在应用启动时由 `runAllUnittest()`（`TinyJS/utils/unittest.cpp`）执行 `RUN_ALL_TESTS()`。
   - 用 gtest 的 `TEST(...)` + `ASSERT_*` 宏（例：`MediaTags/LrcParser.cpp` 底部、`TinyJS/unittest/`）。
   - 纯 `-fsyntax-only` 语法检查（不链接）可加速验证，例如：

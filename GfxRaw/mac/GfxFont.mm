@@ -128,12 +128,9 @@ bool GfxFont::create(cstr_t faceName, int fontHeight, bool italic, int weight, b
     return true;
 }
 
-// 返回绘制字符串宽度
+// 在基线位置绘制，返回字符串宽度
 int GfxFont::draw(CGContextRef ctx, CFStringRef string, int x, int y) {
     assert(string);
-
-    // 在 Mac 下字体是按照 descent 的位置来对齐的.
-    y -= CTFontGetDescent(m_font);
 
     CFAttributedStringRef attrString = CFAttributedStringCreate(kCFAllocatorDefault, string, m_attributes);
     assert(attrString);
@@ -151,6 +148,20 @@ int GfxFont::draw(CGContextRef ctx, CFStringRef string, int x, int y) {
     CFRelease(attrString);
 
     return ptEnd.x - x;
+}
+
+int GfxFont::getAscent() const {
+    if (m_font == nullptr) {
+        return 0;
+    }
+    return (int)ceil(CTFontGetAscent(m_font));
+}
+
+int GfxFont::getDescent() const {
+    if (m_font == nullptr) {
+        return 0;
+    }
+    return (int)ceil(CTFontGetDescent(m_font));
 }
 
 void GfxFont::destroy() {

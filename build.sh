@@ -587,11 +587,11 @@ RELEASE_DIR="${CUR_DIR}/../Release/${VERSION}"
 
 echo "Host: ${HOST_OS}, configuration: ${BUILD_TYPE}, version: ${VERSION}"
 
-if [[ $ACTION_GENERATE ]] || [[ $ACTION_BUILD ]] || [[ $ACTION_PACK ]] || [[ $ACTION_LANG ]] ; then
+if [[ $ACTION_GENERATE ]] || [[ $ACTION_PACK ]] || [[ $ACTION_LANG ]] ; then
     generate_i18n
 fi
 
-if [[ $ACTION_BUILD ]] || [[ $ACTION_PACK ]] ; then
+if [[ $ACTION_PACK ]] ; then
     ensure_app_icons
 fi
 
