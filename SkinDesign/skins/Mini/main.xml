@@ -33,7 +33,7 @@
 
 		<Container Name="Body" Rect="0,0,w,h">
 
-			<!-- sys：仅在鼠标移入或窗口 focus 时渐显；caption-btn 图走 Glass -->
+			<!-- sys：仅在鼠标移入或窗口 focus 时渐显；小图 caption-btn-sm / mac 走 Glass -->
 			<Container ID="CID_SYS" Name="SysChrome" Rect="2,2,18,h-4" Visible="false">
 				<Toolbar os="mac" ID="CID_TB_CLOSE" Rect="1,h/2-17,16,16"
 					Image="caption-btn-mac.png" enablehover="TRUE" units_x="16"
@@ -48,13 +48,13 @@
 					<button ID="ID_MINIMIZE" Left="1" />
 				</Toolbar>
 				<Toolbar os="win,linux" ID="CID_TB_CLOSE" Rect="1,h/2-17,16,16"
-					Image="caption-btn.png" enablehover="TRUE" units_x="16"
+					Image="caption-btn-sm.png" enablehover="TRUE" units_x="16"
 					blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
 					MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
 					<button ID="ID_CLOSE" Left="4" />
 				</Toolbar>
 				<Toolbar os="win,linux" ID="CID_TB_MINIMIZE" Rect="1,h/2+1,16,16"
-					Image="caption-btn.png" enablehover="TRUE" units_x="16"
+					Image="caption-btn-sm.png" enablehover="TRUE" units_x="16"
 					blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
 					MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
 					<button ID="ID_MINIMIZE" Left="1" />

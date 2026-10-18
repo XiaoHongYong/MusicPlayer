@@ -4,8 +4,8 @@
     <Container Visible="true" Name="Rename playlist" Rect="0,0,w,h">
         <NormalListCtrl ID="CID_PLAYLIST_CTRL" Rect="10,20,w-20,h-20-45" EnableHeader="true" SubmitCmd="true"/>
 
-        <NormalTextBt ID="ID_OK" Text="&amp;Open" Rect="w/2-120,h-10-20,100,"/>
-        <NormalTextBt ID="CID_MORE" Text="&amp;More &gt;&gt;" Rect="w/2+20,h-10-20,100,"/>
+        <NormalTextBt ID="ID_OK" Text="Open" Rect="w/2-120,h-10-20,100,"/>
+        <NormalTextBt ID="CID_MORE" Text="More &gt;&gt;" Rect="w/2+20,h-10-20,100,"/>
         <NormalTextBt ID="ID_CANCEL" Text="Cancel" Rect="w-110,h-10-20,100,"/>
     </Container>
 

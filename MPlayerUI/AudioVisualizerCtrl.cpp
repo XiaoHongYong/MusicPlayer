@@ -289,9 +289,9 @@ void CAudioVisualizerCtrl::drawSpectrumBars(CRawGraph *canvas, const CRect &rc, 
 
         const int peakY = rc.bottom - (int)std::lround(m_peakLevels[i] * (float)height) - peakH;
         if (m_peakLevels[i] > 0.02f && peakY < rc.bottom - 1) {
-            canvas->fillRect(
-                CRect(x0, std::max(rc.top, peakY), x0 + w, std::max(rc.top, peakY) + peakH),
-                m_peakColor, BPM_BLEND);
+            // Win32 RECT 成员是 LONG，peakY 是 int；显式转成同一类型再 max。
+            const int yPeak = std::max((int)rc.top, peakY);
+            canvas->fillRect(CRect(x0, yPeak, x0 + w, yPeak + peakH), m_peakColor, BPM_BLEND);
         }
     }
 }

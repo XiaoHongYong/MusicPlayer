@@ -3,10 +3,7 @@
 #define _WIN32_WINNT	0x0500
 #include <windows.h>
 
-#include <oleauto.h>
 #include <crtdbg.h>
-#include <atldef.h>
-#include <atlconv.h>
 #include <stdio.h>
 #else
 #include <sys/types.h>
@@ -78,8 +75,6 @@ static HWND _hDebugWnd;
 
 void logTrace(void *lpData, int nSize) {
     COPYDATASTRUCT data;
-    USES_CONVERSION;
-    LPCSTR	szMsgAssii = T2CA((TCHAR*)lpData);
 
     data.dwData = SENDDEBUGMESSAGE;
     data.lpData = (void *)lpData;

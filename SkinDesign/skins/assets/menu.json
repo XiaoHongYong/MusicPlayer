@@ -1,18 +1,18 @@
 {
   "MediaLibMenu": [
     [
-      "&Queue Up",
+      "Queue Up",
       "ID_QUEUE_UP"
     ],
     [
-      "&Queue Up All",
+      "Queue Up All",
       "ID_QUEUE_UP_ALL"
     ],
     [
       "separator"
     ],
     [
-      "&Add Folder to Media Library",
+      "Add Folder to Media Library",
       "ID_ADD_DIR_TO_ML"
     ],
     [
@@ -26,62 +26,62 @@
       "separator"
     ],
     [
-      "&Now Playing",
+      "Now Playing",
       "ID_NOWPLAYING"
     ]
   ],
   "MainContextMenu": [
     [
-      "&File",
+      "File",
       [
         [
-          "&Open File...",
+          "Open File...",
           "ID_PL_OPEN_FILE"
         ],
         [
-          "Open &Folder...",
+          "Open Folder...",
           "ID_PL_OPEN_DIR"
         ],
         [
           "separator"
         ],
         [
-          "&Add File...",
+          "Add File...",
           "ID_PL_ADD_FILE"
         ],
         [
-          "Add F&older...",
+          "Add Folder...",
           "ID_PL_ADD_DIR"
         ],
         [
           "separator"
         ],
         [
-          "Open &Playlist...",
+          "Open Playlist...",
           "ID_OPEN_PL"
         ],
         [
-          "&Save Playlist...",
+          "Save Playlist...",
           "ID_PL_SAVE"
         ],
         [
           "separator"
         ],
         [
-          "Media &Information",
+          "Media Information",
           "ID_PL_PROPERTY"
         ]
       ]
     ],
     [
-      "&Search Lyrics...",
+      "Search Lyrics...",
       "ID_OPEN_LRC"
     ],
     [
-      "&Lyrics",
+      "Lyrics",
       [
         [
-          "Ra&te These Lyrics",
+          "Rate These Lyrics",
           [
             [
               "5 (High)",
@@ -109,43 +109,43 @@
           "separator"
         ],
         [
-          "Save Lyrics in &Song File...",
+          "Save Lyrics in Song File...",
           "ID_SAVE_LYR_IN_SONG_FILE"
         ],
         [
           "separator"
         ],
         [
-          "&Save Lyrics",
+          "Save Lyrics",
           "ID_SAVE_LRC"
         ],
         [
-          "Save Lyrics &As...",
+          "Save Lyrics As...",
           "ID_SAVE_LRC_AS"
         ],
         [
           "separator"
         ],
         [
-          "&Upload Lyrics...",
+          "Upload Lyrics...",
           "ID_UPLOAD_LYR"
         ],
         [
-          "Sign in via &Web Browser...",
+          "Sign in via Web Browser...",
           "ID_LOGIN_VIA_IE"
         ],
         [
-          "&Sign Up Free...",
+          "Sign Up Free...",
           "ID_APPLY_ACCOUNT"
         ],
         [
           "separator"
         ],
         [
-          "&Character Encoding",
+          "Character Encoding",
           [
             [
-              "&Default",
+              "Default",
               "ID_ENC_DEFAULT"
             ],
             [
@@ -201,14 +201,14 @@
               "separator"
             ],
             [
-              "&Japanese",
+              "Japanese",
               "ID_ENC_JAPANESE"
             ],
             [
               "separator"
             ],
             [
-              "&Korean",
+              "Korean",
               "ID_ENC_KOREAN"
             ],
             [
@@ -222,11 +222,11 @@
               "separator"
             ],
             [
-              "&Simplified Chinese (GB)",
+              "Simplified Chinese (GB)",
               "ID_ENC_CHS"
             ],
             [
-              "&Traditional Chinese (Big5)",
+              "Traditional Chinese (Big5)",
               "ID_ENC_CHT"
             ],
             [
@@ -247,11 +247,11 @@
               "separator"
             ],
             [
-              "&Unicode",
+              "Unicode",
               "ID_ENC_UNICODE"
             ],
             [
-              "UTF-&8",
+              "UTF-8",
               "ID_ENC_UTF8"
             ],
             [
@@ -267,7 +267,7 @@
           "separator"
         ],
         [
-          "&Edit with External Lyrics Editor...",
+          "Edit with External Lyrics Editor...",
           "ID_EXTERNAL_LYR_EDIT"
         ]
       ]
@@ -276,7 +276,7 @@
       "separator"
     ],
     [
-      "S&kins",
+      "Skins",
       [
         [
           "INSERT_SKIN_POS",
@@ -285,87 +285,87 @@
       ]
     ],
     [
-      "Display &Options",
+      "Display Options",
       [
         [
-          "Dis&play Options...",
+          "Display Options...",
           "ID_DISPLAY_OPT"
         ],
         [
-          "Ad&just Hue...",
+          "Adjust Hue...",
           "ID_ADJUST_HUE"
         ],
         [
           "separator"
         ],
         [
-          "Mouse &Click Through",
+          "Mouse Click Through",
           "ID_CLICK_THROUGH"
         ],
         [
           "separator"
         ],
         [
-          "&Vertical Scrolling Style",
+          "Vertical Scrolling Style",
           "ID_LDS_MULTI_LINE"
         ],
         [
-          "&Double Line Style",
+          "Double Line Style",
           "ID_LDS_TWO_LINE"
         ],
         [
-          "Single &Line Style",
+          "Single Line Style",
           "ID_LDS_SINGLE_LINE"
         ],
         [
-          "S&tatic Text Style",
+          "Static Text Style",
           "ID_LDS_STATIC_TXT"
         ],
         [
-          "Movie S&ubtitle Style",
+          "Movie Subtitle Style",
           "ID_LDS_VOBSUB"
         ],
         [
           "separator"
         ],
         [
-          "&Karaoke",
+          "Karaoke",
           "ID_LDO_KARAOKE"
         ],
         [
           "separator"
         ],
         [
-          "&Automatic",
+          "Automatic",
           "ID_LDO_AUTO"
         ],
         [
-          "Norma&l",
+          "Normal",
           "ID_LDO_NORMAL"
         ],
         [
-          "&Fade in Lyrics",
+          "Fade in Lyrics",
           "ID_LDO_FADE_IN"
         ],
         [
-          "Fade out to Back&ground",
+          "Fade out to Background",
           "ID_LDO_FADEOUT_BG"
         ]
       ]
     ],
     [
-      "&Preferences...",
+      "Preferences...",
       "ID_PREFERENCES"
     ],
     [
       "separator"
     ],
     [
-      "&Floating Lyrics...",
+      "Floating Lyrics...",
       "ID_FLOATING_LYRICS"
     ],
     [
-      "Lyrics &Editor...",
+      "Lyrics Editor...",
       "ID_LYR_EDITOR"
     ],
     [
@@ -376,21 +376,21 @@
       "separator"
     ],
     [
-      "&Help and Support",
+      "Help and Support",
       [
         [
-          "A&bout $Product$...",
+          "About $Product$...",
           "ID_ABOUT"
         ],
         [
-          "$Product$ &Help",
+          "$Product$ Help",
           "ID_HELP"
         ],
         [
           "separator"
         ],
         [
-          "$Product$ &Website",
+          "$Product$ Website",
           "ID_WEBHOME"
         ]
       ]
@@ -399,59 +399,59 @@
       "separator"
     ],
     [
-      "Always on &Top",
+      "Always on Top",
       "ID_TOPMOST"
     ],
     [
       "separator"
     ],
     [
-      "E&xit",
+      "Exit",
       "ID_QUIT"
     ]
   ],
   "OpenLyricsDlgMenu": [
     [
-      "&Browse File...",
+      "Browse File...",
       "ID_BROWSE"
     ],
     [
-      "&No Suitable Lyrics for the Song File",
+      "No Suitable Lyrics for the Song File",
       "ID_NO_SUITTABLE_LYRICS"
     ],
     [
-      "&Edit with External Lyrics Editor...",
+      "Edit with External Lyrics Editor...",
       "ID_EXTERNAL_LYR_EDIT"
     ],
     [
       "separator"
     ],
     [
-      "&Delete File",
+      "Delete File",
       "ID_DEL_FILE"
     ],
     [
-      "&Rename File",
+      "Rename File",
       "ID_RENAME"
     ],
     [
       "separator"
     ],
     [
-      "Don't &Pop up This Window Automatically",
+      "Don't Pop up This Window Automatically",
       "ID_NO_PROMPT"
     ]
   ],
   "LyricsMenu": [
     [
-      "&Search Lyrics...",
+      "Search Lyrics...",
       "ID_OPEN_LRC"
     ],
     [
-      "&Lyrics",
+      "Lyrics",
       [
         [
-          "Ra&te These Lyrics",
+          "Rate These Lyrics",
           [
             [
               "5 (High)",
@@ -479,28 +479,28 @@
           "separator"
         ],
         [
-          "Save Lyrics in &Song File...",
+          "Save Lyrics in Song File...",
           "ID_SAVE_LYR_IN_SONG_FILE"
         ],
         [
           "separator"
         ],
         [
-          "&Save Lyrics",
+          "Save Lyrics",
           "ID_SAVE_LRC"
         ],
         [
-          "Save Lyrics &As...",
+          "Save Lyrics As...",
           "ID_SAVE_LRC_AS"
         ],
         [
           "separator"
         ],
         [
-          "&Character Encoding",
+          "Character Encoding",
           [
             [
-              "&Default",
+              "Default",
               "ID_ENC_DEFAULT"
             ],
             [
@@ -556,14 +556,14 @@
               "separator"
             ],
             [
-              "&Japanese",
+              "Japanese",
               "ID_ENC_JAPANESE"
             ],
             [
               "separator"
             ],
             [
-              "&Korean",
+              "Korean",
               "ID_ENC_KOREAN"
             ],
             [
@@ -577,11 +577,11 @@
               "separator"
             ],
             [
-              "&Simplified Chinese (GB)",
+              "Simplified Chinese (GB)",
               "ID_ENC_CHS"
             ],
             [
-              "&Traditional Chinese (Big5)",
+              "Traditional Chinese (Big5)",
               "ID_ENC_CHT"
             ],
             [
@@ -602,11 +602,11 @@
               "separator"
             ],
             [
-              "&Unicode",
+              "Unicode",
               "ID_ENC_UNICODE"
             ],
             [
-              "UTF-&8",
+              "UTF-8",
               "ID_ENC_UTF8"
             ],
             [
@@ -622,11 +622,11 @@
           "separator"
         ],
         [
-          "Lyrics &Editor...",
+          "Lyrics Editor...",
           "ID_LYR_EDITOR"
         ],
         [
-          "&Edit with External Lyrics Editor...",
+          "Edit with External Lyrics Editor...",
           "ID_EXTERNAL_LYR_EDIT"
         ]
       ]
@@ -635,106 +635,106 @@
       "separator"
     ],
     [
-      "Dis&play Options...",
+      "Display Options...",
       "ID_DISPLAY_OPT"
     ],
     [
       "separator"
     ],
     [
-      "Mouse &Click Through",
+      "Mouse Click Through",
       "ID_CLICK_THROUGH"
     ],
     [
       "separator"
     ],
     [
-      "&Automatic",
+      "Automatic",
       "ID_LDO_AUTO"
     ],
     [
-      "Norma&l",
+      "Normal",
       "ID_LDO_NORMAL"
     ],
     [
-      "&Fade in Lyrics",
+      "Fade in Lyrics",
       "ID_LDO_FADE_IN"
     ],
     [
-      "Fade out to Back&ground",
+      "Fade out to Background",
       "ID_LDO_FADEOUT_BG"
     ],
     [
       "separator"
     ],
     [
-      "&Vertical Scrolling Style",
+      "Vertical Scrolling Style",
       "ID_LDS_MULTI_LINE"
     ],
     [
-      "&Double Line Style",
+      "Double Line Style",
       "ID_LDS_TWO_LINE"
     ],
     [
-      "Single &Line Style",
+      "Single Line Style",
       "ID_LDS_SINGLE_LINE"
     ],
     [
-      "Movie S&ubtitle Style",
+      "Movie Subtitle Style",
       "ID_LDS_VOBSUB"
     ],
     [
       "separator"
     ],
     [
-      "Always on &Top",
+      "Always on Top",
       "ID_TOPMOST"
     ],
     [
       "separator"
     ],
     [
-      "&Close",
+      "Close",
       "ID_CLOSE"
     ]
   ],
   "PlaylistMenu": [
     [
-      "Show in &Finder",
+      "Show in Finder",
       "ID_SHOW_IN_FINDER"
     ],
     [
-      "&Open File...",
+      "Open File...",
       "ID_PL_OPEN_FILE"
     ],
     [
-      "Open &Folder...",
+      "Open Folder...",
       "ID_PL_OPEN_DIR"
     ],
     [
-      "Open &Playlist...",
+      "Open Playlist...",
       "ID_OPEN_PL"
     ],
     [
       "separator"
     ],
     [
-      "&Add File...",
+      "Add File...",
       "ID_PL_ADD_FILE"
     ],
     [
-      "Add F&older...",
+      "Add Folder...",
       "ID_PL_ADD_DIR"
     ],
     [
       "separator"
     ],
     [
-      "&Save Playlist...",
+      "Save Playlist...",
       "ID_PL_SAVE"
     ],
     [
-      "Add &to Playlist",
+      "Add to Playlist",
       [
         [
           "Create New Playlist",
@@ -750,18 +750,18 @@
       "separator"
     ],
     [
-      "Move &Up",
+      "Move Up",
       "ID_PL_UP"
     ],
     [
-      "&Move Down",
+      "Move Down",
       "ID_PL_DOWN"
     ],
     [
       "separator"
     ],
     [
-      "&Remove From Playlist",
+      "Remove From Playlist",
       "ID_PL_DEL"
     ],
     [
@@ -772,14 +772,14 @@
       "separator"
     ],
     [
-      "&Clear Now Playing",
+      "Clear Now Playing",
       "ID_CLEAR"
     ],
     [
       "separator"
     ],
     [
-      "Media &Information",
+      "Media Information",
       "ID_PL_PROPERTY"
     ]
   ],
@@ -795,102 +795,102 @@
   ],
   "TrayIconMenu": [
     [
-      "&Play/Pause",
+      "Play/Pause",
       "ID_PLAYPAUSE"
     ],
     [
-      "Pr&evious",
+      "Previous track",
       "ID_PREVIOUS"
     ],
     [
-      "&Next",
+      "Next track",
       "ID_NEXT"
     ],
     [
       "separator"
     ],
     [
-      "&Search Lyrics...",
+      "Search Lyrics...",
       "ID_OPEN_LRC"
     ],
     [
-      "Show &Main Window",
+      "Show Main Window",
       "ID_SHOW_MAIN_WND"
     ]
   ],
   "MainWndMenu": [
     [
-      "&File",
+      "File",
       [
         [
-          "&Open File...",
+          "Open File...",
           "ID_PL_OPEN_FILE"
         ],
         [
-          "Open &Folder...",
+          "Open Folder...",
           "ID_PL_OPEN_DIR"
         ],
         [
           "separator"
         ],
         [
-          "&Add File...",
+          "Add File...",
           "ID_PL_ADD_FILE"
         ],
         [
-          "Add F&older...",
+          "Add Folder...",
           "ID_PL_ADD_DIR"
         ],
         [
           "separator"
         ],
         [
-          "Open &Playlist...",
+          "Open Playlist...",
           "ID_OPEN_PL"
         ],
         [
-          "&Save Playlist...",
+          "Save Playlist...",
           "ID_PL_SAVE"
         ],
         [
           "separator"
         ],
         [
-          "Media &Information",
+          "Media Information",
           "ID_PL_PROPERTY"
         ]
       ]
     ],
     [
-      "Play&back",
+      "Playback",
       [
         [
-          "&Play/Pause",
+          "Play/Pause",
           "ID_PLAYPAUSE"
         ],
         [
           "separator"
         ],
         [
-          "Pr&evious",
+          "Previous track",
           "ID_PREVIOUS"
         ],
         [
-          "&Next",
+          "Next track",
           "ID_NEXT"
         ],
         [
           "separator"
         ],
         [
-          "&Shuffle",
+          "Shuffle",
           "ID_SHUFFLE"
         ],
         [
           "separator"
         ],
         [
-          "&Repeat All",
+          "Repeat All",
           "ID_LOOP_ALL"
         ],
         [
@@ -904,17 +904,17 @@
       ]
     ],
     [
-      "&Lyrics",
+      "Lyrics",
       [
         [
-          "&Search Lyrics...",
+          "Search Lyrics...",
           "ID_OPEN_LRC"
         ],
         [
           "separator"
         ],
         [
-          "Ra&te These Lyrics",
+          "Rate These Lyrics",
           [
             [
               "5 (High)",
@@ -939,18 +939,18 @@
           ]
         ],
         [
-          "&Upload Lyrics",
+          "Upload Lyrics",
           [
             [
-              "&Upload Lyrics...",
+              "Upload Lyrics...",
               "ID_UPLOAD_LYR"
             ],
             [
-              "Sign in via &Web Browser...",
+              "Sign in via Web Browser...",
               "ID_LOGIN_VIA_IE"
             ],
             [
-              "&Sign Up Free...",
+              "Sign Up Free...",
               "ID_APPLY_ACCOUNT"
             ]
           ]
@@ -959,28 +959,28 @@
           "separator"
         ],
         [
-          "Save Lyrics in &Song File...",
+          "Save Lyrics in Song File...",
           "ID_SAVE_LYR_IN_SONG_FILE"
         ],
         [
           "separator"
         ],
         [
-          "&Save Lyrics",
+          "Save Lyrics",
           "ID_SAVE_LRC"
         ],
         [
-          "Save Lyrics &As...",
+          "Save Lyrics As...",
           "ID_SAVE_LRC_AS"
         ],
         [
           "separator"
         ],
         [
-          "&Character Encoding",
+          "Character Encoding",
           [
             [
-              "&Default",
+              "Default",
               "ID_ENC_DEFAULT"
             ],
             [
@@ -1036,14 +1036,14 @@
               "separator"
             ],
             [
-              "&Japanese",
+              "Japanese",
               "ID_ENC_JAPANESE"
             ],
             [
               "separator"
             ],
             [
-              "&Korean",
+              "Korean",
               "ID_ENC_KOREAN"
             ],
             [
@@ -1057,11 +1057,11 @@
               "separator"
             ],
             [
-              "&Simplified Chinese (GB)",
+              "Simplified Chinese (GB)",
               "ID_ENC_CHS"
             ],
             [
-              "&Traditional Chinese (Big5)",
+              "Traditional Chinese (Big5)",
               "ID_ENC_CHT"
             ],
             [
@@ -1082,11 +1082,11 @@
               "separator"
             ],
             [
-              "&Unicode",
+              "Unicode",
               "ID_ENC_UNICODE"
             ],
             [
-              "UTF-&8",
+              "UTF-8",
               "ID_ENC_UTF8"
             ],
             [
@@ -1102,28 +1102,28 @@
           "separator"
         ],
         [
-          "&Edit with External Lyrics Editor...",
+          "Edit with External Lyrics Editor...",
           "ID_EXTERNAL_LYR_EDIT"
         ]
       ]
     ],
     [
-      "&View",
+      "View",
       [
         [
-          "Lyrics &Editor...",
+          "Lyrics Editor...",
           "ID_LYR_EDITOR"
         ],
         [
-          "&Floating Lyrics...",
+          "Floating Lyrics...",
           "ID_FLOATING_LYRICS"
         ],
         [
-          "&Media Center...",
+          "Media Center...",
           "ID_OPEN_MEDIA_CENTER"
         ],
         [
-          "&Preferences...",
+          "Preferences...",
           "ID_PREFERENCES"
         ],
         [
@@ -1134,35 +1134,35 @@
           "separator"
         ],
         [
-          "Ad&just Hue...",
+          "Adjust Hue...",
           "ID_ADJUST_HUE"
         ],
         [
           "separator"
         ],
         [
-          "&Vertical Scrolling Style",
+          "Vertical Scrolling Style",
           "ID_LDS_MULTI_LINE"
         ],
         [
-          "S&tatic Text Style",
+          "Static Text Style",
           "ID_LDS_STATIC_TXT"
         ],
         [
           "separator"
         ],
         [
-          "Mouse &Click Through",
+          "Mouse Click Through",
           "ID_CLICK_THROUGH"
         ],
         [
-          "Always on &Top",
+          "Always on Top",
           "ID_TOPMOST"
         ]
       ]
     ],
     [
-      "S&kins",
+      "Skins",
       [
         [
           "INSERT_SKIN_POS",
@@ -1174,21 +1174,21 @@
       ]
     ],
     [
-      "&Help",
+      "Help",
       [
         [
-          "A&bout $Product$...",
+          "About $Product$...",
           "ID_ABOUT"
         ],
         [
-          "$Product$ &Help",
+          "$Product$ Help",
           "ID_HELP"
         ],
         [
           "separator"
         ],
         [
-          "$Product$ &Website",
+          "$Product$ Website",
           "ID_WEBHOME"
         ]
       ]
@@ -1196,21 +1196,21 @@
   ],
   "LyrEditorMenu": [
     [
-      "&File",
+      "File",
       [
         [
-          "&Upload Lyrics",
+          "Upload Lyrics",
           [
             [
-              "&Upload Lyrics...",
+              "Upload Lyrics...",
               "ID_UPLOAD_LYR"
             ],
             [
-              "Sign in via &Web Browser...",
+              "Sign in via Web Browser...",
               "ID_LOGIN_VIA_IE"
             ],
             [
-              "&Sign Up Free...",
+              "Sign Up Free...",
               "ID_APPLY_ACCOUNT"
             ]
           ]
@@ -1219,39 +1219,39 @@
           "separator"
         ],
         [
-          "&New Lyrics",
+          "New Lyrics",
           "ID_NEW_LRC"
         ],
         [
-          "Open &Lyrics...",
+          "Open Lyrics...",
           "ID_OPEN_LRC"
         ],
         [
           "separator"
         ],
         [
-          "Save Lyrics in &Song File...",
+          "Save Lyrics in Song File...",
           "ID_SAVE_LYR_IN_SONG_FILE"
         ],
         [
           "separator"
         ],
         [
-          "&Save Lyrics",
+          "Save Lyrics",
           "ID_SAVE_LRC"
         ],
         [
-          "Save Lyrics &As...",
+          "Save Lyrics As...",
           "ID_SAVE_LRC_AS"
         ],
         [
           "separator"
         ],
         [
-          "&Character Encoding",
+          "Character Encoding",
           [
             [
-              "&Default",
+              "Default",
               "ID_ENC_DEFAULT"
             ],
             [
@@ -1307,14 +1307,14 @@
               "separator"
             ],
             [
-              "&Japanese",
+              "Japanese",
               "ID_ENC_JAPANESE"
             ],
             [
               "separator"
             ],
             [
-              "&Korean",
+              "Korean",
               "ID_ENC_KOREAN"
             ],
             [
@@ -1328,11 +1328,11 @@
               "separator"
             ],
             [
-              "&Simplified Chinese (GB)",
+              "Simplified Chinese (GB)",
               "ID_ENC_CHS"
             ],
             [
-              "&Traditional Chinese (Big5)",
+              "Traditional Chinese (Big5)",
               "ID_ENC_CHT"
             ],
             [
@@ -1353,11 +1353,11 @@
               "separator"
             ],
             [
-              "&Unicode",
+              "Unicode",
               "ID_ENC_UNICODE"
             ],
             [
-              "UTF-&8",
+              "UTF-8",
               "ID_ENC_UTF8"
             ],
             [
@@ -1373,42 +1373,42 @@
           "separator"
         ],
         [
-          "&Close",
+          "Close",
           "ID_CLOSE"
         ]
       ]
     ],
     [
-      "&Play",
+      "Play",
       [
         [
-          "&Play/Pause",
+          "Play/Pause",
           "ID_PLAYPAUSE"
         ],
         [
-          "&Stop",
+          "Stop",
           "ID_STOP"
         ],
         [
           "separator"
         ],
         [
-          "Pr&evious",
+          "Previous track",
           "ID_PREVIOUS"
         ],
         [
-          "&Next",
+          "Next track",
           "ID_NEXT"
         ],
         [
           "separator"
         ],
         [
-          "&Backward 2 Seconds",
+          "Backward 2 Seconds",
           "ID_BACKWARD"
         ],
         [
-          "&Forward 2 Seconds",
+          "Forward 2 Seconds",
           "ID_FORWARD"
         ],
         [
@@ -1418,50 +1418,50 @@
       ]
     ],
     [
-      "&Edit",
+      "Edit",
       [
         [
-          "&Undo",
+          "Undo",
           "ID_EDIT_UNDO"
         ],
         [
-          "&Redo",
+          "Redo",
           "ID_EDIT_REDO"
         ],
         [
           "separator"
         ],
         [
-          "Cu&t",
+          "Cut",
           "ID_EDIT_CUT"
         ],
         [
-          "&Copy",
+          "Copy",
           "ID_EDIT_COPY"
         ],
         [
-          "&Paste",
+          "Paste",
           "ID_EDIT_PASTE"
         ],
         [
-          "&Delete",
+          "Delete",
           "ID_EDIT_DELETE"
         ],
         [
           "separator"
         ],
         [
-          "&Find...",
+          "Find...",
           "ID_EDIT_FIND"
         ],
         [
-          "&Replace...",
+          "Replace...",
           "ID_EDIT_REPLACE"
         ]
       ]
     ],
     [
-      "&Lyrics",
+      "Lyrics",
       [
         [
           "Synchronize the current line and move to next line",
@@ -1533,53 +1533,53 @@
       ]
     ],
     [
-      "&Options",
+      "Options",
       [
         [
-          "&Lyrics Color...",
+          "Lyrics Color...",
           "ID_EDITOR_LYR_COLOR"
         ],
         [
-          "&Highlight Lyrics Color...",
+          "Highlight Lyrics Color...",
           "ID_EDITOR_HIGH_COLOR"
         ],
         [
-          "&Tag Color...",
+          "Tag Color...",
           "ID_TAG_COLOR"
         ],
         [
-          "&Background Color of Edited Line...",
+          "Background Color of Edited Line...",
           "ID_EDIT_LINE_COLOR"
         ],
         [
-          "Back&ground Color...",
+          "Background Color...",
           "ID_EDITOR_BG_COLOR"
         ],
         [
           "separator"
         ],
         [
-          "Edit Lyrics &Tag",
+          "Edit Lyrics Tag",
           "ID_EDIT_LYR_TAG"
         ]
       ]
     ],
     [
-      "&Help",
+      "Help",
       [
         [
-          "A&bout $Product$...",
+          "About $Product$...",
           "ID_ABOUT"
         ],
         [
-          "$Product$ &Help",
+          "$Product$ Help",
           "ID_HELP"
         ],
         [
           "separator"
         ],
         [
-          "$Product$ &Website",
+          "$Product$ Website",
           "ID_WEBHOME"
         ]
       ]
@@ -1609,40 +1609,40 @@
   ],
   "PlaylistSearchCtx": [
     [
-      "Show in &Finder",
+      "Show in Finder",
       "ID_SHOW_IN_FINDER"
     ],
     [
-      "Play Selected &File",
+      "Play Selected File",
       "ID_PLAY_SELECTED_FILE"
     ],
     [
       "separator"
     ],
     [
-      "&Replace Now Playing",
+      "Replace Now Playing",
       "ID_REPLACE_NOW_PLAYING_WITH_RESULTS"
     ],
     [
-      "R&eplace Now Playing with Selected",
+      "Replace Now Playing with Selected",
       "ID_REPLACE_NOW_PLAYING_WITH_SELECTED"
     ],
     [
       "separator"
     ],
     [
-      "&Add All to Now Playing",
+      "Add All to Now Playing",
       "ID_ADD_RESULTS_TO_NOW_PLAYING"
     ],
     [
-      "Add Selected &to Now Playing",
+      "Add Selected to Now Playing",
       "ID_ADD_SELECTED_TO_NOW_PLAYING"
     ],
     [
       "separator"
     ],
     [
-      "&Add All to Playlist",
+      "Add All to Playlist",
       [
         [
           "Create New Playlist",
@@ -1655,7 +1655,7 @@
       ]
     ],
     [
-      "Add Selected &to Playlist",
+      "Add Selected to Playlist",
       [
         [
           "Create New Playlist",
@@ -1671,7 +1671,7 @@
       "separator"
     ],
     [
-      "&Remove From Playlist",
+      "Remove From Playlist",
       "ID_PL_DEL"
     ],
     [

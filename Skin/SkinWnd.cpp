@@ -369,7 +369,14 @@ void CSkinWnd::closeSkin() {
     m_nHeight = 0;
     m_bRememberSizePos = true;
 
-    m_fontProperty.setProperty("Font", "Tohama,14,normal,0,0,");
+#if defined(_WIN32)
+    // Others 用微软雅黑：空值时 Win 易回退宋体，标题栏菜单中文会发糊
+    m_fontProperty.setProperty("Font", "Tahoma,14,normal,0,0,Microsoft YaHei");
+#elif defined(_MAC_OS)
+    m_fontProperty.setProperty("Font", "Tahoma,14,normal,0,0,PingFang SC");
+#else
+    m_fontProperty.setProperty("Font", "Tahoma,14,normal,0,0,");
+#endif
 
     m_timeLatestMouseMsg = 0;
     m_bMouseActive = false;
@@ -980,7 +987,16 @@ void CSkinWnd::onPaint(CRawGraph *canvas, CRect *rcClip) {
         }
     }
 
-    canvas->drawToWindow(rcClip->left, rcClip->top, rcClip->width(), rcClip->height(), rcClip->left, rcClip->top);
+#ifdef _WIN32
+    // Layered 窗口由 UpdateLayeredWindow 上屏，勿再 BitBlt。
+    if (!m_bTranslucencyLayered) {
+        canvas->drawToWindow(rcClip->left, rcClip->top, rcClip->width(), rcClip->height(),
+            rcClip->left, rcClip->top);
+    }
+#else
+    canvas->drawToWindow(rcClip->left, rcClip->top, rcClip->width(), rcClip->height(),
+        rcClip->left, rcClip->top);
+#endif
 }
 
 
@@ -2138,7 +2154,13 @@ int CSkinWnd::fromXML(SXNode *pXmlNode) {
 
     m_rootConainter.m_rcObj = m_rcBoundBox;
 
-    m_fontProperty.setProperty("Font", "Tohama,14,normal,0,0,");
+#if defined(_WIN32)
+    m_fontProperty.setProperty("Font", "Tahoma,14,normal,0,0,Microsoft YaHei");
+#elif defined(_MAC_OS)
+    m_fontProperty.setProperty("Font", "Tahoma,14,normal,0,0,PingFang SC");
+#else
+    m_fontProperty.setProperty("Font", "Tahoma,14,normal,0,0,");
+#endif
 
     SXNode *pNodeExtends = nullptr;
     cstr_t szExtends = pXmlNode->getProperty(SZ_PN_EXTENDS);

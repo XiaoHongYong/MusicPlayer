@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <stdexcept>
 #include <vector>
 
 // 实数输入的 radix-2 FFT（输出交错 re/im，长度 fftSize）。

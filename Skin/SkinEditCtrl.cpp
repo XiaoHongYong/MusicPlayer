@@ -2580,13 +2580,13 @@ void CSkinEditCtrl::onContexMenu(int xPos, int yPos) {
     rapidjson::Document doc;
     doc.SetArray();
 
-    addMenuItem(doc, _TL("&Undo"), "ID_EDIT_UNDO");
-    addMenuItem(doc, _TL("&Redo"), "ID_EDIT_REDO");
+    addMenuItem(doc, _TL("Undo"), "ID_EDIT_UNDO");
+    addMenuItem(doc, _TL("Redo"), "ID_EDIT_REDO");
     addMenuItem(doc, nullptr, nullptr);
-    addMenuItem(doc, _TL("Cu&t"), "ID_EDIT_CUT");
-    addMenuItem(doc, _TL("&Copy"), "ID_EDIT_COPY");
-    addMenuItem(doc, _TL("&Paste"), "ID_EDIT_PASTE");
-    addMenuItem(doc, _TL("&Delete"), "ID_EDIT_DELETE");
+    addMenuItem(doc, _TL("Cut"), "ID_EDIT_CUT");
+    addMenuItem(doc, _TL("Copy"), "ID_EDIT_COPY");
+    addMenuItem(doc, _TL("Paste"), "ID_EDIT_PASTE");
+    addMenuItem(doc, _TL("Delete"), "ID_EDIT_DELETE");
 
     menu.loadMenu(doc.GetArray());
 

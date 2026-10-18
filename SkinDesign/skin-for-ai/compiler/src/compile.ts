@@ -7,7 +7,7 @@ import { insertTagStripSvg, resolveIconName } from "./icons.js";
 import { clearPngColumns, compositeSheet, extendPos, hashJson, kebabName, rasterSvg, renderSvgToPair, savePngPair, SS, type SavedPng } from "./raster.js";
 import { resolveSkin, validateLayerTypes, type ResolveIssue } from "./refs.js";
 import { assertComponentType, formatZodError, SkinJsonSchema, type ComponentType } from "./schema.js";
-import { frameRingSvg, maskShapeSvg, visualToSvg, type Visual } from "./svg.js";
+import { frameRingSvg, maskShapeSvg, topRightRoundRectPath, visualToSvg, type Visual } from "./svg.js";
 
 export interface CompileOptions {
     inputPath: string;
@@ -585,8 +585,19 @@ async function emitNineSlice(name: string, file: string, comp: Record<string, un
 const CAPTION_GLYPHS = ["", "minimize", "maximize", "restore", "close"];
 
 async function emitCaptionToolbar(name: string, comp: Record<string, unknown>, ctx: EmitCtx): Promise<SavedPng[]> {
-    const cell = num(comp.cellSize as number | undefined, 16);
+    // Win11：格可矩形；cellSize 作正方形回退。主窗常用 46×25、图标 10px
+    const cellFallback = num(comp.cellSize as number | undefined, 16);
+    const cellW = num(comp.cellWidth as number | undefined, cellFallback);
+    const cellH = num(comp.cellHeight as number | undefined, cellFallback);
     const buttons = (comp.buttons as string[] | undefined) ?? ["minimize", "maximize", "restore", "close"];
+    const defaultRadius = num(comp.radius as number | undefined, 0);
+    const iconInset = typeof comp.iconInset === "number" ? comp.iconInset : 0.18;
+    const iconSize = typeof comp.iconSize === "number" ? comp.iconSize : undefined;
+    // 可选：关闭钮右上角挖透明（closeCornerRadius），与 bg 圆角对齐；未设则直角
+    const closeCornerR = typeof comp.closeCornerRadius === "number" ? comp.closeCornerRadius : 0;
+    const closeClip = closeCornerR > 0
+        ? topRightRoundRectPath(cellW, cellH, closeCornerR)
+        : undefined;
     const cols = 5;
     // 4 行：normal / hover / pressed / inactive（失焦灰态，与系统标题栏一致）
     const rows = 4;
@@ -600,19 +611,26 @@ async function emitCaptionToolbar(name: string, comp: Record<string, unknown>, c
             const vis = state === "inactive"
                 ? stateOf(comp, "normal", ctx.issues, `components.${name}.states.normal`)
                 : stateOf(comp, state, ctx.issues, `components.${name}.states.${state}`);
-            vis.radius = vis.radius ?? cell / 2;
+            vis.radius = vis.radius ?? defaultRadius;
+            vis.iconInset = typeof vis.iconInset === "number" ? vis.iconInset : iconInset;
             if (state === "inactive") {
                 vis.fill = undefined;
                 vis.iconColor = "#9A9A9A";
             } else if (icon === "close" && state !== "normal") {
-                vis.fill = row === 1 ? "#E5484D" : "#B23338";
+                // Win11 关闭悬停红 / 按下更深
+                vis.fill = row === 1 ? "#C42B1C" : "#B11A10";
                 vis.iconColor = "#FFFFFF";
             }
-            const svg = visualToSvg(vis, cell, cell, { icon: icon && resolveIconName(icon) ? icon : undefined });
+            const svg = visualToSvg(vis, cellW, cellH, {
+                icon: icon && resolveIconName(icon) ? icon : undefined,
+                iconInset: vis.iconInset,
+                iconSize,
+                clipPath: icon === "close" ? closeClip : undefined,
+            });
             cells.push({ col, row, svg });
         }
     }
-    const sheet = await compositeSheet(cols, rows, cell, cell, cells);
+    const sheet = await compositeSheet(cols, rows, cellW, cellH, cells);
     const base = fileBase(comp, "captionToolbar", name);
     const win = await savePngPair(ctx.outDir, base, sheet.hi, sheet.width, sheet.height);
     if (base === "caption-btn") {
@@ -944,7 +962,7 @@ async function emitScrollbar(name: string, comp: Record<string, unknown>, ctx: E
     return [await savePngPair(ctx.outDir, fileBase(comp, "scrollbar", name), sheet.hi, sheet.width, sheet.height)];
 }
 
-/** StyleBase NormalTabButton / skin-creator button-group：
+/** StyleBase NormalTabButton button-group：
  *  每行是一整条圆角胶囊（60×24），中间 2px 竖线切开。
  *  引擎按 ButtunBorderWidth=13 + face=3 切：左端圆角帽、可拉伸面、内侧直边 | 分隔 | 对称右半。
  *  行 0–2 = 未选 normal/hover/pressed（整行同色）；行 3–5 = 选中三态。左右半不是两种状态。 */

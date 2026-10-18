@@ -62,6 +62,23 @@ void CRawGraphData::destroy() {
 }
 
 void CRawGraphData::drawToWindow(int xdest, int ydest, int width, int height, int xsrc, int ysrc, float scaleFactor) {
-	assert(0);
-    // BitBlt(pTarg->getHandle(), xdest, ydest, width, height, getHandle(), xsrc, ysrc, SRCCOPY);
+    if (!m_hdc || !m_windowHandle || width <= 0 || height <= 0) {
+        return;
+    }
+
+    HDC hdcWnd = ::GetDC((HWND)m_windowHandle);
+    if (!hdcWnd) {
+        return;
+    }
+
+    // 内存位图已按 scaleFactor 创建；入参为逻辑坐标，需映射到物理像素。
+    const int nXDest = (int)(xdest * scaleFactor);
+    const int nYDest = (int)(ydest * scaleFactor);
+    const int nWidth = (int)(width * scaleFactor);
+    const int nHeight = (int)(height * scaleFactor);
+    const int nXSrc = (int)(xsrc * scaleFactor);
+    const int nYSrc = (int)(ysrc * scaleFactor);
+
+    ::BitBlt(hdcWnd, nXDest, nYDest, nWidth, nHeight, m_hdc, nXSrc, nYSrc, SRCCOPY);
+    ::ReleaseDC((HWND)m_windowHandle, hdcWnd);
 }

@@ -76,7 +76,7 @@ class MenuAndSkinExtractTest(unittest.TestCase):
 
         data = {
             "MainWndMenu": [
-                ["&File", [["&Open File...", "ID_PL_OPEN_FILE"], ["separator"]]],
+                ["File", [["Open File...", "ID_PL_OPEN_FILE"], ["separator"]]],
                 ["INSERT_SKIN_POS"],
                 ["4", "ID_RATE_LYR_4"],
             ]
@@ -85,7 +85,7 @@ class MenuAndSkinExtractTest(unittest.TestCase):
             path = Path(tmp) / "menu.json"
             path.write_text(json.dumps(data), encoding="utf-8")
             keys = [x.key for x in extract_menu_json(path)]
-        self.assertEqual(keys, ["&File", "&Open File..."])
+        self.assertEqual(keys, ["File", "Open File..."])
 
     def test_skin_xml(self):
         import tempfile
@@ -95,7 +95,7 @@ class MenuAndSkinExtractTest(unittest.TestCase):
         <Text Text="Playlist"/>
         <NormalEdit PlaceHolder="Search music"/>
         <button ToolTip="Lyrics"/>
-        <NormalTextBt Text="&amp;Save"/>
+        <NormalTextBt Text="Save"/>
         <Text Text=""/>
         <Text Text="TRUE"/>
         '''
@@ -103,7 +103,7 @@ class MenuAndSkinExtractTest(unittest.TestCase):
             root = Path(tmp)
             (root / "main.xml").write_text(xml, encoding="utf-8")
             keys = [x.key for x in extract_skin_xml(root)]
-        self.assertEqual(keys, ["Playlist", "Search music", "Lyrics", "&Save"])
+        self.assertEqual(keys, ["Playlist", "Search music", "Lyrics", "Save"])
 
 
 if __name__ == "__main__":

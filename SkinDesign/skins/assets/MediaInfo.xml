@@ -38,12 +38,12 @@
 
     <Container.pictures ID="CID_C_MI_PICTURES" Rect="0,0,w,h" Visible="false">
       <NormalListCtrl ID="LIST_PICTURES" Rect="5,10,w-10,h-45" LineHeight="250" EnableHorzScrollBar="false"/>
-      <NormalTextBt ID="ID_PIC_ACTIONS" Text="&amp;Actions" Rect="5,h-25,80,"/>
+      <NormalTextBt ID="ID_PIC_ACTIONS" Text="Actions" Rect="5,h-25,80,"/>
     </Container.pictures>
 
   </Container>
 
-  <NormalTextBt ID="ID_OK" Text="&amp;Save" Rect="w-80-80-40,h-30,80,"/>
-  <NormalTextBt ID="ID_CANCEL" Text="&amp;Cancel" Rect="w-80-20,h-30,80,"/>
+  <NormalTextBt ID="ID_OK" Text="Save" Rect="w-80-80-40,h-30,80,"/>
+  <NormalTextBt ID="ID_CANCEL" Text="Cancel" Rect="w-80-20,h-30,80,"/>
 
 </skinwnd>

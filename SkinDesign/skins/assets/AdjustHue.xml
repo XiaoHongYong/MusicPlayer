@@ -4,7 +4,7 @@
   <Container.AdjustHue ID="CID_C_ADJUST_HUE" Name="AdjustHue" Visible="false" Rect="0,0,w,h">
     <NormalTextRight Text="Hue:" Rect="10,40,70,"/>
     <Slider ID="CID_HUE" Rect="90,43,w-90-20," TabFocus="true" />
-    <NormalTextBt ID="CID_RESET" Text="&amp;Reset" Rect="w/2-100-100/2-20,80,100,"/>
+    <NormalTextBt ID="CID_RESET" Text="Reset" Rect="w/2-100-100/2-20,80,100,"/>
     <NormalTextBt ID="ID_OK" Text="OK" Rect="w/2-100/2,80,100,"/>
     <NormalTextBt ID="ID_CANCEL" Text="Cancel" Rect="w/2+100/2+20,80,100,"/>
   </Container.AdjustHue>

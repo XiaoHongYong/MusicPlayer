@@ -1,5 +1,17 @@
 cmake_minimum_required(VERSION 3.15)
 
+# CMake 4.x 移除了对 < 3.5 策略的兼容；glog 等第三方仍有 cmake_policy(VERSION 3.3)。
+# 允许这些子工程按 3.5 策略继续 configure。
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "4.0")
+    set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+endif()
+
+# MSVC 默认静态运行时：Debug=/MTd，其它=/MT。须在 add_subdirectory / add_* 之前设置。
+# 注意：不能写成 MultiThreaded$<$<CONFIG:${CMAKE_BUILD_TYPE}>:...>，Release 会变成非法的 MultiThreadedRelease。
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 if(UNIX AND NOT APPLE)
     set(LINUX TRUE)
 endif()
@@ -24,6 +36,8 @@ elseif (LINUX)
     add_definitions(-D_LINUX)
 else(WIN32)
     add_definitions(-DUNICODE)
+    # C++17 std::byte 与 Windows SDK rpcndr.h 的 byte 冲突（UtilsTypes.h 有 using namespace std）。
+    add_definitions(-D_HAS_STD_BYTE=0)
 endif ()
 
 add_definitions(-DASIO_STANDALONE)
@@ -32,6 +46,12 @@ add_definitions(-D_WEBSOCKETPP_CPP11_TYPE_TRAITS_)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
 
 PROJECT(MusicPlayer)
+
+# 必须在 project() 之后：此前 MSVC 工具链未就绪，add_compile_options(/utf-8) 进不了 vcxproj。
+# 源码为 UTF-8，否则中文字面量会被当成 CP936，触发 C3680/C2001。
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
 
 #
 # Compile third-parties first.
@@ -64,23 +84,24 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/third-parties/mbedtls mbedtls)
 # Media Engine dependencies
 #
 
-set(BUILD_CXXLIBS OFF)
-set(BUILD_PROGRAMS OFF)
-set(BUILD_EXAMPLES OFF)
-set(BUILD_TESTING OFF)
-set(BUILD_DOCS OFF)
-set(WITH_FORTIFY_SOURCE OFF)
-set(WITH_STACK_PROTECTOR OFF)
-set(INSTALL_MANPAGES OFF)
-set(INSTALL_PKGCONFIG_MODULES OFF)
+# flac 子目录 cmake_minimum_required(3.5) 会把 CMP0077 置为 OLD，
+# 普通 set() 挡不住里面的 option()；必须用 CACHE FORCE。
+set(BUILD_CXXLIBS OFF CACHE BOOL "" FORCE)
+set(BUILD_PROGRAMS OFF CACHE BOOL "" FORCE)
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(WITH_FORTIFY_SOURCE OFF CACHE BOOL "" FORCE)
+set(WITH_STACK_PROTECTOR OFF CACHE BOOL "" FORCE)
+set(INSTALL_MANPAGES OFF CACHE BOOL "Install MAN pages" FORCE)
+set(INSTALL_PKGCONFIG_MODULES OFF CACHE BOOL "" FORCE)
+set(INSTALL_CMAKE_CONFIG_MODULE OFF CACHE BOOL "" FORCE)
 #set(ZLIB_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/zlib/Debug/zlib.lib)
 set(ZLIB_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/third-parties/zlib)
-set(ZLIB_BUILD_EXAMPLES OFF)
-#set(INSTALL_CMAKE_CONFIG_MODULE OFF)
+set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 # flac options
-set(INSTALL_CMAKE_CONFIG_MODULE OFF)
-set(WITH_OGG ON)
+set(WITH_OGG ON CACHE BOOL "" FORCE)
 add_subdirectory(${PROJECT_SOURCE_DIR}/third-parties/flac FLAC)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/third-parties/faad2 libfaad2)
@@ -203,12 +224,18 @@ if(APPLE)
         # XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "iPhone Developer"
         # XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf-with-dsym"
     )
-elseif (LINUX)
-else(LINUX)
-    # Win32
+elseif(LINUX)
+else()
+    # Win32。exe 固定落在 build/Debug、build/Release，与 install.nsi、build.sh 一致。
+    # 静态运行时：Debug → MultiThreadedDebug，其它配置 → MultiThreaded（/MT）。
     add_executable(${PROJECT_NAME} ${SRC} ${HEADER_FILES})
-    set_property(TARGET ${PROJECT_NAME} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:${CMAKE_BUILD_TYPE}>:${CMAKE_BUILD_TYPE}>")
-endif(LINUX)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/Debug"
+        RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/Release"
+        RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/RelWithDebInfo"
+        RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}/MinSizeRel"
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 # 语言包由 tools/i18n_extract.py 生成到 i18n/lang/（gitignore，cmake GLOB 时可能还不存在）。
 # 不要把 *.ini 加进 Xcode Resources / MACOSX_PACKAGE_LOCATION：源路径含 /lang/、目标又是

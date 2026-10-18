@@ -308,7 +308,16 @@ bool CMenu::getMenuItemInfo(uint32_t index, bool byPosition, MenuItemInfo &itemO
 
     auto state = GetMenuState(getHandle(), index, MF_BYPOSITION);
 
-    itemOut.text = ucs2ToUtf8(text);
+    // Win32 菜单把加速键写在标题里：Label\tCtrl+O
+    string utf8Text = ucs2ToUtf8(text);
+    string label, shortcut;
+    if (strSplit(utf8Text.c_str(), '\t', label, shortcut)) {
+        itemOut.text = std::move(label);
+        itemOut.shortcutKey = std::move(shortcut);
+    } else {
+        itemOut.text = std::move(utf8Text);
+        itemOut.shortcutKey.clear();
+    }
     itemOut.id = info.wID;
     itemOut.isSubmenu = info.hSubMenu != nullptr;
     itemOut.isSeparator = state & MF_SEPARATOR;

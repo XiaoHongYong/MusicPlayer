@@ -121,8 +121,10 @@ void topmostWindow(HWND hwnd, bool bTopmost) {
 }
 
 bool showAsAppWindowNoRefresh(HWND hWnd) {
+    // 仅给「纯 TOOLWINDOW」临时最大化用：去掉 TOOLWINDOW 以便 SW_SHOWMAXIMIZED。
+    // 常驻「进任务栏」请用 showAsAppWindow（保留 TOOLWINDOW|APPWINDOW）。
     auto dwStyleEx = (uint32_t)GetWindowLong(hWnd, GWL_EXSTYLE);
-    if (isFlagSet(dwStyleEx, WS_EX_TOOLWINDOW) || isFlagSet(dwStyleEx, WS_EX_PALETTEWINDOW)) {
+    if (isFlagSet(dwStyleEx, WS_EX_TOOLWINDOW) && !isFlagSet(dwStyleEx, WS_EX_APPWINDOW)) {
         dwStyleEx &= ~(WS_EX_TOOLWINDOW | WS_EX_PALETTEWINDOW);
         dwStyleEx |= WS_EX_APPWINDOW;
         SetWindowLong(hWnd, GWL_EXSTYLE, dwStyleEx);
@@ -132,10 +134,12 @@ bool showAsAppWindowNoRefresh(HWND hWnd) {
 }
 
 bool showAsToolWindowNoRefresh(HWND hWnd) {
+    // 目标：纯 TOOLWINDOW（无 APPWINDOW）。用于副窗临时最大化还原。
     auto dwStyleEx = (uint32_t)GetWindowLong(hWnd, GWL_EXSTYLE);
-    if (!isFlagSet(dwStyleEx, WS_EX_TOOLWINDOW) && !isFlagSet(dwStyleEx, WS_EX_PALETTEWINDOW)) {
-        dwStyleEx |= WS_EX_TOOLWINDOW;// | WS_EX_PALETTEWINDOW;
-        dwStyleEx &= ~WS_EX_APPWINDOW;
+    if (!isFlagSet(dwStyleEx, WS_EX_TOOLWINDOW) || isFlagSet(dwStyleEx, WS_EX_APPWINDOW)
+        || isFlagSet(dwStyleEx, WS_EX_PALETTEWINDOW)) {
+        dwStyleEx |= WS_EX_TOOLWINDOW;
+        dwStyleEx &= ~(WS_EX_APPWINDOW | WS_EX_PALETTEWINDOW);
         SetWindowLong(hWnd, GWL_EXSTYLE, dwStyleEx);
         return true;
     }
@@ -156,12 +160,13 @@ HWND getParentOrSelf(HWND wnd) {
 }
 
 bool showAsToolWindow(HWND hWnd) {
+    // 目标：纯 TOOLWINDOW（无任务栏）。可从「无 TOOLWINDOW」或「TOOLWINDOW|APPWINDOW」转入。
     auto dwStyleEx = (DWORD)GetWindowLong(hWnd, GWL_EXSTYLE);
-    if (!isFlagSet(dwStyleEx, WS_EX_TOOLWINDOW) && !isFlagSet(dwStyleEx, WS_EX_PALETTEWINDOW)) {
-        // not showed in task bar, so show it
+    if (!isFlagSet(dwStyleEx, WS_EX_TOOLWINDOW) || isFlagSet(dwStyleEx, WS_EX_APPWINDOW)
+        || isFlagSet(dwStyleEx, WS_EX_PALETTEWINDOW)) {
         ShowWindow(hWnd, SW_HIDE);
-        dwStyleEx |= WS_EX_TOOLWINDOW;// | WS_EX_PALETTEWINDOW;
-        dwStyleEx &= ~WS_EX_APPWINDOW;
+        dwStyleEx |= WS_EX_TOOLWINDOW;
+        dwStyleEx &= ~(WS_EX_APPWINDOW | WS_EX_PALETTEWINDOW);
         SetWindowLong(hWnd, GWL_EXSTYLE, dwStyleEx);
         ShowWindow(hWnd, SW_SHOW);
         return TRUE;
@@ -169,14 +174,18 @@ bool showAsToolWindow(HWND hWnd) {
     return FALSE;
 }
 
-// add it's WS_EX_APPWINDOW AND remove WS_EX_TOOLWINDOW
+// 进任务栏：APPWINDOW + 保留 TOOLWINDOW。
+// Win11 对「仅 APPWINDOW」的 per-pixel layered 主窗会套 DWMWCP_ROUNDSMALL（约 2–3px），
+// 磁吸开边后仍在 TL/TR 裁出白月牙；副窗自带 TOOLWINDOW 故接缝正常。DWMWA_DONOTROUND 对本类分层窗无效。
 bool showAsAppWindow(HWND hWnd) {
     auto dwStyleEx = (DWORD)GetWindowLong(hWnd, GWL_EXSTYLE);
-    if (isFlagSet(dwStyleEx, WS_EX_TOOLWINDOW) || isFlagSet(dwStyleEx, WS_EX_PALETTEWINDOW)) {
-        // not showed in task bar, so show it
+    const bool needApp = !isFlagSet(dwStyleEx, WS_EX_APPWINDOW);
+    const bool needTool = !isFlagSet(dwStyleEx, WS_EX_TOOLWINDOW);
+    const bool dropPalette = isFlagSet(dwStyleEx, WS_EX_PALETTEWINDOW);
+    if (needApp || needTool || dropPalette) {
         ShowWindow(hWnd, SW_HIDE);
-        dwStyleEx &= ~(WS_EX_TOOLWINDOW | WS_EX_PALETTEWINDOW);
-        dwStyleEx |= WS_EX_APPWINDOW;
+        dwStyleEx &= ~WS_EX_PALETTEWINDOW;
+        dwStyleEx |= WS_EX_TOOLWINDOW | WS_EX_APPWINDOW;
         SetWindowLong(hWnd, GWL_EXSTYLE, dwStyleEx);
         ShowWindow(hWnd, SW_SHOW);
         return TRUE;
@@ -344,6 +353,10 @@ bool Window::createForSkin(cstr_t szClassName, cstr_t szCaption, int x, int y, i
     }
     if (bToolWindow) {
         dwExStyle |= WS_EX_TOOLWINDOW;
+    } else {
+        // 主窗：进任务栏，同时带 TOOLWINDOW，避免 Win11 对纯 APPWINDOW 分层窗套 ROUNDSMALL。
+        // Mac 忽略 bToolWindow，圆角只由皮肤 WindowImage / EnableEdgeMerge 控制。
+        dwExStyle |= WS_EX_TOOLWINDOW | WS_EX_APPWINDOW;
     }
     if (bVisible) {
         dwStyle |= WS_VISIBLE;
@@ -586,9 +599,11 @@ void Window::setTopmost(bool bTopmost) {
 }
 
 bool Window::isToolWindow() {
+    // 「纯工具窗」：有 TOOLWINDOW 且无 APPWINDOW（托盘-only / 不进任务栏）。
+    // 主窗常驻 TOOLWINDOW|APPWINDOW 以规避 Win11 DWM 圆角，此时不算 tool window（最小化进任务栏）。
     DWORD dwStyleEx = (DWORD)GetWindowLong(m_hWnd, GWL_EXSTYLE);
-
-    return (dwStyleEx & WS_EX_TOOLWINDOW) == WS_EX_TOOLWINDOW/* | WS_EX_PALETTEWINDOW*/;
+    return (dwStyleEx & WS_EX_TOOLWINDOW) == WS_EX_TOOLWINDOW
+        && (dwStyleEx & WS_EX_APPWINDOW) != WS_EX_APPWINDOW;
 }
 
 void Window::setToolWindow(bool bToolWindow) {

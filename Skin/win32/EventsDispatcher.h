@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <climits>
 #include <list>
 
 
@@ -18,7 +19,7 @@ public:
 protected:
     virtual LRESULT wndProc(uint32_t message, WPARAM wParam, LPARAM lParam);
 
-    void onExecTimer();
+    void processExecItems();
 
     struct ExecItem {
         std::function<void()>       func;
@@ -29,6 +30,6 @@ protected:
 
     std::mutex                      _mutex;
     ListExecItems                   _execItems;
-    int64_t                         _nextTime;
+    int64_t                         _nextTime = INT64_MAX;
 
 };

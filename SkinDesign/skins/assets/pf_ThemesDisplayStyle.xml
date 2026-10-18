@@ -23,5 +23,5 @@
     <NormalComboBox ID="CID_DS_FADEOUT" Name="Fade out" Rect="w/2,290,w/2-20,"/>
     <NormalText Rect="25,320,w/4-25," Text="Align lyrics at:"/>
     <NormalComboBox ID="CID_DS_ALIGN" Name="Align" Rect="w/4,320,w/4-20,"/>
-    <NormalCheckBox ID="CID_C_KARAOKE" Text="&amp;Karaoke" Rect="w/2,320,w/2-20,"/>
+    <NormalCheckBox ID="CID_C_KARAOKE" Text="Karaoke" Rect="w/2,320,w/2-20,"/>
 </container>

@@ -26,6 +26,10 @@ const StringView SS_ON_DESTORY = makeCommonString("ondestory");
 const StringView SS_ON_MOUSE_ACTIVATE = makeCommonString("onmouseactivate");
 const StringView SS_HEIGHT = makeCommonString("height");
 const StringView SS_WIDTH = makeCommonString("width");
+#ifdef SS_LEFT
+// Windows winuser.h 将 SS_LEFT 定义为静态控件样式宏
+#undef SS_LEFT
+#endif
 const StringView SS_LEFT = makeCommonString("left");
 const StringView SS_TOP = makeCommonString("top");
 const StringView SS_ID = makeCommonString("id");

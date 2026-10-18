@@ -87,7 +87,10 @@
     },
     "captionBtns": {
       "type": "captionToolbar",
-      "cellSize": 16,
+      "cellWidth": 36,
+      "cellHeight": 25,
+      "radius": 0,
+      "iconSize": 20,
       "fullStatusImage": true,
       "states": {
         "normal": { "iconColor": "$tokens.colors.fg-muted" },
@@ -98,7 +101,10 @@
     "captionBtnsLg": {
       "type": "captionToolbar",
       "file": "caption-btn-lg",
-      "cellSize": 20,
+      "cellWidth": 46,
+      "cellHeight": 25,
+      "radius": 0,
+      "iconSize": 20,
       "fullStatusImage": true,
       "states": {
         "normal": { "iconColor": "$tokens.colors.fg-muted" },

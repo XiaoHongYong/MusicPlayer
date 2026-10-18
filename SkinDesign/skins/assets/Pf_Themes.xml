@@ -13,9 +13,9 @@
       <NormalListCtrl ID="CID_THME_LIST" Rect="10,35,w-25,180" EnableHorzScrollBar="false"/>
       <NormalTextRight Rect="10,230,110," Text="Theme name:"/>
       <NormalEdit ID="CID_E_THEMENAME" Text="" Rect="130,230,w-130-20,"/>
-      <NormalTextBt ID="CID_LOAD_THEME" Text="&amp;Load Theme" Rect="w/2-110-110/2-30,260,110,"/>
-      <NormalTextBt ID="CID_SAVE_THEME" Text="&amp;Save Theme" Rect="w/2-110/2,260,110,"/>
-      <NormalTextBt ID="CID_DELETE_THEME" Text="&amp;Delete Theme" Rect="w/2+110/2+30,260,110,"/>
+      <NormalTextBt ID="CID_LOAD_THEME" Text="Load Theme" Rect="w/2-110-110/2-30,260,110,"/>
+      <NormalTextBt ID="CID_SAVE_THEME" Text="Save Theme" Rect="w/2-110/2,260,110,"/>
+      <NormalTextBt ID="CID_DELETE_THEME" Text="Delete Theme" Rect="w/2+110/2+30,260,110,"/>
     </PreferPage.Theme>
     <PreferPage.LyrDisplayStyle Name="Lyrics Display" Visible="false" Rect="0,30,w,h-30-20">
       <include Name="pf_ThemesDisplayStyle.xml"/>

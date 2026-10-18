@@ -95,10 +95,16 @@ public:
 
         ret = g_funGdipCreateFontFromLogfontW(canvas->getHandle(), &logFont, &m_font);
         if (ret == NotTrueTypeFont) {
-            // 选择默认的TRUEType字体！
-            LOGFONTW logfontNew = logFont;
-            wcscpy_s(logfontNew.lfFaceName, CountOf(logfontNew.lfFaceName), L"Tahoma");
-            ret = g_funGdipCreateFontFromLogfontW(canvas->getHandle(), &logfontNew, &m_font);
+            // 非 TrueType 时依次尝试常见 UI 字体（含中文雅黑）
+            static const wchar_t *kFallbackFaces[] = { L"Microsoft YaHei", L"Tahoma" };
+            for (auto face : kFallbackFaces) {
+                LOGFONTW logfontNew = logFont;
+                wcscpy_s(logfontNew.lfFaceName, CountOf(logfontNew.lfFaceName), face);
+                ret = g_funGdipCreateFontFromLogfontW(canvas->getHandle(), &logfontNew, &m_font);
+                if (ret == Ok) {
+                    break;
+                }
+            }
         }
 
         return ret == Ok;
@@ -351,12 +357,14 @@ CGdiplusFontPtr CGdiplusGraphicsLite::createFont(FontInfoEx &font, bool isLatin)
     logFont.lfWeight = font.getWeight();
     logFont.lfItalic = font.getItalic();
     logFont.lfUnderline = font.isUnderline;
-    if (isEmptyString(font.getName())) {
-        wcscpy_s(logFont.lfFaceName, CountOf(logFont.lfFaceName), L"Tahoma");
-    } else {
-        wcscpy_s(logFont.lfFaceName, CountOf(logFont.lfFaceName), 
-            utf8ToUCS2(isLatin ? font.getName() : font.getNameOthers()).c_str());
+
+    // FontName 管拉丁字符，FontNameOthers 管中文等。Others 为空时若落到系统默认，
+    // 中文 Windows 常选宋体，小字号标题栏/菜单会发糊；改用微软雅黑。
+    cstr_t faceName = isLatin ? font.getName() : font.getNameOthers();
+    if (isEmptyString(faceName)) {
+        faceName = isLatin ? "Tahoma" : "Microsoft YaHei";
     }
+    wcscpy_s(logFont.lfFaceName, CountOf(logFont.lfFaceName), utf8ToUCS2(faceName).c_str());
 
     auto f = std::make_shared<CGdiplusFont>();
     f->create(this, logFont);

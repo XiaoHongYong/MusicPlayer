@@ -217,7 +217,7 @@ public:
     }
 
     virtual void getOptions(VecStrings &vString, int &nRadio) {
-        vString.push_back(_TLT("Add &Folder..."));
+        vString.push_back(_TLT("Add Folder..."));
 
         if (g_LyricSearch.getSearchFolerCount() > 0) {
             vString.push_back("");
@@ -442,7 +442,7 @@ public:
 
 };
 
-cstr_t g_szSysTrayOpt[] = { _TLM("&Taskbar only"), _TLM("S&ystem tray only"), _TLM("T&askbar and system tray"), "&None" };
+cstr_t g_szSysTrayOpt[] = { _TLM("Taskbar only"), _TLM("System tray only"), _TLM("Taskbar and system tray"), "None" };
 
 class CPfItemSystemTrayIcon : public CPfItemInt {
 public:
@@ -598,7 +598,7 @@ void showShortcutKeyDialog(CSkinWnd *parent, uint32_t cmd, bool isGlobal) {
 class CPfItemBoolEnableGlobalHotkey : public CPfItemBool {
 public:
     CPfItemBoolEnableGlobalHotkey()
-    : CPfItemBool(removePrefixOfAcckey(connectToLocalStr(_TLM("Shortcut"), _TLM("&Enable Global Hotkeys")).c_str()).c_str(),
+    : CPfItemBool(removePrefixOfAcckey(connectToLocalStr(_TLM("Shortcut"), _TLM("Enable Global Hotkeys")).c_str()).c_str(),
         ET_NULL, SZ_APP_NAME, "enableGlobalHotkey", false) {
     }
 

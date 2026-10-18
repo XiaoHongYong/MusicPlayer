@@ -1,6 +1,7 @@
 ﻿#include "CrossfadeTransition.h"
 
 #include <algorithm>
+#include <cmath>
 
 void CrossfadeTransition::begin(IAlbumArtEffect *from, IAlbumArtEffect *to, float durationSec) {
     m_from = from;

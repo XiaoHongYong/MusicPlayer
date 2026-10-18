@@ -21,15 +21,17 @@ bool CSkinWnd::invalidateRect(const CRect *lpRect, bool bErase) {
 void CSkinWnd::invalidateRectOfLayeredWindow(const CRect* lpRect) {
     assert(m_bTranslucencyLayered);
     auto memCanvas = getMemGraphics();
-    CRawGraph::CClipBoxAutoRecovery autoCBR(memCanvas);
+
+    // 与 onPaint 一致：先铺 WindowImage 再画控件。
+    // 有 WindowImage 时 root 的 bgType=BG_NONE，若此处漏画背景，
+    // UpdateLayeredWindow 只会提交控件像素，窗口主体会完全透明。
+    CRect rcClip;
     if (lpRect) {
-        memCanvas->setClipBoundBox(*lpRect);
+        rcClip = *lpRect;
+    } else {
+        rcClip.setLTWH(0, 0, m_rcBoundBox.width(), m_rcBoundBox.height());
     }
-
-    // draw every ui objects on back buffer one by one
-    m_rootConainter.draw(memCanvas);
-    m_skinToolTip.onPaint(memCanvas);
-
+    onPaint(memCanvas, &rcClip);
     updateLayeredWindowUsingMemGraph(memCanvas);
 }
 

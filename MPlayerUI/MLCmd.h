@@ -133,7 +133,7 @@ DEFINE_CMD_ID(ID_LDS_STATIC_TXT)                                    \
 DEFINE_CMD_ID(ID_LDS_TWO_LINE)                                      \
 DEFINE_CMD_ID(ID_LDS_SINGLE_LINE)                                   \
 DEFINE_CMD_ID(ID_LDS_VOBSUB)                                        \
-DEFINE_CMD_ID_TIP(ID_NO_SUITTABLE_LYRICS, _TLM("&No Suitable Lyrics for the Song File")) \
+DEFINE_CMD_ID_TIP(ID_NO_SUITTABLE_LYRICS, _TLM("No Suitable Lyrics for the Song File")) \
 DEFINE_CMD_ID_TIP(ID_INSTRUMENTAL_MUSIC, _TLM("Instrumental music, no lyrics")) \
 DEFINE_CMD_ID(ID_REMOVE_FROM_LIBRARY)                               \
 DEFINE_CMD_ID(ID_REPLACE_NOW_PLAYING_WITH_SELECTED)                 \

@@ -13,7 +13,8 @@
 
 
 const int32_t MIN_ITEM_WIDTH = 100;
-const int32_t SHORTCUT_KEY_SEP = 20;
+// 菜单标题与右侧快捷键之间的间距
+const int32_t SHORTCUT_KEY_SEP = 32;
 
 const int IDX_UP_ARROW = -3;
 const int IDX_DOWN_ARROW = -2;
@@ -60,9 +61,9 @@ void SkinMenuItemsContainer::onMeasureSizeByContent() {
     m_hasChecked = false;
     m_hasSubmenu = false;
     m_isShowArrow = false;
+    m_maxShortcutWidth = 0;
 
     int maxTextSize = 0;
-    int maxShortcutSize = 0;
     int expectedHeight = m_sepYPadding * 2;
 
     // 统计期望的高度和宽度
@@ -87,16 +88,18 @@ void SkinMenuItemsContainer::onMeasureSizeByContent() {
 
         if (!item.shortcutKey.empty()) {
             if (canvas->getTextExtentPoint32(item.shortcutKey.c_str(), item.shortcutKey.size(), &size)
-                && size.cx > maxShortcutSize) {
-                maxShortcutSize = size.cx;
+                && size.cx > m_maxShortcutWidth) {
+                m_maxShortcutWidth = size.cx;
             }
         }
     }
 
     // 计算宽度：当有 check 和 submenu 时需要额外的空间来显示对应的图标
-    int expectedWidth = maxTextSize + (maxShortcutSize > 0 ? SHORTCUT_KEY_SEP + maxShortcutSize : 0) + m_xPadding * 3;
+    int expectedWidth = maxTextSize
+        + (m_maxShortcutWidth > 0 ? SHORTCUT_KEY_SEP + m_maxShortcutWidth : 0)
+        + m_xPadding * 3;
     if (m_hasChecked) { expectedWidth += m_itemHeight / 2; }
-    if (m_hasSubmenu && maxShortcutSize == 0) { expectedWidth += m_itemHeight / 2; }
+    if (m_hasSubmenu && m_maxShortcutWidth == 0) { expectedWidth += m_itemHeight / 2; }
 
     // 计算和调整最大能够显示的大小
     CRect rcWnd = m_pSkin->getBoundBox();
@@ -356,11 +359,26 @@ void SkinMenuItemsContainer::draw(CRawGraph *canvas) {
         }
 
         CRect rcItem(x, y, xEnd, y + m_itemHeight);
+        CRect rcText = rcItem;
+        if (m_maxShortcutWidth > 0) {
+            // 标题不要画进快捷键列
+            rcText.right = xEnd - m_maxShortcutWidth - SHORTCUT_KEY_SEP;
+            if (rcText.right < rcText.left) {
+                rcText.right = rcText.left;
+            }
+        }
+
         if (!item.isEnabled) {
             canvas->setTextColor(m_font.getTextColor(false));
         }
 
-        canvas->drawText(item.text.c_str(), item.text.size(), rcItem, DT_VCENTER | DT_END_ELLIPSIS | DT_PREFIX_TEXT);
+        canvas->drawText(item.text.c_str(), item.text.size(), rcText,
+            DT_VCENTER | DT_END_ELLIPSIS | DT_PREFIX_TEXT | DT_SINGLELINE);
+
+        if (!item.shortcutKey.empty()) {
+            canvas->drawText(item.shortcutKey.c_str(), item.shortcutKey.size(), rcItem,
+                DT_VCENTER | DT_RIGHT | DT_SINGLELINE);
+        }
 
         if (!item.isEnabled) {
             canvas->setTextColor(clrText);
@@ -397,6 +415,14 @@ void SkinMenuItemsContainer::setMenu(const CMenu &menu) {
     for (int i = 0; i < count; i++) {
         MenuItemInfo item = { 0 };
         if (m_menu.getMenuItemInfo(i, true, item)) {
+            // 兼容仍把加速键拼在标题里（Label\tCtrl+O）的平台
+            string label, shortcut;
+            if (strSplit(item.text.c_str(), '\t', label, shortcut)) {
+                item.text = std::move(label);
+                if (item.shortcutKey.empty()) {
+                    item.shortcutKey = std::move(shortcut);
+                }
+            }
             m_items.push_back(item);
         }
     }

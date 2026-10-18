@@ -8,11 +8,11 @@
   <Container Name="Content" Rect="10,0,w-20,h" ClipChildren="true">
     <PreferPage.LyrDownload ID="CID_C_LYR_DOWNLOAD" Visible="false" Name="Lyrics Download" Rect="0,30,w,h-30-10">
       <NormalFrame Rect="10,10,w-20,240" Text="Save downloaded lyrics in:"/>
-      <NormalCheckBox ID="CID_C_SAVE_IN_SONG_DIR" Text="&amp;Save lyrics in the song's directory" Rect="25,40,w-50,"/>
-      <NormalCheckBox ID="CID_C_SAVE_IN_DIR" Text="&amp;Save lyrics in:" Rect="25,70,140,"/>
+      <NormalCheckBox ID="CID_C_SAVE_IN_SONG_DIR" Text="Save lyrics in the song's directory" Rect="25,40,w-50,"/>
+      <NormalCheckBox ID="CID_C_SAVE_IN_DIR" Text="Save lyrics in:" Rect="25,70,140,"/>
       <NormalTextBt ID="CID_DOWN_DIR" Text="Choose the directory" Rect="170,70,w-170-20,"/>
-      <NormalCheckBox ID="CID_C_SAVE_IN_SONG_FILE" Text="Save lyrics in &amp;song file" Rect="25,100,w-50,"/>
-      <NormalCheckBox ID="CID_C_M4A_LYRICS" Text="Embedded lyrics for iPod, iTunes (For &amp;AAC (M4A) file)" Rect="45,130,w-70,"/>
+      <NormalCheckBox ID="CID_C_SAVE_IN_SONG_FILE" Text="Save lyrics in song file" Rect="25,100,w-50,"/>
+      <NormalCheckBox ID="CID_C_M4A_LYRICS" Text="Embedded lyrics for iPod, iTunes (For AAC (M4A) file)" Rect="45,130,w-70,"/>
       <NormalCheckBox ID="CID_C_ID3V2_USLT" Text="Embedded lyrics for iPod, iTunes (ID3v2 unsynchronized lyrics)" Rect="45,160,w-70,"/>
       <NormalCheckBox ID="CID_C_ID3V2_SYLT" Text="Embedded lyrics for Windows Media Player (ID3v2 synchronized lyrics)" Rect="45,190,w-70,"/>
       <NormalCheckBox ID="CID_C_LYR3V2" Text="Embedded lyrics (Lyrics3v2 synchronized lyrics)" Rect="45,220,w-70,"/>
@@ -21,7 +21,7 @@
       <NormalRadioBt ID="CID_C_AS_SONG_NAME" Text="Same name as the song" Rect="25,320,w-50,"/>
     </PreferPage.LyrDownload>
     <PreferPage.LyrSaveOptions ID="CID_C_LYR_SAVE_OPT" Visible="false" Name="Lyrics Saving Options" Rect="0,30,w,h-30-10">
-      <NormalCheckBox ID="CID_C_REMOVE_EXTRA_BLANK_LINES" Text="&amp;Remove extra blank lines in lyrics" Rect="10,15,w-50,"/>
+      <NormalCheckBox ID="CID_C_REMOVE_EXTRA_BLANK_LINES" Text="Remove extra blank lines in lyrics" Rect="10,15,w-50,"/>
     </PreferPage.LyrSaveOptions>
   </Container>
 </PreferPage.LyricsRoot>

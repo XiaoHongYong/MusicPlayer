@@ -9,7 +9,7 @@
     <NormalEdit ID="CID_E_TITLE" Rect="70,52,w-70-20-80-20,"/>
     <NormalTextBt ID="CID_GOOGLE" Rect="w-90-10,20,30," ResizeToContent="true"
             ImageContent="google.png"/>
-    <NormalTextBt ID="CID_SEARCH" Text="&amp;Search" Rect="w-90-10,52,90,"/>
+    <NormalTextBt ID="CID_SEARCH" Text="Search" Rect="w-90-10,52,90,"/>
 
     <NormalListCtrl ID="CID_L_LYRICS" Rect="10,85,w-20,h-85-45" EnableHeader="true"
         EnableSort="true" ImageList="lyric-file-type.png"/>
@@ -17,8 +17,8 @@
     <NormalTextBt ID="CID_PREV_PAGE" Visible="false" Text="&lt;&lt; Prev Page" Rect="w-230,h-30-15-20,100,"/>
     <NormalTextBt ID="CID_NEXT_PAGE" Visible="false" Text="Next Page &gt;&gt;" Rect="w-110,h-30-15-20,100,"/>
 
-    <NormalTextBt ID="CID_OPEN" Text="&amp;Open" Rect="w/2-120,h-10-20,100,"/>
-    <NormalTextBt ID="CID_MORE" Text="&amp;More &gt;&gt;" Rect="w/2+20,h-10-20,100,"/>
+    <NormalTextBt ID="CID_OPEN" Text="Open" Rect="w/2-120,h-10-20,100,"/>
+    <NormalTextBt ID="CID_MORE" Text="More &gt;&gt;" Rect="w/2+20,h-10-20,100,"/>
     <NormalTextBt ID="ID_CANCEL" Text="Cancel" Rect="w-110,h-10-20,100,"/>
   </Container.SearchLyr>
   <Container.RenameLyr ID="CID_C_RENAME" Visible="false" Name="Rename lyrics file" Rect="0,0,w,h">

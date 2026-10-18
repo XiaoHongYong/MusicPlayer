@@ -50,7 +50,8 @@ public:
         }
 
         if (isEmptyString(font.getNameOthers())) {
-            strcpy_safe(m_logFontOthers.lfFaceName, CountOf(m_logFontOthers.lfFaceName), "Tahoma");
+            // 中文缺省用微软雅黑，避免 GDI 回退到宋体导致小字模糊
+            strcpy_safe(m_logFontOthers.lfFaceName, CountOf(m_logFontOthers.lfFaceName), "Microsoft YaHei");
         } else {
             strcpy_safe(m_logFontOthers.lfFaceName, CountOf(m_logFontOthers.lfFaceName), font.getNameOthers());
         }

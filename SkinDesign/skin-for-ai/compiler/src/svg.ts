@@ -226,8 +226,12 @@ export function visualToSvg(visual: Visual, w: number, h: number, opts?: {
     icon?: string;
     maskOnly?: boolean;
     iconInset?: number;
+    /** 固定图标边长（像素）；设了则忽略 inset，居中绘制 */
+    iconSize?: number;
     /** 仅平移图标(不带动背景/指示条)，用于 Tab 等把图标摆到指示条旁的内容区中心 */
     iconOffset?: [number, number];
+    /** 可见区裁切路径（如关闭钮右上角透明圆角），与 bg 圆角对齐 */
+    clipPath?: string;
 }): string {
     resetSvgIds();
     const defs: string[] = [];
@@ -238,10 +242,12 @@ export function visualToSvg(visual: Visual, w: number, h: number, opts?: {
     const opacity = visual.opacity ?? 1;
     const cx = w / 2;
     const cy = h / 2;
-    const iconInset = typeof opts?.iconInset === "number" ? opts.iconInset
-        : (typeof visual.iconInset === "number" ? visual.iconInset : 0.22);
+    const fixedIcon = typeof opts?.iconSize === "number" && opts.iconSize > 0;
+    const iconInset = fixedIcon ? 0
+        : (typeof opts?.iconInset === "number" ? opts.iconInset
+            : (typeof visual.iconInset === "number" ? visual.iconInset : 0.22));
 
-    const iconSide = Math.min(w, h);
+    const iconSide = fixedIcon ? opts!.iconSize! : Math.min(w, h);
     // iconSvg 画的是贴在 (0,0) 的方块；非正方形格子需平移到单元格中心
     const iconOriginX = (w - iconSide) / 2;
     const iconOriginY = (h - iconSide) / 2;
@@ -269,11 +275,26 @@ export function visualToSvg(visual: Visual, w: number, h: number, opts?: {
     const iconGroup = iconBody
         ? `<g transform="translate(${ix},${iy})">${iconBody}</g>`
         : "";
+    let body = `${layersBody}${iconGroup}`;
+    if (opts?.clipPath) {
+        const id = nextId("c");
+        defs.push(`<mask id="${id}"><path d="${opts.clipPath}" fill="white"/></mask>`);
+        body = `<g mask="url(#${id})">${body}</g>`;
+    }
     return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" shape-rendering="geometricPrecision">
   <defs>${defs.join("")}</defs>
-  <g opacity="${opacity}" transform="${transform}">${layersBody}${iconGroup}</g>
+  <g opacity="${opacity}" transform="${transform}">${body}</g>
 </svg>`;
+}
+
+/** 仅右上角圆角的矩形路径（关闭钮贴窗口右上角时挖透明） */
+export function topRightRoundRectPath(w: number, h: number, r: number): string {
+    const rr = Math.max(0, Math.min(r, w, h));
+    if (rr <= 0) {
+        return `M0,0 H${w} V${h} H0 Z`;
+    }
+    return `M0,0 H${w - rr} A${rr},${rr} 0 0 1 ${w},${rr} V${h} H0 Z`;
 }
 
 export function frameRingSvg(size: number, round: number, thick: number, color: string, innerColor?: string): string {

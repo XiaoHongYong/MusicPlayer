@@ -16,10 +16,11 @@
 		   TextColorPressed="#FFFFFF"
 		   BgColorPressed="#B8954A" BgPressedAlpha="200"/>
 		<Text ID="ID_CAPTION" Rect="w/2-150,8,300,20" CaptionText="true" FontName="Verdana" FontHeight="14" FontBold="false" TextColor="#8A8A8A" LeftMargin="0" AlignText="AT_CENTER | AT_VCENTER"/>
-		<Toolbar ID="CID_TB_SYSBT" Rect="w-12-60,10,60,16"
-			 Image="caption-btn.png" enablehover="TRUE" units_x="16"
-			 blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
-			 MarginX="0" MarginY="0" ButtonSpacesCX="5" FullStatusImage="TRUE">
+		<!-- Win11：46×36、无间距、贴右上角 -->
+		<Toolbar ID="CID_TB_SYSBT" Rect="w-138,0,138,25"
+			 Image="caption-btn-lg.png" enablehover="TRUE" units_x="46"
+			 blank_x="-1" blank_cx="46" seperator_x="0" seperator_cx="10"
+			 MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
 			<button ID="ID_MINIMIZE" Left="1" />
 			<button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
 		  <button ID="ID_CLOSE" Left="4" />
@@ -49,10 +50,10 @@
 			<button ID="CID_TOGGLE_LYRICS" Left="3" ToolTip="Lyrics"/>
 			<button ID="ID_OPEN_MEDIA_CENTER" Left="4" ToolTip="Media Center"/>
 		</Toolbar>
-		<Toolbar ID="CID_TB_SYSBT" Rect="w-12-60,10,60,16"
-			 Image="caption-btn.png" enablehover="TRUE" units_x="16"
-			 blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
-			 MarginX="0" MarginY="0" ButtonSpacesCX="5" FullStatusImage="TRUE">
+		<Toolbar ID="CID_TB_SYSBT" Rect="w-138,0,138,25"
+			 Image="caption-btn-lg.png" enablehover="TRUE" units_x="46"
+			 blank_x="-1" blank_cx="46" seperator_x="0" seperator_cx="10"
+			 MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
 			<button ID="ID_MINIMIZE" Left="1" />
 			<button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
 			<button ID="ID_CLOSE" Left="4" />
@@ -80,10 +81,10 @@
 
 	<DialogCaption Extends="Container" Name="Caption bar" TranslucencyWithSkin="TRUE">
 		<Text ID="ID_CAPTION" Rect="24,6,w-80,20" CaptionText="true" FontName="Verdana" FontHeight="15" FontBold="false" TextColor="#F5F5F5" LeftMargin="0" AlignText="AT_LEFT | AT_VCENTER"/>
-		<Toolbar ID="CID_TB_SYSBT" Rect="w-8-16,9,16,16" TranslucencyWithSkin="TRUE"
-			Image="caption-btn.png" enablehover="TRUE" units_x="16"
-			blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
-			MarginX="0" MarginY="0" ButtonSpacesCX="5" FullStatusImage="TRUE">
+		<Toolbar ID="CID_TB_SYSBT" Rect="w-36,0,36,25" TranslucencyWithSkin="TRUE"
+			Image="caption-btn.png" enablehover="TRUE" units_x="36"
+			blank_x="-1" blank_cx="36" seperator_x="0" seperator_cx="10"
+			MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
 		  <button ID="ID_CLOSE" Left="4" />
 		</Toolbar>
 	</DialogCaption>
@@ -103,11 +104,11 @@
 			FontHeight="13" FontBold="false" TextColor="#C8C8C8"
 			TextColorPressed="#FFFFFF"
 			BgColorPressed="#B8954A" BgPressedAlpha="200"/>
-		<Text ID="ID_CAPTION" Rect="w/2,6,w/2-10-60-10,20" CaptionText="true" FontName="Verdana" FontHeight="15" FontBold="false" TextColor="#F5F5F5" LeftMargin="0" AlignText="AT_LEFT | AT_VCENTER"/>
-		<Toolbar ID="CID_TB_SYSBT" Rect="w-8-60,9,60,16" TranslucencyWithSkin="TRUE"
-			Image="caption-btn.png" enablehover="TRUE" units_x="16"
-			blank_x="-1" blank_cx="16" seperator_x="0" seperator_cx="10"
-			MarginX="0" MarginY="0" ButtonSpacesCX="5" FullStatusImage="TRUE">
+		<Text ID="ID_CAPTION" Rect="w/2,6,w/2-10-108-10,20" CaptionText="true" FontName="Verdana" FontHeight="15" FontBold="false" TextColor="#F5F5F5" LeftMargin="0" AlignText="AT_LEFT | AT_VCENTER"/>
+		<Toolbar ID="CID_TB_SYSBT" Rect="w-108,0,108,25" TranslucencyWithSkin="TRUE"
+			Image="caption-btn.png" enablehover="TRUE" units_x="36"
+			blank_x="-1" blank_cx="36" seperator_x="0" seperator_cx="10"
+			MarginX="0" MarginY="0" ButtonSpacesCX="0" FullStatusImage="TRUE">
 			<button ID="ID_MINIMIZE" Left="1" />
 			<button ID="ID_MAXIMIZE" Left="2" CanCheck="TRUE" checked_left="3"/>
 			<button ID="ID_CLOSE" Left="4" />
@@ -132,7 +133,7 @@
 
 		<Property Name="WindowImage" Image="bg-dialog.png" HorzExtendPos="11,53" VertExtendPos="33,53" />
 
-		<DialogCaption Rect="2,2,w-4,31"/>
+		<DialogCaption Rect="0,0,w,31"/>
 
 		<ClientArea Rect="10,33,w-20,h-33-10" ClipChildren="true"/>
 	</WindowFrame>
@@ -144,7 +145,7 @@
 
 		<Property Name="WindowImage" Image="bg-dialog.png" HorzExtendPos="11,53" VertExtendPos="33,53" />
 
-		<MenuCaption Rect="2,2,w-4,31"/>
+		<MenuCaption Rect="0,0,w,31"/>
 
 		<ClientArea Rect="6,33,w-12,h-33-6" ClipChildren="true"/>
 	</MenuWindowFrame>

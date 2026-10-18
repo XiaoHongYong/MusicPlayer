@@ -48,7 +48,7 @@ Rules:
 - Same English key → **same** translation. Never fork wording for C++ vs Web.
 - Keep existing translations unless the user asked to revise them.
 - Preserve `{name}` / `{n}` placeholders and C++ `%s` / `%d` / `$Product$`.
-- Preserve `&` accelerators (Win32). Prefer `复制(&C)` for `&Copy`.
+- Do not add Win32 `&` / `(&C)` menu accelerators; titles are plain text (e.g. `Copy` → `复制`).
 - Empty value means “use English”. Do not invent keys that are not in the catalog.
 - Tone: desktop music player, concise UI Chinese. Match nearby strings.
 - Do not translate product name `Music Center` unless the user asks.

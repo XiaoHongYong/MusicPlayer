@@ -16,7 +16,7 @@ function pull() {
     BRANCH=`git branch | sed -n 's/\* \(.*\)$/\1/p'`
     # echo $BRANCH
     # set -x
-    git pull --rebase "origin" $BRANCH
+    git pull --autostash --rebase "origin" $BRANCH
 
     exit_if_err "Failed to pull $BRANCH, in $(pwd)"
 }
@@ -37,6 +37,7 @@ function pull_or_clone() {
     fi
 }
 
+pull
 pull_or_clone git@gitee.com:xiaohongyong/LyricServer.git LyricServer
 pull_or_clone git@gitee.com:xiaohongyong/music-player-third-parties.git third-parties
 pull_or_clone git@gitee.com:xiaohongyong/TinyJS.git TinyJS

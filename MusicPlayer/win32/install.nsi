@@ -64,11 +64,11 @@ Section "MusicPlayer (required)"
   SetOutPath $INSTDIR\patterns
   File /r ..\..\SkinDesign\patterns
 
-  SetOutPath $INSTDIR\skin-creator
-  File /r ..\..\SkinDesign\skin-creator\*.*
-
   SetOutPath $INSTDIR\local-server
-  File /r ..\..\LocalServer\www\dist\spa\*.*
+  File /r ..\..\LocalServer\www\dist\*.*
+
+  SetOutPath $INSTDIR\lang
+  File /r ..\..\i18n\lang\*.ini
 
   ; Write the installation path into the registry
   WriteRegStr HKLM SOFTWARE\MusicPlayer "Install_Dir" "$INSTDIR"

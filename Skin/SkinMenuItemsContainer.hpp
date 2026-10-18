@@ -84,6 +84,7 @@ protected:
     bool                        m_isShowArrow = false;
     bool                        m_hasChecked = false;
     bool                        m_hasSubmenu = false;
+    int                         m_maxShortcutWidth = 0;
     uint32_t                    m_xPadding;
     uint32_t                    m_sepYPadding;
     uint32_t                    m_itemHeight;

@@ -250,9 +250,9 @@ public:
 
             menu.createPopupMenu();
 
-            menu.appendItem(ID_ADD_PIC, _TL("&Add Picture..."));
-            menu.appendItem(ID_DEL_PIC, _TL("&Delete Picture"));
-            menu.appendItem(ID_SAVE_PIC_AS, _TL("&Save Picture as..."));
+            menu.appendItem(ID_ADD_PIC, _TL("Add Picture..."));
+            menu.appendItem(ID_DEL_PIC, _TL("Delete Picture"));
+            menu.appendItem(ID_SAVE_PIC_AS, _TL("Save Picture as..."));
 
             if (_picListCtrl->getSelectedCount() == 0) {
                 menu.enableItem(ID_DEL_PIC, false);

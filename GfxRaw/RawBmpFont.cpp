@@ -1074,9 +1074,11 @@ void CRawBmpFont::useColorOverlay() {
 }
 
 bool isWordSplitChar(cstr_t szChar) {
-    uint32_t c = (uint32_t)*szChar;
+    // 必须先按 unsigned char 取值：signed char 的 UTF-8 高字节（如中文）
+    // 转成 uint32_t 会变成 0xFFFFFFEx，再传给 CRT isalpha 会在 Debug 下触发断言崩溃。
+    const unsigned char c = static_cast<unsigned char>(*szChar);
 
-    if (!(isalpha(c) || isDigit(c) || (c >= 127 && c <= 255)
+    if (!(isAlpha(c) || isDigit(c) || c >= 127
         || c == '\'' || c == '\"' || c == '_' || c == '-')) {
         return true;
     }

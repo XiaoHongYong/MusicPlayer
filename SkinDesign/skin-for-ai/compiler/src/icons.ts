@@ -91,14 +91,17 @@ const FRAGMENTS: Record<string, (color: string) => string> = {
         `<rect x="8.7" y="6" width="2.8" height="13" rx="0.8" fill="${c}"/>` +
         `<rect x="12.9" y="8.5" width="2.8" height="10.5" rx="0.8" fill="${c}"/>` +
         `<rect x="17.1" y="4.5" width="2.8" height="14.5" rx="0.8" fill="${c}"/>`,
-    minimize: (c) => `<line x1="5" y1="17" x2="19" y2="17" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/>`,
-    maximize: (c) => `<rect x="6" y="6" width="12" height="12" fill="none" stroke="${c}" stroke-width="2"/>`,
+    // Win11 Fluent 标题栏：细线、直角、居中（stroke ~1.25 @24）
+    minimize: (c) =>
+        `<line x1="6" y1="12" x2="18" y2="12" stroke="${c}" stroke-width="1.25" stroke-linecap="square"/>`,
+    maximize: (c) =>
+        `<rect x="6.5" y="6.5" width="11" height="11" fill="none" stroke="${c}" stroke-width="1.25"/>`,
     restore: (c) =>
-        `<rect x="9" y="4" width="10" height="10" fill="none" stroke="${c}" stroke-width="1.8"/>` +
-        `<rect x="5" y="8" width="10" height="10" fill="none" stroke="${c}" stroke-width="1.8"/>`,
+        `<path d="M9 7.25 h7.75 v7.75" fill="none" stroke="${c}" stroke-width="1.25" stroke-linejoin="miter"/>` +
+        `<rect x="6.5" y="9" width="8.5" height="8.5" fill="none" stroke="${c}" stroke-width="1.25"/>`,
     close: (c) =>
-        `<line x1="6" y1="6" x2="18" y2="18" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/>` +
-        `<line x1="18" y1="6" x2="6" y2="18" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/>`,
+        `<line x1="7" y1="7" x2="17" y2="17" stroke="${c}" stroke-width="1.25" stroke-linecap="square"/>` +
+        `<line x1="17" y1="7" x2="7" y2="17" stroke="${c}" stroke-width="1.25" stroke-linecap="square"/>`,
     "file-new": (c) =>
         `<path d="M7 4 h7 l4 4 v12 h-11 z" fill="none" stroke="${c}" stroke-width="1.7" stroke-linejoin="round"/>` +
         `<path d="M14 4 v4 h4" fill="none" stroke="${c}" stroke-width="1.7" stroke-linejoin="round"/>` +
