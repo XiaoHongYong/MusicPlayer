@@ -208,7 +208,7 @@ void CAudioVisualizerCtrl::scheduleInvalidate() {
     });
 }
 
-bool CAudioVisualizerCtrl::onLButtonUp(uint32_t nFlags, CPoint point) {
+bool CAudioVisualizerCtrl::onLButtonClick(uint32_t nFlags, CPoint point) {
     if (!m_rcObj.ptInRect(point)) {
         return false;
     }
@@ -216,9 +216,11 @@ bool CAudioVisualizerCtrl::onLButtonUp(uint32_t nFlags, CPoint point) {
     return true;
 }
 
-int CAudioVisualizerCtrl::calcSpectrumColumns(int width) const {
-    const int gap = std::max(0, m_gap);
-    const int minW = std::max(1, m_minBarWidth);
+int CAudioVisualizerCtrl::calcSpectrumColumns(int width, float scaleFactor) const {
+    const float s = std::max(0.01f, scaleFactor);
+    // 按物理像素估列数，与 drawSpectrumBars 的物理布局一致。
+    const int gap = std::max(0, (int)std::lround(std::max(0, m_gap) * s));
+    const int minW = std::max(1, (int)std::lround(std::max(1, m_minBarWidth) * s));
     const int slot = minW + gap;
     if (width <= 0 || slot <= 0) {
         return 8;
@@ -268,38 +270,51 @@ void CAudioVisualizerCtrl::updateDisplayLevels(const AudioAnalysisFrame &frame, 
 }
 
 void CAudioVisualizerCtrl::drawSpectrumBars(CRawGraph *canvas, const CRect &rc, int bandCount) {
-    const int gap = std::max(0, m_gap);
+    // 在物理像素空间布局：逻辑坐标经 DPI 缩放时左右边各自截断，会导致条宽/间距在相邻柱上差 1px。
+    const int pxL = (int)canvas->mapAndScaleX(rc.left);
+    const int pxR = (int)canvas->mapAndScaleX(rc.right);
+    const int pyT = (int)canvas->mapAndScaleY(rc.top);
+    const int pyB = (int)canvas->mapAndScaleY(rc.bottom);
+    const int physW = pxR - pxL;
+    const int physH = pyB - pyT;
+    if (physW <= 0 || physH <= 0 || bandCount <= 0) {
+        return;
+    }
+
+    const float scale = canvas->getScaleFactor();
+    const int gap = std::max(0, (int)std::lround(std::max(0, m_gap) * scale));
     const int totalGap = gap * (bandCount - 1);
-    const int barArea = std::max(bandCount, rc.width() - totalGap);
-    // 统一整数条宽，避免浮点取整导致相邻条粗细不一致。
+    const int barArea = std::max(bandCount, physW - totalGap);
     const int barW = std::max(1, barArea / bandCount);
     const int usedW = bandCount * barW + totalGap;
-    const int xOffset = (rc.width() - usedW) / 2;
-    const int height = rc.height();
-    const int peakH = std::max(1, height / 24);
+    const int xOffset = (physW - usedW) / 2;
+    const int peakH = std::max(1, physH / 24);
+    const int minBarH = std::max(1, (int)std::lround(std::max(1, m_minBarHeight) * scale));
 
     for (int i = 0; i < bandCount; ++i) {
-        const int x0 = rc.left + xOffset + i * (barW + gap);
+        const int x0 = pxL + xOffset + i * (barW + gap);
+        const int x1 = x0 + barW;
 
-        int barH = (int)std::lround(m_displayLevels[i] * (float)height);
+        int barH = (int)std::lround(m_displayLevels[i] * (float)physH);
         if (barH > 0) {
-            barH = std::max(m_minBarHeight, barH);
-            const int y0 = rc.bottom - barH;
-            canvas->fillRect(CRect(x0, y0, x0 + barW, rc.bottom), m_barColor, BPM_BLEND);
+            barH = std::max(minBarH, barH);
+            const int y0 = pyB - barH;
+            canvas->fillRectPhysical(x0, y0, x1, pyB, m_barColor, BPM_BLEND);
         }
 
-        const int peakY = rc.bottom - (int)std::lround(m_peakLevels[i] * (float)height) - peakH;
-        if (m_peakLevels[i] > 0.02f && peakY < rc.bottom - 1) {
-            // Win32 RECT 成员是 LONG，peakY 是 int；显式转成同一类型再 max。
-            const int yPeak = std::max((int)rc.top, peakY);
-            canvas->fillRect(CRect(x0, yPeak, x0 + barW, yPeak + peakH), m_peakColor, BPM_BLEND);
+        const int peakY = pyB - (int)std::lround(m_peakLevels[i] * (float)physH) - peakH;
+        if (m_peakLevels[i] > 0.02f && peakY < pyB - 1) {
+            const int yPeak = std::max(pyT, peakY);
+            canvas->fillRectPhysical(x0, yPeak, x1, yPeak + peakH, m_peakColor, BPM_BLEND);
         }
     }
 }
 
 void CAudioVisualizerCtrl::drawWaveform(CRawGraph *canvas, const CRect &rc,
                                         const AudioAnalysisFrame &frame, bool hasFrame) {
-    const int n = std::max(32, calcSpectrumColumns(rc.width()) * 2);
+    const float scale = canvas->getScaleFactor();
+    const int physW = (int)canvas->mapAndScaleX(rc.right) - (int)canvas->mapAndScaleX(rc.left);
+    const int n = std::max(32, calcSpectrumColumns(physW, scale) * 2);
     if ((int)m_displayLevels.size() != n) {
         m_displayLevels.assign(n, 0.f);
         m_peakLevels.clear();
@@ -354,7 +369,9 @@ void CAudioVisualizerCtrl::drawWaveform(CRawGraph *canvas, const CRect &rc,
 
 void CAudioVisualizerCtrl::drawCircle(CRawGraph *canvas, const CRect &rc,
                                       const AudioAnalysisFrame &frame, bool hasFrame) {
-    const int bandCount = std::min(48, calcSpectrumColumns(rc.width()));
+    const float scale = canvas->getScaleFactor();
+    const int physW = (int)canvas->mapAndScaleX(rc.right) - (int)canvas->mapAndScaleX(rc.left);
+    const int bandCount = std::min(48, calcSpectrumColumns(physW, scale));
     updateDisplayLevels(hasFrame ? frame : AudioAnalysisFrame{}, bandCount);
 
     const float bass = hasFrame ? frame.bass : 0.f;
@@ -435,7 +452,9 @@ void CAudioVisualizerCtrl::draw(CRawGraph *canvas) {
         return;
     }
 
-    const int bandCount = calcSpectrumColumns(rc.width());
+    const float scale = canvas->getScaleFactor();
+    const int physW = (int)canvas->mapAndScaleX(rc.right) - (int)canvas->mapAndScaleX(rc.left);
+    const int bandCount = calcSpectrumColumns(physW, scale);
     if (hasFrame) {
         updateDisplayLevels(frame, bandCount);
     } else {

@@ -20,7 +20,7 @@
 		歌词底 CID_LYRICS_BG 与条带同色，仅 focus/hover 时 FadeIn
 	-->
 	<skinwnd Extends="Window" Name="MainWnd"
-			MinWidth="173" MinHeight="44" Width="480" Height="44" Menu="MainWndMenu"
+			MinWidth="173" MinHeight="44" Width="800" Height="44" Menu="MainWndMenu"
 			CmdHandler="ch_common,ch_playlist" Script="main.js"
 			ContextMenu="MainContextMenu"
 			EnableTranslucency="true"

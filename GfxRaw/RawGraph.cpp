@@ -796,9 +796,36 @@ void CRawGraph::fillRect(const CRect &rcDst, const CColor &clrFill, BlendPixMode
     ::fillRect(&m_imageData, x, y, xMax, yMax, clrFill, bpm, m_nOpacityPainting);
 }
 
+void CRawGraph::fillRectPhysical(int x, int y, int xMax, int yMax, const CColor &clrFill, BlendPixMode bpm) {
+    assert(m_imageData.bitCount == 32);
+
+    x = max(x, (int)m_rcClipScaleMaped.left);
+    y = max(y, (int)m_rcClipScaleMaped.top);
+    xMax = min(xMax, (int)m_rcClipScaleMaped.right);
+    yMax = min(yMax, (int)m_rcClipScaleMaped.bottom);
+    if (x >= xMax || y >= yMax) {
+        return;
+    }
+
+    if (!m_bAlphaChannelEnabled) {
+        bpm &= ~BPM_CHANNEL_ALPHA;
+    }
+
+    ::fillRect(&m_imageData, x, y, xMax, yMax, clrFill, bpm, m_nOpacityPainting);
+}
+
 void CRawGraph::bltImage(int xDest, int yDest, int widthDest, int heightDest, RawImageData *image, int xSrc, int ySrc, BlendPixMode bpm, int nOpacitySrc)
 {
     assert(image);
+
+    // 逻辑 → 物理：与 create()/toPhysical 一致用四舍五入，避免非整型 DPI 下截断少一截。
+    xDest = (int)lround((xDest + m_ptOrigin.x) * m_scaleFactor);
+    yDest = (int)lround((yDest + m_ptOrigin.y) * m_scaleFactor);
+    widthDest = (int)lround(widthDest * m_scaleFactor);
+    heightDest = (int)lround(heightDest * m_scaleFactor);
+    xSrc = (int)lround(xSrc * m_scaleFactor);
+    ySrc = (int)lround(ySrc * m_scaleFactor);
+
     widthDest = min(widthDest, (int)image->width);
     heightDest = min(heightDest, (int)image->height);
 

@@ -39,7 +39,7 @@ public:
     void onCreate() override;
     void draw(CRawGraph *canvas) override;
     bool setProperty(cstr_t szProperty, cstr_t szValue) override;
-    bool onLButtonUp(uint32_t nFlags, CPoint point) override;
+    bool onLButtonClick(uint32_t nFlags, CPoint point) override;
 
     void onAudioAnalysisFrame(const AudioAnalysisFrame &frame) override;
 
@@ -55,7 +55,7 @@ protected:
     static Mode modeFromString(cstr_t s);
     static cstr_t modeToString(Mode mode);
 
-    int calcSpectrumColumns(int width) const;
+    int calcSpectrumColumns(int width, float scaleFactor = 1.f) const;
     void updateDisplayLevels(const AudioAnalysisFrame &frame, int bandCount);
     void drawSpectrumBars(CRawGraph *canvas, const CRect &rc, int bandCount);
     void drawWaveform(CRawGraph *canvas, const CRect &rc, const AudioAnalysisFrame &frame, bool hasFrame);

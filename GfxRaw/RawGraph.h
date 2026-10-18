@@ -180,6 +180,10 @@ public:
         fillRect(CRect(x, y, x + nWidth, y + nHeight), clrFill, bpm);
     }
 
+    // 物理像素坐标填充（已含 scale/origin），用于频谱等需像素级等宽的绘制。
+    void fillRectPhysical(int x, int y, int xMax, int yMax, const CColor &clrFill, BlendPixMode bpm = BPM_COPY);
+
+    // 目标与源均为逻辑坐标（与 fillRect / stretchBlt 一致）；image 为同 scale 的物理缓冲，内部统一换算。
     void bltImage(int xDest, int yDest, int widthDest, int heightDest, RawImageData *image, int xSrc, int ySrc, BlendPixMode bpm = BPM_BLEND, int nOpacitySrc = 255);
 
     int getOpacityPainting() const { return m_nOpacityPainting; }

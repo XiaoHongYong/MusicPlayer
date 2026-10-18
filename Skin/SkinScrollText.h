@@ -33,7 +33,7 @@ protected:
 
     CRawGraph                   *m_pTextCache;      // 整串离屏渲染（scale 后 backing 空间）
     int                         m_nCacheWidth;      // 构建时的逻辑文本宽
-    int                         m_nCacheScale;
+    float                       m_cacheScale = 0.f;
     void                        *m_cacheFont;       // CRawBmpFont* 身份
     CColor                      m_cacheClrTxt, m_cacheClrBorder;
     bool                        m_cacheOutlined;

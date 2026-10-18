@@ -874,9 +874,9 @@ bool CLyricShowObj::drawRow(CRawGraph *canvas, LyricsLine &lyricRow, int x, int 
 
                 if (rpImg) {
                     // 单一定色：作透明度 255 的一次混合，与动态 textOut 像素一致。
+                    // bltImage 统一按逻辑坐标换算 scale，与 fillRect / stretchBlt 一致。
                     RawImageData *s = rpImg->getRawBuff();
-                    canvas->bltImage(canvas->mapAndScaleX(x), canvas->mapAndScaleY(y),
-                        s->width, s->height, s, 0, 0, BPM_BLEND);
+                    canvas->bltImage(x, y, nW, nH, s, 0, 0, BPM_BLEND);
                     return true;
                 }
                 // 构建失败：回退下方动态路径
@@ -1219,9 +1219,9 @@ void CLyricShowObj::drawBgCache(CRawGraph *canvas) {
 
     RawImageData *src = m_pBgCache->getRawBuff();
 
-    // bltImage 的坐标是 scale 后（物理）坐标；cache 与 canvas 同 scale，像素 1:1。
-    canvas->bltImage(canvas->mapAndScaleX(m_rcObj.left), canvas->mapAndScaleY(m_rcObj.top),
-        src->width, src->height, src, 0, 0, BPM_BLEND);
+    // bltImage 入参为逻辑坐标；cache 与 canvas 同 scale，内部换算后像素 1:1。
+    canvas->bltImage(m_rcObj.left, m_rcObj.top, m_rcObj.width(), m_rcObj.height(),
+        src, 0, 0, BPM_BLEND);
 }
 
 #define LYRIC_ROW_CACHE_CAP        24          // 可见行缓存上限（LRU 淘汰）

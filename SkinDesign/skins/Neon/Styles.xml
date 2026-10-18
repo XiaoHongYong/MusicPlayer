@@ -15,7 +15,7 @@
 		   FontHeight="13" FontBold="false" TextColor="#C9C9E0"
 		   TextColorPressed="#FFFFFF"
 		   BgColorPressed="#5B3BD6" BgPressedAlpha="200"/>
-		<Text ID="ID_CAPTION" Rect="w/2-150,8,300,20" CaptionText="true" FontName="Verdana" FontHeight="14" FontBold="false" TextColor="#8A8AB0" LeftMargin="0" AlignText="AT_CENTER | AT_VCENTER"/>
+		<Text Rect="w/2-150,8,300,20" Text="Music Player" FontName="Verdana" FontHeight="14" FontBold="false" TextColor="#8A8AB0" LeftMargin="0" AlignText="AT_CENTER | AT_VCENTER"/>
 		<!-- Win11：46×36、无间距、贴右上角 -->
 		<Toolbar ID="CID_TB_SYSBT" Rect="w-138,0,138,25"
 			 Image="caption-btn-lg.png" enablehover="TRUE" units_x="46"

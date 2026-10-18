@@ -15,7 +15,7 @@ CSkinScrollText::CSkinScrollText() {
 
     m_pTextCache = nullptr;
     m_nCacheWidth = -1;
-    m_nCacheScale = 0;
+    m_cacheScale = 0.f;
     m_cacheFont = nullptr;
     m_cacheOutlined = false;
 }
@@ -95,14 +95,13 @@ void CSkinScrollText::draw(CRawGraph *canvas) {
         // 整串缓存里文本像素 i 对应屏幕 (rc.left + nLeftClip) + (i - nLeftClip)：最终文本左端
         // (m_rcObj.left + m_nLeftMargin) 处放第 nLeftClip 个文本像素，窗口正好显示文本的
         // [nLeftClip - m_nLeftMargin … +nVisibleWidth] 这段。因此 blt 目标锚定在减去前的
-        // 原始左端 rc.left + nLeftClip，源从第 nLeftClip 个像素开始，宽度固定为可视窗 nVisibleWidth。
+        // 原始左端 rc.left + nLeftClip，源从第 nLeftClip 个逻辑像素开始，宽度固定为可视窗 nVisibleWidth。
         // 注意 rc.left 上面已 -= nLeftClip：这一处偏移只能作用在目标或源之一，不能两处都算，
         // 否则右移滚动时 blt 覆盖不到窗口右端，文字滚着滚着会整串消失。
+        // scale 由 bltImage 统一换算，这里只传逻辑坐标。
         RawImageData *s = pCache->getRawBuff();
-        int nScale = (int)canvas->getScaleFactor();
-        canvas->bltImage(canvas->mapAndScaleX(rc.left + nLeftClip), canvas->mapAndScaleY(rc.top),
-            nVisibleWidth * nScale, s->height,
-            s, nLeftClip * nScale, 0, BPM_BLEND);
+        canvas->bltImage(rc.left + nLeftClip, rc.top, nVisibleWidth, rc.height(),
+            s, nLeftClip, 0, BPM_BLEND);
         return;
     }
     // 缓存不可用（空文本/离屏构建失败）：回退原动态路径，逐帧重绘字形。
@@ -141,11 +140,11 @@ CRawGraph *CSkinScrollText::getOrBuildTextCache(CRawGraph *canvas) {
     void *pFont = m_font.getFont();
     const CColor &clrTxt = m_font.getTextColor(m_enable);
     const CColor &clrBorder = m_font.getColorOutlined();
-    int nScale = (int)canvas->getScaleFactor();
+    float scale = canvas->getScaleFactor();
     bool bOutlined = m_font.isOutlined();
 
     bool bStale = (m_pTextCache == nullptr)
-        || m_nCacheScale != nScale
+        || m_cacheScale != scale
         || m_cacheFont != pFont
         || m_nCacheWidth != m_nWidthText
         || m_cacheOutlined != bOutlined
@@ -182,7 +181,7 @@ CRawGraph *CSkinScrollText::getOrBuildTextCache(CRawGraph *canvas) {
     }
 
     m_pTextCache = pImg;
-    m_nCacheScale = nScale;
+    m_cacheScale = scale;
     m_cacheFont = pFont;
     m_nCacheWidth = m_nWidthText;
     m_cacheOutlined = bOutlined;

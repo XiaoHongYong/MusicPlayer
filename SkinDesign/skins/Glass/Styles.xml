@@ -20,7 +20,7 @@
 			TextColorPressed="#1F6FE0"
 			BgColorPressed="#DCE9FB" BgPressedAlpha="220"/>
 
-		<Text ID="ID_CAPTION" Rect="w/2-46,11,92,20" CaptionText="true" FontName="Verdana" FontHeight="15" FontBold="false" TextColor="#3A4150" LeftMargin="0" AlignText="AT_LEFT | AT_VCENTER"/>
+		<Text Rect="w/2-46,11,92,20" Text="Music Player" FontName="Verdana" FontHeight="15" FontBold="false" TextColor="#3A4150" LeftMargin="0" AlignText="AT_LEFT | AT_VCENTER"/>
 		<Toolbar ID="CID_TB_SYSBT" Rect="w-138,0,138,25" TranslucencyWithSkin="TRUE"
 			Image="caption-btn-lg.png" enablehover="TRUE" units_x="46"
 			blank_x="-1" blank_cx="46" seperator_x="0" seperator_cx="10"
