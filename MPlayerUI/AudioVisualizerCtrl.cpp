@@ -271,27 +271,28 @@ void CAudioVisualizerCtrl::drawSpectrumBars(CRawGraph *canvas, const CRect &rc, 
     const int gap = std::max(0, m_gap);
     const int totalGap = gap * (bandCount - 1);
     const int barArea = std::max(bandCount, rc.width() - totalGap);
-    const float barW = (float)barArea / (float)bandCount;
+    // 统一整数条宽，避免浮点取整导致相邻条粗细不一致。
+    const int barW = std::max(1, barArea / bandCount);
+    const int usedW = bandCount * barW + totalGap;
+    const int xOffset = (rc.width() - usedW) / 2;
     const int height = rc.height();
     const int peakH = std::max(1, height / 24);
 
     for (int i = 0; i < bandCount; ++i) {
-        const int x0 = rc.left + (int)std::lround(i * (barW + gap));
-        const int x1 = rc.left + (int)std::lround(i * (barW + gap) + barW);
-        const int w = std::max(1, x1 - x0);
+        const int x0 = rc.left + xOffset + i * (barW + gap);
 
         int barH = (int)std::lround(m_displayLevels[i] * (float)height);
         if (barH > 0) {
             barH = std::max(m_minBarHeight, barH);
             const int y0 = rc.bottom - barH;
-            canvas->fillRect(CRect(x0, y0, x0 + w, rc.bottom), m_barColor, BPM_BLEND);
+            canvas->fillRect(CRect(x0, y0, x0 + barW, rc.bottom), m_barColor, BPM_BLEND);
         }
 
         const int peakY = rc.bottom - (int)std::lround(m_peakLevels[i] * (float)height) - peakH;
         if (m_peakLevels[i] > 0.02f && peakY < rc.bottom - 1) {
             // Win32 RECT 成员是 LONG，peakY 是 int；显式转成同一类型再 max。
             const int yPeak = std::max((int)rc.top, peakY);
-            canvas->fillRect(CRect(x0, yPeak, x0 + w, yPeak + peakH), m_peakColor, BPM_BLEND);
+            canvas->fillRect(CRect(x0, yPeak, x0 + barW, yPeak + peakH), m_peakColor, BPM_BLEND);
         }
     }
 }
