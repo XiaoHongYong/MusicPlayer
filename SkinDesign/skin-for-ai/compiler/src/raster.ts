@@ -103,8 +103,12 @@ export async function compositeSheet(
     return { hi: sheet, width: w, height: h };
 }
 
-/** 九宫格可平铺区 [start, end)。softPad 用于躲开圆角外的软阴影/AA 过渡，避免 tile 出横纹。 */
-export function extendPos(size: number, radius: number, softPad = 0): [number, number] {
+/**
+ * 九宫格可平铺区 [start, end)。
+ * 默认 softPad=2：切分时四周固定边各多留 2px，躲开圆角 AA/阴影过渡，避免 tile 横纹。
+ * 由皮肤生成写入 HorzExtendPos/VertExtendPos，渲染层不做额外内缩。
+ */
+export function extendPos(size: number, radius: number, softPad = 2): [number, number] {
     const a = Math.max(1, Math.min(radius + 1 + softPad, Math.floor(size / 2) - 1));
     return [a, size - a];
 }

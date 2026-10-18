@@ -29,7 +29,7 @@
 			TranslucencyAlphaOnActive="255">
 
 		<!-- 中段纯透明列，避免 tile 出竖条；歌词底由 CID_LYRICS_BG 单独铺 -->
-		<Property Name="WindowImage" Image="bg-mini.png" HorzExtendPos="139,166" VertExtendPos="12,32" />
+		<Property Name="WindowImage" Image="bg-mini.png" HorzExtendPos="141,164" VertExtendPos="14,30" />
 
 		<Container Name="Body" Rect="0,0,w,h">
 

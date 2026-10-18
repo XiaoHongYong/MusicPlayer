@@ -184,10 +184,11 @@ public:
     virtual void setTransparent(uint8_t nAlpha, bool bClickThrough);
     virtual bool isClickThrough() { return m_bClickThrough; }
 
-    // 窗口磨砂玻璃背景：DWM blur-behind，透明区域透出桌面/下层窗口。由皮肤 <Window Glass="true"/> 触发。
+    // 窗口磨砂玻璃背景：透明/半透明像素透出系统 blur（Win10+ Acrylic）。
+    // 由皮肤 <Window Glass="true"/> 触发。
     virtual void setGlassEffect(bool bGlassEffect, cstr_t szMaterial = nullptr);
 
-    // DWM blur-behind 作用于整窗，无圆角概念；为保持三平台接口一致留空实现。
+    // Win 圆角由皮肤 WindowImage 透明像素决定；留空以保持三平台接口一致。
     virtual void setGlassRadius(int radius) { (void)radius; }
 
     bool updateLayeredWindowUsingMemGraph(CRawGraph *canvas);
@@ -202,11 +203,15 @@ public:
 protected:
     void updateScaleFactorFromDpi(UINT dpi);
     void updateScaleFactorFromWindow();
+    // 把当前 m_bGlassAccentOn 写到 DWM（Accent Policy）。首次 WS_EX_LAYERED 后需再调一次。
+    void applyGlassAccentPolicy();
 
     WndSizeMode                 m_WndSizeMode;
     HWND                        m_hWnd;
     bool                        m_isCursorSet = false;
     float                       m_scaleFactor = 1.0f;
+    // 与 CSkinWnd::m_bGlassEffect 分开：此处只服务 Win32 Accent 提交/重挂。
+    bool                        m_bGlassAccentOn = false;
 
 };
 

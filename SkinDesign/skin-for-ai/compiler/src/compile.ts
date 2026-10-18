@@ -173,10 +173,21 @@ function windowBgDims(comp: Record<string, unknown>, radius: number): {
     const w = sized.width;
     const h = (caption != null && bottom != null) ? caption + mid + bottom : sized.height;
     const cleared = clearColumnsOf(comp);
-    const horz: [number, number] = cleared ?? extendPos(w, radius);
-    const vert: [number, number] = (caption != null && bottom != null)
-        ? [caption, h - bottom]
-        : extendPos(h, radius);
+    const slicePad = 2;
+    let horz: [number, number] = cleared
+        ? [cleared[0] + slicePad, cleared[1] - slicePad]
+        : extendPos(w, radius, slicePad);
+    let vert: [number, number] = (caption != null && bottom != null)
+        ? [caption + slicePad, h - bottom - slicePad]
+        : extendPos(h, radius, slicePad);
+    if (horz[1] <= horz[0]) {
+        horz = cleared ? [...cleared] as [number, number] : extendPos(w, radius, 0);
+    }
+    if (vert[1] <= vert[0]) {
+        vert = (caption != null && bottom != null)
+            ? [caption, h - bottom]
+            : extendPos(h, radius, 0);
+    }
     const file = fileBase(comp, "windowBackground", "bg");
     return { w, h, horz, vert, file };
 }
@@ -343,12 +354,12 @@ export async function compileSkin(opts: CompileOptions): Promise<CompileReport> 
     let roundWidth = 12;
     let thickWidth = 3;
     let captionCell = 16;
-    let extendBg: [number, number] = [11, 21];
-    let extendBgVert: [number, number] = [11, 21];
-    let extendDialog: [number, number] = [11, 21];
-    let extendDialogVert: [number, number] = [11, 21];
+    let extendBg: [number, number] = [13, 19];
+    let extendBgVert: [number, number] = [13, 19];
+    let extendDialog: [number, number] = [13, 19];
+    let extendDialogVert: [number, number] = [13, 19];
     let hasDialogBg = false;
-    let extendPanel: [number, number] = [14, 18];
+    let extendPanel: [number, number] = [13, 19];
     let sliderEndWidth = 8;
     let playlistAttrs: Record<string, unknown> | undefined;
 
@@ -384,8 +395,8 @@ export async function compileSkin(opts: CompileOptions): Promise<CompileReport> 
         }
         if (type === "panel") {
             const r = radiusOf(comp, asVisual(comp), 10);
-            // Glass 等软边面板：radius+1 仍落在阴影过渡带，tile 会打出水平横纹
-            extendPanel = extendPos(32, r, 3);
+            // 切分时四周多留 2px（extendPos 默认 softPad），写入 XML ExtendPos
+            extendPanel = extendPos(32, r);
         }
         if (type === "captionToolbar") {
             captionCell = num((comp.cellSize as number | undefined), 16);

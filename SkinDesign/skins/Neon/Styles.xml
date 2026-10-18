@@ -90,7 +90,7 @@
         MinWidth="100" MinHeight="100" Width="330" Height="400" IsDialog="true"
         BgColor="#1C1C38">
 
-		<Property Name="WindowImage" Image="bg-dialog.png" HorzExtendPos="11,53" VertExtendPos="33,53" />
+		<Property Name="WindowImage" Image="bg-dialog.png" HorzExtendPos="13,51" VertExtendPos="35,51" />
 
 		<DialogCaption Rect="0,0,w,31"/>
 
@@ -102,7 +102,7 @@
         MinWidth="100" MinHeight="100" Width="330" Height="400"
         BgColor="#1C1C38">
 
-		<Property Name="WindowImage" Image="bg-dialog.png" HorzExtendPos="11,53" VertExtendPos="33,53" />
+		<Property Name="WindowImage" Image="bg-dialog.png" HorzExtendPos="13,51" VertExtendPos="35,51" />
 
 		<MenuCaption Rect="0,0,w,31"/>
 
@@ -112,7 +112,7 @@
     <NeonMainFrame Extends="Window"
         MinWidth="640" MinHeight="400" Width="800" Height="480">
 
-		<Property Name="WindowImage" Image="bg.png" HorzExtendPos="11,53" VertExtendPos="36,56" />
+		<Property Name="WindowImage" Image="bg.png" HorzExtendPos="13,51" VertExtendPos="38,54" />
 
 		<Caption Rect="0,0,w,36"/>
 

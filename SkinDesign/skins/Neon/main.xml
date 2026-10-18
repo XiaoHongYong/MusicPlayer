@@ -27,7 +27,7 @@
 			<Container Name="RightPanel" Rect="h-77-10-5+10,5,w-(h-77-10-5+10),h-10">
 				<Container ID="CID_PLAYLIST" Name="PlaylistArea" Rect="0,0,w,h">
 					<Container Name="SearchBar" Rect="16,12,w-32,26">
-						<Property Name="BgImage" Image="search-bg.png" HorzExtendPos="16,48" VertExtendPos="13,14" BlendPixMode="alpha_blend"/>
+						<Property Name="BgImage" Image="search-bg.png" HorzExtendPos="18,46" VertExtendPos="13,14" BlendPixMode="alpha_blend"/>
 						<Image Name="Search" Rect="8,3,20,20" Image="search.png"/>
 						<NormalEdit ID="CID_E_SEARCH_MUSIC" Text="" PlaceHolder="Search music" Rect="34,3,w-34-10,20" EnableBorder="false"/>
 					</Container>
@@ -40,7 +40,7 @@
 					  EnableToolbar="FALSE" EnableAutoResize="FALSE" />
 
 					<Container ID="CID_LYR_TOOL_BAR" Rect="w-110,10,94,30" Visible="False">
-						<Property Name="BgImage" Image="lyr-ctrl-bg.png" HorzExtendPos="8,22" BlendPixMode="alpha_blend"/>
+						<Property Name="BgImage" Image="lyr-ctrl-bg.png" HorzExtendPos="10,20" BlendPixMode="alpha_blend"/>
 
 						<Toolbar ID="ID_TB_LYR_SYNC" Rect="12,4,70,22" Image="fl_buttons.png" enablehover="TRUE"
 								units_x="22" blank_x="-1" blank_cx="22" seperator_x="220" seperator_cx="14" ButtonSpacesCX="2"

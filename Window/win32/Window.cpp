@@ -1124,21 +1124,91 @@ void Window::setTransparent(uint8_t nAlpha, bool bClickThrough) {
     }
 }
 
-void Window::setGlassEffect(bool bGlassEffect, cstr_t szMaterial) {
-    // DWM blur-behind：把窗口透明/边框区域渲染成磨砂玻璃（Win7+）。szMaterial 在 win 上暂未区分。
-    (void)szMaterial;
+// Win10+ 未公开的窗口合成属性：用 Accent Policy 做磨砂/Acrylic。
+// DwmEnableBlurBehindWindow 在 WS_EX_LAYERED + UpdateLayeredWindow 下已失效（只剩半透明无 blur）。
+enum WINDOWCOMPOSITIONATTRIB {
+    WCA_ACCENT_POLICY = 19,
+};
+
+enum ACCENT_STATE {
+    ACCENT_DISABLED = 0,
+    ACCENT_ENABLE_ACRYLICBLURBEHIND = 4, // Win10 1803+
+};
+
+struct ACCENT_POLICY {
+    ACCENT_STATE AccentState;
+    DWORD AccentFlags;
+    DWORD GradientColor; // 0xAABBGGRR
+    DWORD AnimationId;
+};
+
+struct WINDOWCOMPOSITIONATTRIBDATA {
+    WINDOWCOMPOSITIONATTRIB Attrib;
+    PVOID pvData;
+    SIZE_T cbData;
+};
+
+using PFN_SetWindowCompositionAttribute =
+    BOOL (WINAPI *)(HWND, WINDOWCOMPOSITIONATTRIBDATA *);
+
+static PFN_SetWindowCompositionAttribute getSetWindowCompositionAttribute() {
+    static PFN_SetWindowCompositionAttribute pfn = nullptr;
+    static bool loaded = false;
+    if (!loaded) {
+        loaded = true;
+        HMODULE user32 = GetModuleHandleW(L"user32.dll");
+        if (user32) {
+            pfn = (PFN_SetWindowCompositionAttribute)GetProcAddress(
+                user32, "SetWindowCompositionAttribute");
+        }
+    }
+    return pfn;
+}
+
+void Window::applyGlassAccentPolicy() {
     if (m_hWnd == nullptr) {
         return;
     }
 
+    auto pSet = getSetWindowCompositionAttribute();
+    if (pSet) {
+        ACCENT_POLICY policy = {};
+        if (m_bGlassAccentOn) {
+            // Acrylic：透明/半透明像素透出磨砂；浅色 tint 贴近 Glass 皮肤 #E8EAF5。
+            // GradientColor = 0xAABBGGRR（A 控制 tint 强度，皮肤 bg.png 再叠一层着色）。
+            // 与 UpdateLayeredWindow 可共存；旧 DwmEnableBlurBehindWindow 在 layered 下无效。
+            policy.AccentState = ACCENT_ENABLE_ACRYLICBLURBEHIND;
+            policy.AccentFlags = 0;
+            policy.GradientColor = 0x40F5EAE8;
+        } else {
+            policy.AccentState = ACCENT_DISABLED;
+        }
+
+        WINDOWCOMPOSITIONATTRIBDATA data = {};
+        data.Attrib = WCA_ACCENT_POLICY;
+        data.pvData = &policy;
+        data.cbData = sizeof(policy);
+        pSet(m_hWnd, &data);
+        return;
+    }
+
+    // 无 SetWindowCompositionAttribute 时（极旧系统）再退 DWM blur-behind。
     DWM_BLURBEHIND bb;
     memset(&bb, 0, sizeof(bb));
-    // 整窗 blur-behind（配合皮肤透明像素，角落/裁切处透出 blur）。
     bb.dwFlags = DWM_BB_ENABLE;
-    bb.fEnable = bGlassEffect ? TRUE : FALSE;
+    bb.fEnable = m_bGlassAccentOn ? TRUE : FALSE;
     bb.fTransitionOnMaximized = TRUE;
-
     DwmEnableBlurBehindWindow(m_hWnd, &bb);
+}
+
+void Window::setGlassEffect(bool bGlassEffect, cstr_t szMaterial) {
+    // szMaterial 仅 mac 区分 NSVisualEffect 材质；Win 未区分。
+    (void)szMaterial;
+    m_bGlassAccentOn = bGlassEffect;
+    if (m_hWnd == nullptr) {
+        return;
+    }
+    applyGlassAccentPolicy();
 }
 
 bool Window::updateLayeredWindowUsingMemGraph(CRawGraph *canvas) {
@@ -1152,7 +1222,8 @@ bool Window::updateLayeredWindowUsingMemGraph(CRawGraph *canvas) {
     } else {
         dwStyleNew &= ~WS_EX_TRANSPARENT;
     }
-    if (dwStyle != dwStyleNew) {
+    const bool becameLayered = (dwStyle != dwStyleNew);
+    if (becameLayered) {
         SetWindowLong(m_hWnd, GWL_EXSTYLE, dwStyleNew);
     }
 
@@ -1172,6 +1243,11 @@ bool Window::updateLayeredWindowUsingMemGraph(CRawGraph *canvas) {
     bool bRet = UpdateLayeredWindow(m_hWnd, hdc, &ptDest, &sizeWnd, hdcSrc, &ptSrc, 0, &blend, ULW_ALPHA);
 
     ReleaseDC(m_hWnd, hdc);
+
+    // Accent Policy 需在 WS_EX_LAYERED 生效后再写一次，否则磨砂挂不到 per-pixel 透明窗上。
+    if (becameLayered && m_bGlassAccentOn) {
+        applyGlassAccentPolicy();
+    }
 
     return bRet;
 }

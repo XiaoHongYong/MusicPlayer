@@ -27,7 +27,7 @@
 	<styles>
 		<style>
 			<OrbitMainFrame Extends="Window" EnableEdgeMerge="true">
-				<Property Name="WindowImage" Image="bg.png" HorzExtendPos="11,53" VertExtendPos="36,56"/>
+				<Property Name="WindowImage" Image="bg.png" HorzExtendPos="13,51" VertExtendPos="38,54"/>
 				<!-- 专用标题栏：无菜单栏；工具条与 Win 菜单按钮见 Styles OrbitMainCaption -->
 				<OrbitMainCaption Rect="0,0,w,36"/>
 				<!-- 底栏 230；进度条行加高 -->
@@ -74,7 +74,7 @@
 			<OrbitSideFrame Extends="Window"
 				MinWidth="280" MinHeight="240" Width="360" Height="480"
 				BgColor="#000000" EnableEdgeMerge="true">
-				<Property Name="WindowImage" Image="bg-dialog.png" HorzExtendPos="11,53" VertExtendPos="33,53"/>
+				<Property Name="WindowImage" Image="bg-dialog.png" HorzExtendPos="13,51" VertExtendPos="35,51"/>
 				<DialogCaption Rect="2,2,w-4,31"/>
 				<ClientArea Rect="8,36,w-16,h-36-10" ClipChildren="true"/>
 			</OrbitSideFrame>
@@ -94,7 +94,7 @@
 			<!-- 浮动音量：单层容器；宽 150，水平居中 -->
 			<Container ID="CID_VOLUME_POPUP" Name="VolumePopup" Rect="w/2-75,5,150,18" Visible="False"
 				TranslucencyWithSkin="TRUE">
-				<Property Name="BgImage" Image="lyr-ctrl-bg.png" HorzExtendPos="8,22" BlendPixMode="alpha_blend"/>
+				<Property Name="BgImage" Image="lyr-ctrl-bg.png" HorzExtendPos="10,20" BlendPixMode="alpha_blend"/>
 				<Slider Name="Volume" ID="ID_VOLUME" Rect="10,4,130,10" Height="10" EndWidth="3"
 					ImageTrack="vol-progress.png" ImageThumb="vol-thumb.png" TabFocus="true"/>
 			</Container>
@@ -107,7 +107,7 @@
 
 		<Container Name="Body" Rect="0,0,w,h">
 			<Container Name="SearchBar" Rect="8,4,w-16,26">
-				<Property Name="BgImage" Image="search-bg.png" HorzExtendPos="16,48" VertExtendPos="13,14" BlendPixMode="alpha_blend"/>
+				<Property Name="BgImage" Image="search-bg.png" HorzExtendPos="18,46" VertExtendPos="13,14" BlendPixMode="alpha_blend"/>
 				<Image Name="Search" Rect="8,3,20,20" Image="search.png"/>
 				<NormalEdit ID="CID_E_SEARCH_MUSIC" Text="" PlaceHolder="Search music" Rect="34,3,w-34-10,20" EnableBorder="false"/>
 			</Container>
@@ -124,7 +124,7 @@
 				EnableToolbar="FALSE" EnableAutoResize="FALSE"/>
 
 			<Container ID="CID_LYR_TOOL_BAR" Rect="w-110,8,94,30" Visible="False">
-				<Property Name="BgImage" Image="lyr-ctrl-bg.png" HorzExtendPos="8,22" BlendPixMode="alpha_blend"/>
+				<Property Name="BgImage" Image="lyr-ctrl-bg.png" HorzExtendPos="10,20" BlendPixMode="alpha_blend"/>
 				<!-- fl_buttons 为 assets 共享精灵（索引布局固定）；其余控件图为本皮肤 -->
 				<Toolbar ID="ID_TB_LYR_SYNC" Rect="12,4,70,22" Image="fl_buttons.png" enablehover="TRUE"
 					units_x="22" blank_x="-1" blank_cx="22" seperator_x="220" seperator_cx="14" ButtonSpacesCX="2"

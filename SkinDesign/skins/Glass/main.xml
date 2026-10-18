@@ -15,13 +15,13 @@
 
 				<!-- 卡片 1: 封面 -->
 				<Container Name="ArtCard" Rect="0,0,w,w">
-					<Property Name="BgImage" Image="panel.png" HorzExtendPos="14,18" VertExtendPos="14,18" BlendPixMode="alpha_blend"/>
+					<Property Name="BgImage" Image="panel.png" HorzExtendPos="13,19" VertExtendPos="13,19" BlendPixMode="alpha_blend"/>
 					<AlbumArt Name="AlbumArt" Rect="10,10,w-20,h-20" ID="ID_ALBUMART" Image="albumart-disc.png"/>
 				</Container>
 
 				<!-- 卡片 2: 歌曲信息 + 评分 -->
 				<Container Name="InfoCard" Rect="0,w + 10,w,82">
-					<Property Name="BgImage" Image="panel.png" HorzExtendPos="14,18" VertExtendPos="14,18" BlendPixMode="alpha_blend"/>
+					<Property Name="BgImage" Image="panel.png" HorzExtendPos="13,19" VertExtendPos="13,19" BlendPixMode="alpha_blend"/>
 					<MediaInfoText Name="Title" Rect="14,8,w-28,22" FontName="Tahoma" FontHeight="17" FontBold="TRUE" TextColor="#2B2F3A" Text="" MediaInfoType="Title" AlignText="AT_CENTER | AT_VCENTER"/>
 					<MediaInfoText Name="Artist - Album" Rect="14,32,w-28,16" FontName="Tahoma" FontHeight="12" FontBold="false" TextColor="#5B6372" Text="" MediaInfoType="Artist|Album" CombineWith=" - " AlignText="AT_CENTER | AT_VCENTER"/>
 					<RateButton id="ID_RATE" Rect="w/2-50,52,100,20" Image="rating.png" ImageRect="0,0,40,20" />
@@ -29,7 +29,7 @@
 
 				<!-- 卡片 3: 播放控制 -->
 				<Container Name="ControlCard" Rect="0,w + 102,w,85">
-					<Property Name="BgImage" Image="panel.png" HorzExtendPos="14,18" VertExtendPos="14,18" BlendPixMode="alpha_blend"/>
+					<Property Name="BgImage" Image="panel.png" HorzExtendPos="13,19" VertExtendPos="13,19" BlendPixMode="alpha_blend"/>
 					<Image Name="VolumeIcon" Rect="14,8,18,18" Image="volume.png" />
 					<Slider Name="Volume" ID="ID_VOLUME" Rect="40,9,w-50,15"/>
 					<Button Rect="w/2-24-58,30,48,48" ID="ID_PREVIOUS" ImageMask="prev-next-mask.png" ImageMaskRect="0,0,48,48"
@@ -45,12 +45,12 @@
 			<!-- 右栏: 上为列表/歌词，下为频谱；隐藏频谱时 LinearContainer 自动把上方撑满 -->
 			<LinearContainer Name="RightPanel" Rect="h-187+10,0,w-(h-187+10),h" Orientation="Vertical">
 				<Container Name="RightTopPanel" Width="200" Height="100" Weight="1" LayoutParams="match_parent_width" MinHeight="80">
-					<Property Name="BgImage" Image="panel.png" HorzExtendPos="14,18" VertExtendPos="14,18" BlendPixMode="alpha_blend"/>
+					<Property Name="BgImage" Image="panel.png" HorzExtendPos="13,19" VertExtendPos="13,19" BlendPixMode="alpha_blend"/>
 
 					<Container ID="CID_PLAYLIST" Name="PlaylistArea" Rect="0,0,w,h">
 						<!-- 网页风格搜索框: 白胶囊(与编辑框白底融合) + 内置放大镜, 编辑框去边框 -->
 						<Container Name="SearchBar" Rect="12,10,w-24,26">
-							<Property Name="BgImage" Image="search-bg.png" HorzExtendPos="16,48" VertExtendPos="13,14" BlendPixMode="alpha_blend"/>
+							<Property Name="BgImage" Image="search-bg.png" HorzExtendPos="18,46" VertExtendPos="13,14" BlendPixMode="alpha_blend"/>
 							<Image Name="Search" Rect="8,3,20,20" Image="search.png"/>
 							<NormalEdit ID="CID_E_SEARCH_MUSIC" Text="" PlaceHolder="Search music" Rect="34,3,w-34-10,20" EnableBorder="false"/>
 						</Container>
@@ -63,7 +63,7 @@
 						EnableToolbar="FALSE" EnableAutoResize="FALSE" />
 
 						<Container ID="CID_LYR_TOOL_BAR" Rect="w-110,10,94,30" Visible="False">
-							<Property Name="BgImage" Image="lyr-ctrl-bg.png" HorzExtendPos="8,22" BlendPixMode="alpha_blend"/>
+							<Property Name="BgImage" Image="lyr-ctrl-bg.png" HorzExtendPos="10,20" BlendPixMode="alpha_blend"/>
 
 							<Toolbar ID="ID_TB_LYR_SYNC" Rect="12,4,70,22" Image="fl_buttons.png" enablehover="TRUE"
 									units_x="22" blank_x="-1" blank_cx="22" seperator_x="220" seperator_cx="14" ButtonSpacesCX="2"
@@ -84,7 +84,7 @@
 				</Container>
 				<Container ID="CID_VISUALIZER_PANEL" Name="VisualizerPanel" Width="200" Height="85"
 					FixedHeight="TRUE" LayoutParams="match_parent_width" Margin="0,10,0,0">
-					<Property Name="BgImage" Image="panel.png" HorzExtendPos="14,18" VertExtendPos="14,18" BlendPixMode="alpha_blend"/>
+					<Property Name="BgImage" Image="panel.png" HorzExtendPos="13,19" VertExtendPos="13,19" BlendPixMode="alpha_blend"/>
 					<!-- Modes 仅频谱/波形；BarColor = Glass accent -->
 					<AudioVisualizer Name="Visualizer" Rect="10,10,w-20,h-20"
 						Modes="spectrum-bars,waveform"

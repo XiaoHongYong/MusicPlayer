@@ -100,12 +100,15 @@
 
   `ImageRect`/`ImageMask`/`HorzExtendPos`/`VertExtendPos` 与控件 `BgImage` 相同，但不要写 `BlendPixMode`（窗口级忽略该字段，始终 copy）。旧属性名 `BgImage` 在 `<skinwnd>` 上仍兼容。控件内部背景继续用 `<Property Name="BgImage">`。有 `WindowImage` 时 root 不再用 `BgColor` 整窗填充（见第 8 章第 7 条）。
 
-- `Glass`：窗口**磨砂玻璃背景**（bool）。mac 用 `NSVisualEffectView`，Windows 用 DWM blur-behind。
+- `Glass`：窗口**磨砂玻璃背景**（bool）。mac 用 `NSVisualEffectView`，Windows 用
+  `SetWindowCompositionAttribute` Acrylic（可与 per-pixel layered 窗共存；旧
+  `DwmEnableBlurBehindWindow` 在 `UpdateLayeredWindow` 下已无效）。
   开启后窗口**透明像素处**透出系统 blur（桌面/下层窗口），适合半透明皮肤表现磨砂质感；
   皮肤自绘的不透明区域不受影响。可选：
   - `GlassMaterial`：mac 材质（`fullScreenUI`（默认）/`sidebar`/`popover`/`underWindowBackground`/`headerView`），Windows 未区分。
   - `GlassRadius`：磨砂背板**圆角裁剪半径**（像素，默认 10）。mac 下圆角外的 blur 会被裁掉，
-    透出锐利桌面，得到真正的圆角窗；不设则磨砂铺满整窗（圆角处也透磨砂）。
+    透出锐利桌面，得到真正的圆角窗；不设则磨砂铺满整窗（圆角处也透磨砂）。Windows 圆角由
+    `WindowImage` 透明像素决定，此属性暂无效果。
 
   ```xml
   <Property Name="Glass" Value="true" />

@@ -4,7 +4,8 @@
 
   <style>
 	<!-- 主窗口: 浅色毛玻璃。WindowImage=bg.png 已烘焙圆角/描边/标题条/底栏。
-	     EnableTranslucency：Windows 需 per-pixel alpha（圆角透明 + 半透明底），否则背景不提交。 -->
+	     EnableTranslucency：Windows 需 per-pixel alpha（圆角透明 + 半透明底），否则背景不提交。
+	     Glass：mac=NSVisualEffect；win=Acrylic Accent（透明像素透出磨砂，勿仅靠半透明）。 -->
 	<Window ToolTipBgColor="#2B2F3A" ToolTipTextColor="#FFFFFF" ToolTipFontName="Verdana" ToolTipFontHeight="13"
 		FontName="Verdana" FontHeight="13" TextColor="#2B2F3A" BgColor="#E8EAF5"
 		EnableTranslucency="true" TranslucencyAlpha="255"
@@ -93,7 +94,7 @@
 		MinWidth="660" MinHeight="450" Width="880" Height="520"
 		>
 
-		<Property Name="WindowImage" Image="bg.png" HorzExtendPos="11,53" VertExtendPos="43,63" />
+		<Property Name="WindowImage" Image="bg.png" HorzExtendPos="13,51" VertExtendPos="45,61" />
 
 		<Caption Rect="0,0,w,41"/>
 
@@ -127,7 +128,7 @@
         MinWidth="100" MinHeight="100" Width="330" Height="400" IsDialog="true"
         BgColor="#E8EAF5">
 
-		<Property Name="WindowImage" Image="bg-dialog.png" HorzExtendPos="11,53" VertExtendPos="33,51" />
+		<Property Name="WindowImage" Image="bg-dialog.png" HorzExtendPos="13,51" VertExtendPos="35,49" />
 
 		<DialogCaption Rect="0,0,w,31"/>
 
@@ -138,7 +139,7 @@
         MinWidth="100" MinHeight="100" Width="330" Height="400"
         BgColor="#E8EAF5">
 
-		<Property Name="WindowImage" Image="bg-dialog.png" HorzExtendPos="11,53" VertExtendPos="33,51" />
+		<Property Name="WindowImage" Image="bg-dialog.png" HorzExtendPos="13,51" VertExtendPos="35,49" />
 
 		<MenuCaption Rect="0,0,w,31"/>
 

@@ -292,8 +292,8 @@ public:
 
     CColor getTranslucencyColor(const CColor &clr) const;
 
-    // 窗口磨砂玻璃背景：<Window Glass="true"/> 后，透明区域透出系统 blur（mac NSVisualEffect，
-    // win DWM blur-behind）。
+    // 窗口磨砂玻璃背景：<Window Glass="true"/> 后，透明区域透出系统 blur
+    // （mac NSVisualEffect，win Acrylic Accent Policy）。
     inline bool getGlassEffect() const { return m_bGlassEffect; }
     void setGlassEffect(bool bGlassEffect, cstr_t szMaterial = nullptr) override;
 
