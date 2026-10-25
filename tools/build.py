@@ -17,6 +17,7 @@ import re
 
 
 WORK_DIR = os.path.abspath(os.path.dirname(__file__))
+REPO_ROOT = os.path.abspath(os.path.join(WORK_DIR, os.pardir))
 
 def err_exit(err):
 	print(err)
@@ -150,6 +151,8 @@ def build_player(build_action):
 
 
 if __name__ == '__main__':
+	os.chdir(REPO_ROOT)
+
 	if "update_version_header_file" in sys.argv:
 		# Only print version string
 		org_print=print

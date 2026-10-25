@@ -49,8 +49,10 @@ public:
                             strNewVersion += " ";
                             strNewVersion += versionInfo.verNew;
 
+                            cstr_t url = versionInfo.url.empty()
+                                ? getStrName(SN_HTTP_DOMAIN) : versionInfo.url.c_str();
                             setUIObjectProperty("CID_NEW_VERSION", SZ_PN_TEXT, strNewVersion.c_str());
-                            setUIObjectProperty("CID_NEW_VERSION", SZ_PN_LINK, getStrName(SN_HTTP_DOMAIN));
+                            setUIObjectProperty("CID_NEW_VERSION", SZ_PN_LINK, url);
                             setUIObjectVisible("CID_CHECK_VERSION", false, true);
                             setUIObjectVisible("CID_NEW_VERSION", true, true);
                         } else {

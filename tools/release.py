@@ -14,6 +14,7 @@ import mimetypes
 import os
 import re
 import shutil
+import ssl
 import subprocess
 import sys
 import tempfile
@@ -21,6 +22,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
+from datetime import date
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple
 
@@ -32,6 +34,7 @@ RELEASE_ROOT = REPO_ROOT.parent / "Release"
 GITHUB_REMOTE = "gh"
 GITEE_REMOTE = "origin"
 GITEE_API = "https://gitee.com/api/v5"
+DEFAULT_UPDATE_URL = "http://www.crintsoft.com"
 
 ASSET_RULES = (
     ("MusicPlayer.dmg", "macOS", ".dmg"),
@@ -71,7 +74,10 @@ def warn(msg: str) -> None:
 
 
 def err(msg: str) -> None:
+    # 与 stdout 信息交错时保持顺序可读
+    sys.stdout.flush()
     print(C.wrap(C.RED, f"✗ {msg}"), file=sys.stderr)
+    sys.stderr.flush()
 
 
 def info(msg: str) -> None:
@@ -178,6 +184,46 @@ def notes_body(version: str) -> str:
     if not parts:
         parts.append(f"MusicPlayer {version}")
     return "\n".join(parts).strip() + "\n"
+
+
+def notes_text_from_md(path: Path) -> str:
+    """从 RELEASE_NOTES.*.md 提取纯文本（去掉标题行，保留条目）。"""
+    if not path.is_file():
+        return ""
+    lines: List[str] = []
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        s = raw.strip()
+        if not s or s.startswith("#"):
+            continue
+        lines.append(s)
+    return "\n".join(lines)
+
+
+def write_music_player_update_json(
+    version: str, *, url: str = DEFAULT_UPDATE_URL
+) -> Path:
+    """生成站点用的紧凑 JSON（无缩进），供应用内检查更新下载。
+
+    格式:
+    {"version":"1.1.abc","date":"2026-10-19","url":"http://...","notes":{"en":"...","zh-CN":"..."}}
+    """
+    d = release_dir(version)
+    d.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "version": version,
+        "date": date.today().isoformat(),
+        "url": url or DEFAULT_UPDATE_URL,
+        "notes": {
+            "en": notes_text_from_md(d / "RELEASE_NOTES.en.md"),
+            "zh-CN": notes_text_from_md(d / "RELEASE_NOTES.zh-CN.md"),
+        },
+    }
+    out_path = d / "music-player-update.json"
+    text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    with out_path.open("w", encoding="utf-8", newline="\n") as fp:
+        fp.write(text)
+        fp.write("\n")
+    return out_path
 
 
 def discover_local_assets(version: str) -> List[Tuple[Path, str]]:
@@ -299,9 +345,45 @@ def ensure_gh() -> None:
         )
 
 
+def _gh_auth_hint(stderr: str = "", stdout: str = "") -> Optional[str]:
+    text = f"{stderr}\n{stdout}".lower()
+    if any(
+        s in text
+        for s in (
+            "not logged into",
+            "gh auth login",
+            "gh_token",
+            "authentication required",
+            "to get started with github cli",
+        )
+    ):
+        return (
+            "GitHub CLI 未登录。请先执行: gh auth login"
+            "（或设置环境变量 GH_TOKEN）"
+        )
+    return None
+
+
 def gh(*args: str, check: bool = True) -> str:
     ensure_gh()
-    return run_out(["gh", *args], check=check)
+    try:
+        return run_out(["gh", *args], check=check)
+    except subprocess.CalledProcessError as e:
+        hint = _gh_auth_hint(e.stderr or "", e.stdout or "")
+        if hint:
+            raise RuntimeError(hint) from e
+        detail = (e.stderr or e.stdout or "").strip()
+        raise RuntimeError(detail or f"gh {' '.join(args)} failed (exit {e.returncode})") from e
+
+
+def ssl_context() -> ssl.SSLContext:
+    """macOS 官方 Python 常缺系统 CA；优先用 certifi。"""
+    try:
+        import certifi
+
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        return ssl.create_default_context()
 
 
 def github_release_exists(tag: str) -> bool:
@@ -358,7 +440,9 @@ def github_delete(tag: str) -> None:
 def gitee_token() -> str:
     token = os.environ.get("GITEE_ACCESS_TOKEN") or os.environ.get("GITEE_TOKEN") or ""
     if not token:
-        die("GITEE_ACCESS_TOKEN (or GITEE_TOKEN) is not set")
+        raise RuntimeError(
+            "GITEE_ACCESS_TOKEN (or GITEE_TOKEN) is not set"
+        )
     return token
 
 
@@ -410,7 +494,7 @@ def gitee_request(
         req = urllib.request.Request(url, method=method, headers=headers)
 
     try:
-        with urllib.request.urlopen(req, timeout=300) as resp:
+        with urllib.request.urlopen(req, timeout=300, context=ssl_context()) as resp:
             raw = resp.read().decode("utf-8")
             if not raw:
                 return None
@@ -418,6 +502,15 @@ def gitee_request(
     except urllib.error.HTTPError as e:
         detail = e.read().decode("utf-8", errors="replace")
         raise RuntimeError(f"Gitee API {method} {path} → HTTP {e.code}: {detail}") from e
+    except urllib.error.URLError as e:
+        reason = str(e.reason if getattr(e, "reason", None) else e)
+        if "CERTIFICATE_VERIFY_FAILED" in reason or "SSL" in reason:
+            raise RuntimeError(
+                f"Gitee SSL 校验失败: {reason}. "
+                "请安装/修复证书: python3 -m pip install --upgrade certifi"
+                "，或运行 Python 安装目录下的 Install Certificates.command"
+            ) from e
+        raise RuntimeError(f"Gitee 网络错误: {reason}") from e
 
 
 def gitee_list_releases() -> List[dict]:
@@ -491,28 +584,59 @@ def gitee_delete_release(tag: str) -> None:
     gitee_request("DELETE", f"/releases/{rel['id']}")
 
 
+def ensure_tag_and_push(version: str, tag: str, commit: str, hosts: Sequence[str]) -> None:
+    """本地无 tag 则创建 annotated tag，并推送到所选 host 对应 remote。"""
+    existing = run(["git", "rev-parse", "-q", "--verify", f"refs/tags/{tag}"], check=False)
+    if existing.returncode == 0:
+        tagged = git("rev-list", "-n", "1", tag)
+        if tagged[:7] != commit:
+            die(f"Tag {tag} already points to {tagged[:7]}, expected {commit}")
+        warn(f"Tag {tag} already exists (commit {tagged[:7]})")
+    else:
+        target_cp = run(
+            ["git", "rev-parse", "--verify", f"{commit}^{{commit}}"], check=False
+        )
+        if target_cp.returncode == 0:
+            target = target_cp.stdout.strip()
+        elif current_commit_short() == commit:
+            target = "HEAD"
+        else:
+            die(f"Cannot create tag {tag}: commit {commit} not found in local repo")
+        git("tag", "-a", tag, "-m", f"MusicPlayer {version}", target)
+        ok(f"Created local tag {tag} → {commit}")
+
+    for host in hosts:
+        remote = GITHUB_REMOTE if host == "github" else GITEE_REMOTE
+        # 已在远端则 push 会报 already exists；用 --force-with-lease 太危险，改为探测后跳过
+        remote_has = run(
+            ["git", "ls-remote", "--tags", remote, f"refs/tags/{tag}"], check=False
+        )
+        remote_lines = [
+            ln for ln in (remote_has.stdout or "").splitlines() if ln.strip()
+        ]
+        if remote_lines:
+            remote_sha = remote_lines[0].split()[0]
+            local_sha = git("rev-list", "-n", "1", tag)
+            if remote_sha[:7] != local_sha[:7] and remote_sha != local_sha:
+                die(
+                    f"Remote {remote} already has {tag} at {remote_sha[:7]}, "
+                    f"local is {local_sha[:7]}"
+                )
+            info(f"Tag {tag} already on {remote} ({host}), skip push")
+            continue
+        info(f"Push tag {tag} → {remote}")
+        run(["git", "push", remote, tag], check=True, capture=False)
+        ok(f"Pushed {tag} to {remote} ({host})")
+
+
 def cmd_prepare(args: argparse.Namespace) -> None:
     version, tag, commit = resolve_version(getattr(args, "version", None))
     d = release_dir(version)
     d.mkdir(parents=True, exist_ok=True)
     ok(f"Release directory: {d}")
 
-    existing = run(["git", "rev-parse", "-q", "--verify", f"refs/tags/{tag}"], check=False)
-    if existing.returncode == 0:
-        tagged = git("rev-list", "-n", "1", tag)
-        if tagged[:7] != commit:
-            die(f"Tag {tag} already points to {tagged[:7]}, current commit is {commit}")
-        warn(f"Tag {tag} already exists (commit {tagged[:7]})")
-    else:
-        git("tag", "-a", tag, "-m", f"MusicPlayer {version}")
-        ok(f"Created local tag {tag}")
-
     hosts = hosts_from_arg(args.host)
-    for host in hosts:
-        remote = GITHUB_REMOTE if host == "github" else GITEE_REMOTE
-        info(f"Push tag {tag} → {remote}")
-        run(["git", "push", remote, tag], check=True, capture=False)
-        ok(f"Pushed {tag} to {remote} ({host})")
+    ensure_tag_and_push(version, tag, commit, hosts)
 
     prev = previous_tag(tag)
     range_hint = f"{prev}..HEAD" if prev else "HEAD~30..HEAD"
@@ -545,14 +669,25 @@ def cmd_prepare(args: argparse.Namespace) -> None:
 
     print()
     ok(f"prepare done · VERSION={version} TAG={tag}")
-    warn("Edit RELEASE_NOTES.*.md, then build on each platform and run: upload")
+    warn("Edit RELEASE_NOTES.*.md, then: write-update-json → build → upload")
+
+
+def cmd_write_update_json(args: argparse.Namespace) -> None:
+    version, _, _ = resolve_version(getattr(args, "version", None))
+    url = getattr(args, "url", None) or DEFAULT_UPDATE_URL
+    out = write_music_player_update_json(version, url=url)
+    ok(f"Wrote {out}")
 
 
 def cmd_upload(args: argparse.Namespace) -> None:
-    version, tag, _ = resolve_version(getattr(args, "version", None))
+    version, tag, commit = resolve_version(getattr(args, "version", None))
     d = release_dir(version)
     if not d.is_dir():
         die(f"Release directory not found: {d} (run prepare / build.sh first)")
+
+    # 确认 notes 后若有改动，上传前再写一次，保证站点 JSON 与 notes 一致
+    out = write_music_player_update_json(version)
+    info(f"Refreshed {out.name}")
 
     assets = discover_local_assets(version)
     if not assets:
@@ -563,6 +698,9 @@ def cmd_upload(args: argparse.Namespace) -> None:
 
     body = notes_body(version)
     hosts = hosts_from_arg(args.host)
+
+    # 发布前确保 tag 存在并已推到所选远端（未 prepare 过也能 upload）
+    ensure_tag_and_push(version, tag, commit, hosts)
 
     for host in hosts:
         info(f"=== {host} · {tag} ===")
@@ -715,6 +853,7 @@ def list_local_versions() -> List[str]:
 def interactive() -> None:
     actions = [
         ("prepare", "prepare — 创建版本目录并打 tag"),
+        ("write-update-json", "write-update-json — 生成 music-player-update.json"),
         ("upload", "upload — 上传本地安装包到 GitHub/Gitee"),
         ("list", "list — 查看本地与远端 Release"),
         ("view", "view — 查看指定版本详情"),
@@ -729,7 +868,9 @@ def interactive() -> None:
     host_options = ["all", "github", "gitee"]
     host = host_options[select_menu("选择发布目标 host", host_options)]
 
-    ns = argparse.Namespace(host=host, version=None, yes=False, delete_tag=False)
+    ns = argparse.Namespace(
+        host=host, version=None, yes=False, delete_tag=False, url=DEFAULT_UPDATE_URL
+    )
 
     if action == "prepare":
         cmd_prepare(ns)
@@ -749,7 +890,9 @@ def interactive() -> None:
     else:
         ns.version = choices[vi].split()[0]
 
-    if action == "upload":
+    if action == "write-update-json":
+        cmd_write_update_json(ns)
+    elif action == "upload":
         cmd_upload(ns)
     elif action == "view":
         cmd_view(ns)
@@ -778,6 +921,19 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("prepare", help="创建版本目录并打/推 tag", parents=[host_parent])
     sp.add_argument("version", nargs="?", help="可选，默认从 version.h.in + HEAD 计算")
     sp.set_defaults(func=cmd_prepare)
+
+    sp = sub.add_parser(
+        "write-update-json",
+        help="根据 RELEASE_NOTES 生成 music-player-update.json",
+        parents=[host_parent],
+    )
+    sp.add_argument("version", nargs="?", help="可选版本号")
+    sp.add_argument(
+        "--url",
+        default=DEFAULT_UPDATE_URL,
+        help=f"检查更新打开的页面（默认 {DEFAULT_UPDATE_URL}）",
+    )
+    sp.set_defaults(func=cmd_write_update_json)
 
     sp = sub.add_parser("upload", help="上传本地包；Release 不存在则创建", parents=[host_parent])
     sp.add_argument("version", nargs="?", help="可选版本号")

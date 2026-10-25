@@ -27,7 +27,7 @@ const CAudioVisualizerCtrl::Mode kDefaultModes[] = {
 } // namespace
 
 CAudioVisualizerCtrl::CAudioVisualizerCtrl() {
-    m_msgNeed = UO_MSG_WANT_LBUTTON;
+    m_msgNeed = UO_MSG_WANT_CLICK;
     m_alive = std::make_shared<std::atomic<bool>>(true);
     m_barColor.set(RGB(46, 230, 200));
     m_peakColor.set(RGB(232, 255, 249));
@@ -209,9 +209,6 @@ void CAudioVisualizerCtrl::scheduleInvalidate() {
 }
 
 bool CAudioVisualizerCtrl::onLButtonClick(uint32_t nFlags, CPoint point) {
-    if (!m_rcObj.ptInRect(point)) {
-        return false;
-    }
     cycleMode();
     return true;
 }

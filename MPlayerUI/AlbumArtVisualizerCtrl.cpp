@@ -124,7 +124,7 @@ CColor CAlbumArtVisualizerCtrl::boostForViz(const CColor &c, float satBoost) {
 }
 
 CAlbumArtVisualizerCtrl::CAlbumArtVisualizerCtrl() {
-    m_msgNeed = UO_MSG_WANT_LBUTTON;
+    m_msgNeed = UO_MSG_WANT_CLICK;
     m_alive = std::make_shared<std::atomic<bool>>(true);
     m_fallbackColor.set(180, 180, 180);
     applyFallbackColor(m_fallbackColor);
@@ -418,10 +418,6 @@ float CAlbumArtVisualizerCtrl::consumeDtSec() {
     m_lastDrawTime = now;
     m_hasLastDrawTime = true;
     return dt;
-}
-
-bool CAlbumArtVisualizerCtrl::onLButtonDown(uint32_t nFlags, CPoint point) {
-    return true;
 }
 
 bool CAlbumArtVisualizerCtrl::onLButtonClick(uint32_t nFlags, CPoint point) {

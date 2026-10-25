@@ -6,7 +6,9 @@ bool isNewVersion(cstr_t version);
 class CVersionInfo {
 public:
     string                      verNew;
-    string                      releaseDate;      // 新版发布日期
+    string                      releaseDate;      // YYYY-MM-DD
+    string                      url;              // 打开的下载/介绍页
+    string                      notes;            // 当前界面语言的更新说明
 
 };
 

@@ -526,7 +526,8 @@ protected:
     // only one ui object can capture the mouse at any time
     CUIObject                   *m_pUIObjCapMouse;
 
-    // Down 成功的控件；Up 时若仍在其上且位移 ≤5px 则派发 onLButtonClick / onRButtonClick
+    // Down 目标：on*ButtonDown 返回 true，或声明了 UO_MSG_WANT_CLICK / WANT_RCLICK。
+    // Up 时若仍在其上且位移 ≤5px 则派发 onLButtonClick / onRButtonClick。
     CUIObject                   *m_pUIObjLButtonDown = nullptr;
     CUIObject                   *m_pUIObjRButtonDown = nullptr;
     CPoint                      m_ptLButtonDown;

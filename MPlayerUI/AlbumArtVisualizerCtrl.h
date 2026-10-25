@@ -46,7 +46,6 @@ public:
     void onTimer(int nId) override;
     void draw(CRawGraph *canvas) override;
     bool setProperty(cstr_t szProperty, cstr_t szValue) override;
-    bool onLButtonDown(uint32_t nFlags, CPoint point) override;
     bool onLButtonClick(uint32_t nFlags, CPoint point) override;
     bool onLButtonDblClk(uint32_t nFlags, CPoint point) override;
 

@@ -128,7 +128,10 @@ enum {
     UO_MSG_WANT_MOUSEWHEEL      = 1 << 6,
     UO_MSG_WANT_MENU_KEY        = 1 << 7,
     UO_MSG_WANT_COMMAND         = 1 << 8,
+    // 只要 Click，不必重写 onLButtonDown return true：命中后自动记目标并挡住拖窗
+    UO_MSG_WANT_CLICK           = 1 << 9,
     UO_MSG_WANT_MAGNIFY         = 1 << 10,
+    UO_MSG_WANT_RCLICK          = 1 << 11,
     UO_MSG_WANT_ALL             = 0xFFFFFFFF
 };
 
@@ -313,8 +316,11 @@ public:
 
     inline bool needMsgMouseMove()    { return (m_msgNeed & UO_MSG_WANT_MOUSEMOVE) != 0; }
     inline bool needMsgMouseWheel()    { return (m_msgNeed & UO_MSG_WANT_MOUSEWHEEL) != 0; }
-    inline bool needMsgLButton()    { return (m_msgNeed & UO_MSG_WANT_LBUTTON) != 0; }
-    inline bool needMsgRButton()    { return (m_msgNeed & UO_MSG_WANT_RBUTTON) != 0; }
+    // WANT_CLICK / WANT_RCLICK 也走对应按键路由（Down/Up/DblClk + Click 派发）
+    inline bool needMsgLButton()    { return (m_msgNeed & (UO_MSG_WANT_LBUTTON | UO_MSG_WANT_CLICK)) != 0; }
+    inline bool needMsgRButton()    { return (m_msgNeed & (UO_MSG_WANT_RBUTTON | UO_MSG_WANT_RCLICK)) != 0; }
+    inline bool needMsgClick()      { return (m_msgNeed & UO_MSG_WANT_CLICK) != 0; }
+    inline bool needMsgRClick()     { return (m_msgNeed & UO_MSG_WANT_RCLICK) != 0; }
     inline bool needMsgKey()    { return (m_msgNeed & (UO_MSG_WANT_KEY | UO_MSG_WANT_ALL_KEYS)) != 0; }
     inline bool needMsgAllKeys()    { return (m_msgNeed & UO_MSG_WANT_ALL_KEYS) != 0; }
     inline bool needMsgEnterKey()    { return (m_msgNeed & UO_MSG_WANT_ENTER_KEY) != 0; }

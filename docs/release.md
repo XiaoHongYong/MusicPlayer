@@ -4,7 +4,7 @@
 
 相关实现：
 
-- 发布脚本：[`tools/release.py`](../tools/release.py)
+- 入口脚本：[`release.sh`](../release.sh)（转发到 [`tools/release.py`](../tools/release.py)）
 - Agent skill：[`.cursor/skills/release-prepare/SKILL.md`](../.cursor/skills/release-prepare/SKILL.md)
 
 ## 范围
@@ -28,7 +28,8 @@
 
 - `MusicPlayer.dmg`（macOS）
 - `MusicPlayer.exe`（Windows）
-- `music-player-update.json`（站点更新用，本流程不上传到 Git 托管）
+
+站点检查更新用的 `music-player-update.json` 由 `./release.sh write-update-json` 生成（prepare 填完 notes 后；`upload` 时会再写一次），**不**上传到 Git 托管。
 
 上传到 Release 时脚本会重命名为：
 
@@ -39,9 +40,11 @@
 
 ```text
 prepare (skill + release.py)
-    → 人工确认 Release Notes
+    → 起草 Release Notes
+    → ./release.sh write-update-json
+    → 人工确认
     → 各平台 ./build.sh 打包
-    → release.py upload
+    → ./release.sh upload
 ```
 
 ### 1. Prepare
@@ -49,7 +52,7 @@ prepare (skill + release.py)
 由 Agent 按 skill「准备发布」执行，或手动：
 
 ```bash
-python3 tools/release.py prepare
+./release.sh prepare
 ```
 
 脚本会：
@@ -61,11 +64,17 @@ python3 tools/release.py prepare
    - `RELEASE_NOTES.en.md`
    - `RELEASE_NOTES.zh-CN.md`
 
-Agent 应根据「上一 tag → HEAD」的 `git log` 填好中英文说明，然后**停下等你确认**。
+Agent 应根据「上一 tag → HEAD」的 `git log` 填好中英文说明，再跑 `write-update-json`，然后**停下等你确认**。
 
 ### 2. 人工确认 Release Notes
 
-编辑上述两个文件（可只改中文或两边都改）。确认前不要 `upload`。
+编辑上述两个文件（可只改中文或两边都改）。若改了 notes，可再跑：
+
+```bash
+./release.sh write-update-json
+```
+
+确认前不要 `upload`。
 
 ### 3. 各平台打包
 
@@ -82,27 +91,34 @@ Agent 应根据「上一 tag → HEAD」的 `git log` 填好中英文说明，�
 
 ```bash
 # 默认 GitHub + Gitee；远端无 Release 则创建
-python3 tools/release.py upload
+./release.sh upload
 
 # 只传一边
-python3 tools/release.py upload --host github
-python3 tools/release.py upload --host gitee
+./release.sh upload --host github
+./release.sh upload --host gitee
 
 # 指定版本（目录名，可带或不带 v）
-python3 tools/release.py upload 1.0.a1be871
+./release.sh upload 1.0.a1be871
 ```
+
+`upload` 会：
+
+1. 按当前 notes 刷新 `music-player-update.json`
+2. 若本地无对应 tag 则创建 annotated tag，并推送到所选 host 的 remote（已存在且指向同一 commit 则跳过）
+3. 上传安装包（远端无 Release 则创建）
 
 Release 正文优先合并 `RELEASE_NOTES.en.md`，并附加中文节（来自 `RELEASE_NOTES.zh-CN.md`）。
 
 ## 发布脚本命令
 
 ```bash
-python3 tools/release.py              # 无参数：交互模式（方向键选命令/参数）
-python3 tools/release.py prepare
-python3 tools/release.py upload [VERSION]
-python3 tools/release.py list
-python3 tools/release.py view [VERSION]
-python3 tools/release.py delete [VERSION] [--delete-tag] [-y]
+./release.sh              # 无参数：交互模式（方向键选命令/参数）
+./release.sh prepare
+./release.sh write-update-json [VERSION]
+./release.sh upload [VERSION]
+./release.sh list
+./release.sh view [VERSION]
+./release.sh delete [VERSION] [--delete-tag] [-y]
 ```
 
 全局参数：
@@ -120,13 +136,32 @@ python3 tools/release.py delete [VERSION] [--delete-tag] [-y]
 
 ## 鉴权
 
-- **GitHub**：本机已 `gh auth login`，对目标仓库有写权限。
+- **GitHub**：本机已 `gh auth login`（或设置 `GH_TOKEN`），对目标仓库有写权限。
 - **Gitee**：环境变量 `GITEE_ACCESS_TOKEN`（或 `GITEE_TOKEN`），对目标仓库有写权限。
 
 未配置对应凭据时，该 host 上的创建/上传/删除会失败。
+
+macOS 上若 Gitee 报 `CERTIFICATE_VERIFY_FAILED`，先保证能 `import certifi`（`python3 -m pip install --upgrade certifi`）；脚本会用其 CA 包发起 HTTPS。仍失败时可运行 Python 安装目录下的 `Install Certificates.command`。
 
 ## 与站点更新的关系
 
 应用内检查更新读取的是网站上的 `music-player-update.json`（见 `MPlayerUI/VersionUpdate.cpp`），不是 GitHub/Gitee Release。
 
 需要同步官网下载目录时，仍使用仓库旁的 `Release/push.sh`（scp）。本流程只负责 Git 托管上的 Release 资产。
+
+### `music-player-update.json`
+
+由 `./release.sh write-update-json` 生成（release-prepare skill 在写完 notes 后调用；`upload` 时再写一次），**紧凑单行**（不 pretty-print）。说明文字来自同目录的 `RELEASE_NOTES.en.md` / `RELEASE_NOTES.zh-CN.md`（去掉 `#` 标题行，保留条目）；若 notes 尚未写好则为空字符串。
+
+```text
+{"version":"1.1.abcdef","date":"2026-10-19","url":"http://www.crintsoft.com","notes":{"en":"- ...","zh-CN":"- ..."}}
+```
+
+| 字段 | 含义 |
+|---|---|
+| `version` | 与 `VERSION` 一致，`{MAJOR}.{MINOR}.{BUILD}` |
+| `date` | 生成当日 `YYYY-MM-DD` |
+| `url` | 用户确认后打开的页面（默认官网，可用 `--url` 覆盖） |
+| `notes.en` / `notes.zh-CN` | 仅中英文；界面为中文时用 `zh-CN`，否则用 `en`（中文缺失时也回退 `en`） |
+
+客户端比较：先比 `MAJOR.MINOR`，相同再比完整版本串是否与本地 `VERSION_STR` 不同。

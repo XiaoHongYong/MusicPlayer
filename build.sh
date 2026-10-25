@@ -244,18 +244,6 @@ function build_and_install_media_center() {
     echo "OK"
 }
 
-function create_music_player_update_json() {
-    file="$RELEASE_DIR/music-player-update.json"
-    echo "Creating ${file} ..."
-
-    echo "{
-\"version\": \"$VERSION\",
-\"release-date\": \"$(date '+%Y-%m-%d')\"
-}" > ${file}
-    exit_if_err "Failed to create ${file}."
-    echo "OK"
-}
-
 # 选出带 C++ 工具集的最新 Visual Studio。
 # 通过 stdout 输出两行：生成器名、安装路径（Windows 反斜杠路径）。
 # 不能省略 -G：CMake 在找不到可用 VS 时默认生成器是 NMake Makefiles，而 NMake 不接受 -A x64。
@@ -421,8 +409,7 @@ function pack_macos() {
     rm -f $RELEASE_DIR/*.dmg
     cp build/MusicPlayer.dmg $RELEASE_DIR
     exit_if_err "Failed to copy dmg to ${RELEASE_DIR}."
-
-    create_music_player_update_json
+    echo "Copied MusicPlayer.dmg → ${RELEASE_DIR}"
 }
 
 function pack_windows() {
@@ -461,8 +448,7 @@ function pack_windows() {
     rm -f "$RELEASE_DIR"/*.exe
     cp "${installer}" "$RELEASE_DIR/"
     exit_if_err "Failed to copy installer to ${RELEASE_DIR}."
-
-    create_music_player_update_json
+    echo "Copied MusicPlayer.exe → ${RELEASE_DIR}"
 }
 
 function print_help() {

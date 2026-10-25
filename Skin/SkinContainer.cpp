@@ -228,7 +228,10 @@ bool CSkinContainer::onLButtonDown(uint32_t nFlags, CPoint point) {
                     pObj->setFocus();
                 }
             }
-            if (pObj->onLButtonDown(nFlags, point)) {
+            const bool handled = pObj->onLButtonDown(nFlags, point);
+            // handled：控件自己吃掉 Down；needMsgClick：只要 Click，不必 Down return true
+            // （Caption 等仅 WANT_LBUTTON 且 Down 返回 false 的仍可落到窗口拖拽）
+            if (handled || pObj->needMsgClick()) {
                 // 嵌套 container 已记过更深层目标时不覆盖
                 m_pSkin->setLButtonDownObj(pObj);
                 return true;
@@ -288,7 +291,8 @@ bool CSkinContainer::onRButtonDown(uint32_t nFlags, CPoint point) {
 
         if ((pObj->needMsgRButton() || pObj->isContainer()) && pObj->isVisible()
             && pObj->isEnable() && pObj->isPtIn(point)) {
-            if (pObj->onRButtonDown(nFlags, point)) {
+            const bool handled = pObj->onRButtonDown(nFlags, point);
+            if (handled || pObj->needMsgRClick()) {
                 // 嵌套 container 已记过更深层目标时不覆盖
                 m_pSkin->setRButtonDownObj(pObj);
                 bMsgProceed = true;

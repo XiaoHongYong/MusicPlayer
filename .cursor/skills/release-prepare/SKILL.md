@@ -8,14 +8,15 @@ description: >-
 
 # Release Prepare
 
-权威流程见 [`docs/release.md`](../../../docs/release.md)。本 skill 只覆盖 **第 1 步 prepare + 起草 notes**；确认与上传由用户后续完成。
+权威流程见 [`docs/release.md`](../../../docs/release.md)。本 skill 只覆盖 **prepare → 起草 notes → 生成 update json**；确认与上传由用户后续完成。
 
 ## Task Progress
 
 ```
 Task Progress:
-- [ ] Prepare (tools/release.py prepare)
+- [ ] Prepare (./release.sh prepare)
 - [ ] Draft RELEASE_NOTES.en.md + RELEASE_NOTES.zh-CN.md
+- [ ] Write music-player-update.json (./release.sh write-update-json)
 - [ ] Stop for human confirmation
 ```
 
@@ -30,7 +31,7 @@ Task Progress:
 ### 2. Run prepare
 
 ```bash
-python3 tools/release.py prepare
+./release.sh prepare
 ```
 
 Script will:
@@ -43,7 +44,7 @@ Script will:
 
 Capture printed `VERSION` / `TAG` / directory path.
 
-Optional: `python3 tools/release.py prepare --host github` (or `gitee`) if only one host should receive the tag push.
+Optional: `./release.sh prepare --host github` (or `gitee`) if only one host should receive the tag push.
 
 ### 3. Draft release notes
 
@@ -69,13 +70,24 @@ Rules:
 
 Overwrite the stub placeholders created by `prepare`.
 
-### 4. Stop for human confirmation
+### 4. Write music-player-update.json
 
-Show the two note paths and **stop**. Tell the user:
+Notes 写好后立刻生成站点用检查更新文件（紧凑 JSON，含 `notes.en` / `notes.zh-CN`）：
 
-1. Review / edit the notes.
+```bash
+./release.sh write-update-json
+```
+
+输出：`../Release/{VERSION}/music-player-update.json`。  
+（`upload` 时会再写一次，以便吸收你确认阶段对 notes 的修改。）
+
+### 5. Stop for human confirmation
+
+Show the note paths、update json 路径，然后 **stop**。Tell the user:
+
+1. Review / edit the notes（若改了 notes，可再跑一次 `./release.sh write-update-json`）。
 2. On each platform at the same commit: `./build.sh`
-3. Then: `python3 tools/release.py upload`
+3. Then: `./release.sh upload`（若本地尚无 tag，upload 会自动创建并推到所选 remote）
 
 Do **not** run `upload` or `delete` in this skill unless the user explicitly asks after confirming notes.
 
