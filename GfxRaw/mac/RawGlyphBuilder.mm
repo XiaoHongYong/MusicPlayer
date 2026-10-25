@@ -20,6 +20,7 @@ static const int kBakeHeightInset = 1;
 CRawGlyphBuilder::CRawGlyphBuilder() {
     m_refAscent = 0;
     m_baselineY = 0;
+    m_emInkToBase = 0;
 }
 
 CRawGlyphBuilder::~CRawGlyphBuilder() {
@@ -29,9 +30,16 @@ CRawGlyphBuilder::~CRawGlyphBuilder() {
 void CRawGlyphBuilder::createMemGraph(int nWidthGraph) {
     m_fontMemGraph.destroy();
     // 烘焙缓冲加高：Core Text 墨迹常高于 FontHeight，先完整画出再压回字号契约
-    m_fontMemGraph.create(nWidthGraph, getDrawBufferHeight(), 0, MEM_GRAPH_BITS);
+    const int bufferHeight = getDrawBufferHeight();
+    m_fontMemGraph.create(nWidthGraph, bufferHeight, 0, MEM_GRAPH_BITS);
 
-    CGContextSetTextMatrix(m_fontMemGraph.getHandle(), CGAffineTransformMakeScale(1.0, -1.0));
+    // 翻成左上角原点、y 向下，字形才是正的。agg 行号仍是 CG 设备坐标（底边为 0，
+    // 负 stride），与这里的用户 y 方向相反。fit 时要把 m_baselineY 换成 agg 行号，
+    // 否则基线会落在墨迹上半部，中文下半截被裁掉。
+    CGContextRef ctx = m_fontMemGraph.getHandle();
+    CGContextTranslateCTM(ctx, 0, bufferHeight);
+    CGContextScaleCTM(ctx, 1.0, -1.0);
+    CGContextSetTextMatrix(ctx, CGAffineTransformIdentity);
 
     // 布局仍用 m_fontInfo.height；实际 CT 字体小 1px，上方留出 1px
     int bakeHeight = m_fontInfo.height;
@@ -54,8 +62,50 @@ void CRawGlyphBuilder::createMemGraph(int nWidthGraph) {
     if (m_refAscent < 1) {
         m_refAscent = max(1, bakeHeight * 4 / 5);
     }
-    // 基线下移 1px，配合小字号使墨迹从第 1 行开始（上方留空）
-    m_baselineY = MARGIN_FONT + 1 + m_refAscent;
+    m_baselineY = MARGIN_FONT + m_refAscent;
+    m_emInkToBase = measureEmInkToBase();
+}
+
+int CRawGlyphBuilder::measureEmInkToBase() {
+    if (!m_fontMemGraph.isValid()) {
+        return 0;
+    }
+
+    RawImageData *rawData = m_fontMemGraph.getRawBuff();
+    agg::rendering_buffer bufGraph(rawData->buff, rawData->width, rawData->height, rawData->stride);
+    const int nHeight = m_fontMemGraph.height();
+    uint8_t *row = bufGraph.row_ptr(0);
+    for (int y = 0; y < nHeight; y++) {
+        memset(row, 0, bufGraph.stride_abs());
+        row += bufGraph.stride();
+    }
+
+    // 用一个满高汉字量「墨迹顶到基线」，后面所有字共用这一条基线。
+    const char kEm[] = "花";
+    CFStringRef string = CFStringCreateWithBytes(nullptr, (const UInt8 *)kEm, sizeof(kEm) - 1, kCFStringEncodingUTF8, false);
+    if (!string) {
+        return 0;
+    }
+    m_fontOthers.draw(m_fontMemGraph.getHandle(), string, MARGIN_FONT, m_baselineY);
+    CFRelease(string);
+
+    int first = -1;
+    const int width = m_fontMemGraph.width();
+    for (int y = 0; y < nHeight && first < 0; y++) {
+        uint8_t *p = bufGraph.row_ptr(y);
+        for (int x = 0; x < width; x++, p += 4) {
+            if (p[0] | p[1] | p[2] | p[3]) {
+                first = y;
+                break;
+            }
+        }
+    }
+    if (first < 0) {
+        return 0;
+    }
+    int baselineRow = nHeight - 1 - m_baselineY;
+    int ink = baselineRow - first;
+    return ink > 0 ? ink : 0;
 }
 
 void CRawGlyphBuilder::init(const FontInfoEx &font) {
@@ -85,76 +135,6 @@ int CRawGlyphBuilder::getDrawBufferHeight() {
 
 int CRawGlyphBuilder::getHeightBitmap() {
     return m_fontInfo.height + MARGIN_FONT * 2;
-}
-
-// 压回 FontHeight，并让基线落在单元格内的统一位置。
-// 绘制时 yDst = topOffset - MARGIN，须保证 yDstEnd <= FontHeight，
-// 即 topOffset + heightBitmap <= FontHeight + MARGIN（多 1px 就会裁掉底部）。
-static void fitGlyphToBaseline(Glyph *glyph, int fontHeight, int bakeBaselineY, int refAscent) {
-    if (!glyph || !glyph->bitmap || glyph->heightBitmap == 0 || fontHeight < 1) {
-        return;
-    }
-
-    const int srcH = glyph->heightBitmap;
-    const int srcW = glyph->widthBitmap;
-    // 仅上方留 1px：墨迹落在视觉区域 [1, FontHeight]
-    const int topPad = 1;
-    const int maxBottom = fontHeight + MARGIN_FONT;
-    const int minTop = MARGIN_FONT + topPad;
-    const int inkHeight = fontHeight - topPad;
-    int baseInCell = minTop + refAscent;
-    if (baseInCell > fontHeight) {
-        baseInCell = fontHeight;
-    }
-    if (baseInCell < minTop) {
-        baseInCell = minTop;
-    }
-
-    int inkToBase = bakeBaselineY - (int)glyph->topOffset;
-
-    if (inkHeight > 0 && srcH > inkHeight) {
-        // 超高时从顶部裁掉多余行，优先保留基线以下的 descent/抗锯齿
-        const int crop = srcH - inkHeight;
-        const int dstH = inkHeight;
-        const int dstW = srcW;
-        auto *dst = new uint8_t[dstW * dstH * G_PIX_SIZE];
-        memcpy(dst, glyph->bitmap + crop * srcW * G_PIX_SIZE, dstW * dstH * G_PIX_SIZE);
-
-        delete[] glyph->bitmap;
-        glyph->bitmap = dst;
-        glyph->heightBitmap = (uint8_t)dstH;
-        inkToBase -= crop;
-    }
-
-    int newTop = baseInCell - inkToBase;
-    if (newTop < minTop) {
-        newTop = minTop;
-    }
-    if (newTop + glyph->heightBitmap > maxBottom) {
-        // 保底部：必要时上移；仍放不下则再从顶部裁行
-        newTop = maxBottom - (int)glyph->heightBitmap;
-        if (newTop < minTop) {
-            newTop = minTop;
-        }
-        if (newTop + glyph->heightBitmap > maxBottom && glyph->heightBitmap > 1) {
-            int overflow = newTop + (int)glyph->heightBitmap - maxBottom;
-            if (overflow >= (int)glyph->heightBitmap) {
-                overflow = (int)glyph->heightBitmap - 1;
-            }
-            int dstH = (int)glyph->heightBitmap - overflow;
-            int dstW = (int)glyph->widthBitmap;
-            auto *dst = new uint8_t[dstW * dstH * G_PIX_SIZE];
-            memcpy(dst, glyph->bitmap + overflow * dstW * G_PIX_SIZE, dstW * dstH * G_PIX_SIZE);
-            delete[] glyph->bitmap;
-            glyph->bitmap = dst;
-            glyph->heightBitmap = (uint8_t)dstH;
-            newTop = maxBottom - dstH;
-            if (newTop < minTop) {
-                newTop = minTop;
-            }
-        }
-    }
-    glyph->topOffset = (uint8_t)newTop;
 }
 
 Glyph *CRawGlyphBuilder::buildGlyph(string &ch) {
@@ -195,7 +175,21 @@ Glyph *CRawGlyphBuilder::buildGlyph(string &ch) {
     agg::pixfmt_rgba32 pixf(bufGraph);
     copyBitmpDataFromGraphBuffer(glyph, pixf);
 
-    fitGlyphToBaseline(glyph, m_fontInfo.height, m_baselineY, m_refAscent);
+    // 用户 y（顶向下）→ agg 行号（底边为 0）。见 createMemGraph 里的 CTM 翻转。
+    int baselineRow = m_fontMemGraph.height() - 1 - m_baselineY;
+    if (baselineRow < 0) {
+        baselineRow = 0;
+    }
+    // 按「花」的墨迹高度上移基线，顶边贴住字号盒子，空位留在盒子里面。
+    // 量不到时退回大约 1/8 字号，避免基线又贴死底边。
+    int bottomPad = max(2, (m_fontInfo.height + 7) / 8);
+    if (m_emInkToBase > 0) {
+        bottomPad = m_fontInfo.height - m_emInkToBase - MARGIN_FONT;
+        if (bottomPad < 0) {
+            bottomPad = 0;
+        }
+    }
+    fitGlyphBitmapToBaseline(glyph, m_fontInfo.height, baselineRow, m_refAscent, bottomPad, 0);
 
     return glyph;
 }

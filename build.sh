@@ -399,11 +399,24 @@ function build_project() {
 function pack_macos() {
     echo "Make package: MusicPlayer.dmg ..."
 
+    local app="build/Release/MusicPlayer.app"
+    if [ ! -d "${app}" ]; then
+        echo "ERROR: ${app} not found; build Release first."
+        exit 1
+    fi
+
+    # 只打 .app + Applications 软链，避免把 dSYM 等 build/Release 杂项塞进 dmg。
+    local stage="build/dmg-stage"
+    rm -rf "${stage}"
+    mkdir -p "${stage}"
+    ditto "${app}" "${stage}/MusicPlayer.app"
+    exit_if_err "Failed to stage MusicPlayer.app."
+    ln -s /Applications "${stage}/Applications"
+
     rm -f build/MusicPlayer.dmg
-    rm -f build/Release/Applications
-    ln -s /Applications build/Release/Applications
-    hdiutil create -volname MusicPlayer -srcfolder build/Release -format UDZO build/MusicPlayer.dmg
+    hdiutil create -volname MusicPlayer -srcfolder "${stage}" -format UDZO build/MusicPlayer.dmg
     exit_if_err "Failed to create MusicPlayer.dmg."
+    rm -rf "${stage}"
 
     mkdir -p "$RELEASE_DIR"
     rm -f $RELEASE_DIR/*.dmg

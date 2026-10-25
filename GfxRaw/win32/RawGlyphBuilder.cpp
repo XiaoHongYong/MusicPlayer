@@ -84,76 +84,6 @@ int CRawGlyphBuilder::getHeightBitmap() {
     return m_fontInfo.height + MARGIN_FONT * 2;
 }
 
-// 压回 FontHeight，并让基线落在单元格内的统一位置。
-// 绘制时 yDst = topOffset - MARGIN，须保证 yDstEnd <= FontHeight，
-// 即 topOffset + heightBitmap <= FontHeight + MARGIN（多 1px 就会裁掉底部）。
-static void fitGlyphToBaseline(Glyph *glyph, int fontHeight, int bakeBaselineY, int refAscent) {
-    if (!glyph || !glyph->bitmap || glyph->heightBitmap == 0 || fontHeight < 1) {
-        return;
-    }
-
-    const int srcH = glyph->heightBitmap;
-    const int srcW = glyph->widthBitmap;
-    // 仅上方留 1px：墨迹落在视觉区域 [1, FontHeight]
-    const int topPad = 1;
-    const int maxBottom = fontHeight + MARGIN_FONT;
-    const int minTop = MARGIN_FONT + topPad;
-    const int inkHeight = fontHeight - topPad;
-    int baseInCell = minTop + refAscent;
-    if (baseInCell > fontHeight) {
-        baseInCell = fontHeight;
-    }
-    if (baseInCell < minTop) {
-        baseInCell = minTop;
-    }
-
-    int inkToBase = bakeBaselineY - (int)glyph->topOffset;
-
-    if (inkHeight > 0 && srcH > inkHeight) {
-        // 超高时从顶部裁掉多余行，优先保留基线以下的 descent/抗锯齿
-        const int crop = srcH - inkHeight;
-        const int dstH = inkHeight;
-        const int dstW = srcW;
-        auto *dst = new uint8_t[dstW * dstH * G_PIX_SIZE];
-        memcpy(dst, glyph->bitmap + crop * srcW * G_PIX_SIZE, dstW * dstH * G_PIX_SIZE);
-
-        delete[] glyph->bitmap;
-        glyph->bitmap = dst;
-        glyph->heightBitmap = (uint8_t)dstH;
-        inkToBase -= crop;
-    }
-
-    int newTop = baseInCell - inkToBase;
-    if (newTop < minTop) {
-        newTop = minTop;
-    }
-    if (newTop + glyph->heightBitmap > maxBottom) {
-        // 保底部：必要时上移；仍放不下则再从顶部裁行
-        newTop = maxBottom - (int)glyph->heightBitmap;
-        if (newTop < minTop) {
-            newTop = minTop;
-        }
-        if (newTop + glyph->heightBitmap > maxBottom && glyph->heightBitmap > 1) {
-            int overflow = newTop + (int)glyph->heightBitmap - maxBottom;
-            if (overflow >= (int)glyph->heightBitmap) {
-                overflow = (int)glyph->heightBitmap - 1;
-            }
-            int dstH = (int)glyph->heightBitmap - overflow;
-            int dstW = (int)glyph->widthBitmap;
-            auto *dst = new uint8_t[dstW * dstH * G_PIX_SIZE];
-            memcpy(dst, glyph->bitmap + overflow * dstW * G_PIX_SIZE, dstW * dstH * G_PIX_SIZE);
-            delete[] glyph->bitmap;
-            glyph->bitmap = dst;
-            glyph->heightBitmap = (uint8_t)dstH;
-            newTop = maxBottom - dstH;
-            if (newTop < minTop) {
-                newTop = minTop;
-            }
-        }
-    }
-    glyph->topOffset = (uint8_t)newTop;
-}
-
 void copyBitmpDataFromGraphBuffer(Glyph *pGlyph, agg::pixfmt_rgb24 &bufGraph);
 
 Glyph *CRawGlyphBuilder::buildGlyph(string &ch) {
@@ -211,7 +141,7 @@ Glyph *CRawGlyphBuilder::buildGlyph(string &ch) {
     agg::pixfmt_rgb24 pixf(bufGraph);
     copyBitmpDataFromGraphBuffer(glyph, pixf);
 
-    fitGlyphToBaseline(glyph, m_fontInfo.height, m_baselineY, m_refAscent);
+    fitGlyphBitmapToBaseline(glyph, m_fontInfo.height, m_baselineY, m_refAscent);
 
     return glyph;
 }

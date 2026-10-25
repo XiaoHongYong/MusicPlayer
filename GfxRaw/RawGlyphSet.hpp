@@ -61,6 +61,11 @@ struct Glyph {
     int64_t                     nLastUsedTime;
 };
 
+// 将烘焙字形压回字号单元格，各字形基线对齐到同一行（见 GfxRaw/GlyphBaselineFit.cpp）
+// bottomPad：基线离单元格底边的像素。满高汉字用它把顶边贴住盒子，空位留在下面。
+// topPad：格子顶上留白。绘制会再减掉 MARGIN_FONT，所以 1 表示顶上可见 1px，0 表示顶边贴住盒子。
+void fitGlyphBitmapToBaseline(Glyph *glyph, int fontHeight, int bakeBaselineY, int refAscent, int bottomPad = 0, int topPad = 1);
+
 
 #ifdef _WIN32
 #include "win32/RawGlyphBuilder.h"

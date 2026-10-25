@@ -111,6 +111,14 @@ protected:
 
 
 template<class pixfmt>
+inline bool glyphPixelHasInk(uint8_t *p) {
+    if (p[0] != 0 || p[1] != 0 || p[2] != 0) {
+        return true;
+    }
+    return pixfmt::pix_width >= 4 && p[3] != 0;
+}
+
+template<class pixfmt>
 void copyBitmpDataFromGraphBuffer_t(Glyph *pGlyph, pixfmt &bufGraph) {
     int nHeightBitmap = bufGraph.height();
 
@@ -121,7 +129,7 @@ void copyBitmpDataFromGraphBuffer_t(Glyph *pGlyph, pixfmt &bufGraph) {
         uint8_t *p = pRowSrc;
         int y = 0;
         for (; y < nHeightBitmap; y++) {
-            if (p[0] != 0 || p[1] != 0 || p[2] != 0) {
+            if (glyphPixelHasInk<pixfmt>(p)) {
                 break;
             }
             p += bufGraph.stride();
@@ -143,7 +151,7 @@ void copyBitmpDataFromGraphBuffer_t(Glyph *pGlyph, pixfmt &bufGraph) {
         uint8_t *p = pRowSrc;
         int y = 0;
         for (; y < nHeightBitmap; y++) {
-            if (p[0] != 0 || p[1] != 0 || p[2] != 0) {
+            if (glyphPixelHasInk<pixfmt>(p)) {
                 break;
             }
             p += bufGraph.stride();
@@ -161,7 +169,7 @@ void copyBitmpDataFromGraphBuffer_t(Glyph *pGlyph, pixfmt &bufGraph) {
         uint8_t *p = pRowSrc;
         int x = nLeftBitmap;
         for (; x < nRightBitmap; x++) {
-            if (p[0] != 0 || p[1] != 0 || p[2] != 0) {
+            if (glyphPixelHasInk<pixfmt>(p)) {
                 break;
             }
             p += pixfmt::pix_width;
@@ -179,7 +187,7 @@ void copyBitmpDataFromGraphBuffer_t(Glyph *pGlyph, pixfmt &bufGraph) {
         uint8_t *p = pRowSrc;
         int x = nLeftBitmap;
         for (; x < nRightBitmap; x++) {
-            if (p[0] != 0 || p[1] != 0 || p[2] != 0) {
+            if (glyphPixelHasInk<pixfmt>(p)) {
                 break;
             }
             p += pixfmt::pix_width;
@@ -208,7 +216,11 @@ void copyBitmpDataFromGraphBuffer_t(Glyph *pGlyph, pixfmt &bufGraph) {
             pDst[G_G] = pSrc[PixPosition::PIX_G];
             pDst[G_B] = pSrc[PixPosition::PIX_B];
 #endif
-            pDst[G_A] = RGBToGray(pSrc[G_R], pSrc[G_G], pSrc[G_B]);
+            uint8_t gray = RGBToGray(pSrc[G_R], pSrc[G_G], pSrc[G_B]);
+            if (pixfmt::pix_width >= 4) {
+                gray = max(gray, pSrc[3]);
+            }
+            pDst[G_A] = gray;
             pDst += G_PIX_SIZE;
             pSrc += pixfmt::pix_width;
         }
